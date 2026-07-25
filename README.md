@@ -10,6 +10,14 @@ A ledger-styled, single-file mortgage toolkit — no build step, no server. Two 
 - **Amortization Schedule** — P&I payment, extra-payment savings, payoff date,
   and full **PITI** (P&I + the recommended escrow from the Analysis tab). Balance
   vs. cumulative-interest chart and a **Yearly / Monthly** schedule toggle.
+- **T-Note Lookup** — historical Treasury Constant Maturity rates (1Y–10Y) for an
+  ARM-style lookback: enter a reference date and a lookback (e.g. 45 days); the
+  tool takes the rate that many days earlier, and if that lands on a weekend or
+  U.S. federal holiday it rolls back to the previous business day. Shows the full
+  curve on the resolved date, recent business days, and a rate-history chart.
+  Rates are **bundled** (`tnote-rates.js`, ~11 yrs of daily FRED DGS data) so
+  lookups are instant and need no network. Refresh the data with
+  `scripts/fetch-tnote-rates.sh`.
 
 ### Features
 - **Import historical activity** — paste or upload a servicer CSV (`Date`,
