@@ -235,6 +235,18 @@
   .link-note { font-size: 12px; color: var(--muted); background: var(--paper); border: 1px solid var(--line); border-radius: 9px; padding: 11px 13px; margin-bottom: 16px; display: flex; gap: 8px; align-items: baseline; }
   .link-note b { color: var(--ink); font-family: var(--mono); }
 
+  /* T-Note lookup */
+  .tiles.three { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 620px) { .tiles.three { grid-template-columns: 1fr; } }
+  .tn-presets { display: flex; gap: 6px; margin-top: -4px; }
+  .tn-presets button { flex: 1; padding: 6px; font-size: 12.5px; font-family: var(--sans); font-weight: 600; cursor: pointer; background: var(--paper); color: var(--muted); border: 1px solid var(--line-strong); border-radius: 7px; }
+  .tn-presets button:hover { color: var(--ink); border-color: var(--ink); }
+  .tn-presets button.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 900px) { .duo { grid-template-columns: 1fr; } }
+  tbody tr.hl td { background: var(--accent-soft); }
+  tbody tr.hl td:first-child { color: var(--accent); font-weight: 700; }
+
   /* Statement modal */
   .modal.modal-lg { width: min(940px, 100%); }
   .stmt-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-bottom: 16px; }
@@ -256,6 +268,7 @@
   <nav class="tabs">
     <button class="tab active" data-tab="escrow" type="button">Escrow Analysis</button>
     <button class="tab" data-tab="amort" type="button">Amortization Schedule</button>
+    <button class="tab" data-tab="tnote" type="button">T-Note Lookup</button>
     <div class="tab-actions">
       <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
       <button class="ghost-btn sm accent-btn" id="exportStmt" type="button">&#128196; Escrow statement</button>
@@ -439,6 +452,68 @@
       </div>
     </div>
   </div>
+
+  <!-- ================= T-NOTE LOOKUP VIEW ================= -->
+  <div id="view-tnote" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Lookup</p>
+            <label class="field"><span class="lbl">Reference date</span>
+              <input type="date" id="tnDate"></label>
+            <label class="field" style="margin-bottom:8px;"><span class="lbl">Lookback (days before reference)</span>
+              <div class="suffix-input"><input type="number" id="tnLookback" value="45" step="1" min="0"><span class="sfx">days</span></div></label>
+            <div class="tn-presets">
+              <button type="button" data-lb="30">30</button>
+              <button type="button" data-lb="45">45</button>
+              <button type="button" data-lb="60">60</button>
+              <button type="button" data-lb="90">90</button>
+            </div>
+            <label class="field" style="margin-top:16px;"><span class="lbl">Treasury tenor</span>
+              <select id="tnTenor"></select></label>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Rule</p>
+            <p class="foot-note" style="margin-top:0;">The rate is taken <b>N days before</b> your reference date. If that day is a weekend or U.S. federal holiday, it rolls back to the previous business day &mdash; the standard ARM index lookback.</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles three">
+          <div class="tile"><div class="k" id="tnRateLabel">T-Note rate</div><div class="v" id="tnRate">&mdash;</div><div class="n" id="tnRateNote">as of &mdash;</div></div>
+          <div class="tile"><div class="k">Rate date</div><div class="v" id="tnDateOut" style="font-size:20px;">&mdash;</div><div class="n" id="tnDateOutNote">resolved business day</div></div>
+          <div class="tile"><div class="k">Reference &minus; lookback</div><div class="v" id="tnRawOut" style="font-size:20px;">&mdash;</div><div class="n" id="tnRawNote">before adjustment</div></div>
+        </div>
+
+        <div class="verdict good" id="tnVerdict"></div>
+
+        <div class="card chart-card">
+          <div class="panel">
+            <div class="chart-head">
+              <p class="eyebrow" style="margin:0;">Rate history</p>
+              <div class="legend"><span><i class="bar"></i><span id="tnLegend">10Y</span></span><span style="color:var(--faint);">&#9679; resolved date</span></div>
+            </div>
+            <canvas id="tnChart" width="760" height="220"></canvas>
+          </div>
+        </div>
+
+        <div class="duo">
+          <div class="card table-card" style="margin-top:0;">
+            <div class="panel" style="padding-bottom:8px;"><p class="eyebrow" style="margin:0;">Full curve on rate date</p></div>
+            <table><thead><tr><th>Tenor</th><th>Rate</th></tr></thead><tbody id="tnCurve"></tbody></table>
+          </div>
+          <div class="card table-card" style="margin-top:0;">
+            <div class="panel" style="padding-bottom:8px;"><p class="eyebrow" style="margin:0;">Recent business days</p></div>
+            <div class="scroll-body" style="max-height:262px;"><table><thead><tr><th>Date</th><th id="tnHistTenor">10Y</th></tr></thead><tbody id="tnHist"></tbody></table></div>
+          </div>
+        </div>
+
+        <p class="foot-note">Source: <span id="tnSource"></span>. Bundled data range <span id="tnRange"></span>. Constant-maturity yields; the value shown is the last published rate on or before the resolved business day. Reference only &mdash; not financial advice.</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Import modal -->
@@ -478,6 +553,7 @@
   </div>
 </div>
 
+<script src="tnote-rates.js"></script>
 <script>
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const FREQ = { annual: 1, "semi-annual": 2, quarterly: 4, monthly: 12 };
@@ -939,9 +1015,30 @@
     rows.push(["Total", money(a.totPrin + a.totInt), money(a.totPrin), money(a.totInt), ""]);
     return toCSV(rows);
   }
+  function tnoteCSV() {
+    const t = tnResult, rows = [];
+    rows.push(["T-Note Rate Lookup"]);
+    if (!t) { rows.push(["No result - resolved date is outside the bundled data range."]); return toCSV(rows); }
+    rows.push(["Reference date", t.entered]);
+    rows.push(["Lookback (days)", t.lookback]);
+    rows.push(["Reference minus lookback", t.rawIso]);
+    rows.push(["Adjusted for weekend/holiday", t.adjusted ? "yes (" + t.reason + ")" : "no"]);
+    rows.push(["Data-availability fallback", t.dataFallback ? "yes" : "no"]);
+    rows.push(["Resolved rate date", t.usedIso]);
+    rows.push(["Tenor", t.tenor]);
+    rows.push(["Rate (%)", t.rate]);
+    rows.push([]);
+    rows.push(["Full curve on " + t.usedIso, ""]);
+    rows.push(["Tenor", "Rate (%)"]);
+    t.curve.forEach(c => rows.push([c[0], c[1] == null ? "" : c[1]]));
+    rows.push([]);
+    rows.push(["Recent business days", t.tenor + " (%)"]);
+    t.hist.slice().reverse().forEach(h => rows.push([h.date, h.val]));
+    return toCSV(rows);
+  }
   document.getElementById("exportCsv").addEventListener("click", () => {
-    const amortVisible = !document.getElementById("view-amort").classList.contains("hidden");
-    if (amortVisible) { computeAmort(); downloadBlob("amortization-schedule.csv", amortCSV(), "text/csv;charset=utf-8"); }
+    if (!document.getElementById("view-tnote").classList.contains("hidden")) { computeTnote(); downloadBlob("tnote-lookup.csv", tnoteCSV(), "text/csv;charset=utf-8"); }
+    else if (!document.getElementById("view-amort").classList.contains("hidden")) { computeAmort(); downloadBlob("amortization-schedule.csv", amortCSV(), "text/csv;charset=utf-8"); }
     else { compute(); downloadBlob("escrow-projection.csv", escrowCSV(), "text/csv;charset=utf-8"); }
   });
 
@@ -1094,6 +1191,163 @@
     f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 2000); };
   });
 
+  // ---------- T-Note lookup ----------
+  const TN = window.TNOTE_DATA || { tenors: [], rows: [], source: "n/a", start: "", end: "" };
+  const tnoteMap = new Map(TN.rows.map(r => [r[0], r]));
+
+  function nthWeekday(y, m, wd, n) { let c = 0; for (let d = 1; d <= 31; d++) { const dt = new Date(y, m-1, d); if (dt.getMonth() !== m-1) break; if (dt.getDay() === wd) { if (++c === n) return dt; } } return null; }
+  function lastWeekday(y, m, wd) { let res = null; for (let d = 1; d <= 31; d++) { const dt = new Date(y, m-1, d); if (dt.getMonth() !== m-1) break; if (dt.getDay() === wd) res = dt; } return res; }
+  function observed(y, m, d) { let dt = new Date(y, m-1, d); const wd = dt.getDay(); if (wd === 6) dt = new Date(y, m-1, d-1); else if (wd === 0) dt = new Date(y, m-1, d+1); return dt; }
+  function isoOf(dt) { return dt.getFullYear() + "-" + String(dt.getMonth()+1).padStart(2,"0") + "-" + String(dt.getDate()).padStart(2,"0"); }
+  const HOLIDAYS = new Map(); // observed federal holidays: iso -> name
+  (function () {
+    const add = (dt, name) => { if (dt) HOLIDAYS.set(isoOf(dt), name); };
+    for (let y = 2014; y <= 2028; y++) {
+      add(observed(y,1,1), "New Year's Day");
+      add(nthWeekday(y,1,1,3), "MLK Jr. Day");
+      add(nthWeekday(y,2,1,3), "Presidents' Day");
+      add(lastWeekday(y,5,1), "Memorial Day");
+      if (y >= 2021) add(observed(y,6,19), "Juneteenth");
+      add(observed(y,7,4), "Independence Day");
+      add(nthWeekday(y,9,1,1), "Labor Day");
+      add(nthWeekday(y,10,1,2), "Columbus Day");
+      add(observed(y,11,11), "Veterans Day");
+      add(nthWeekday(y,11,4,4), "Thanksgiving Day");
+      add(observed(y,12,25), "Christmas Day");
+    }
+  })();
+  const DAYNAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  function nonBusinessReason(dt) { const wd = dt.getDay(); if (wd === 0) return "a Sunday"; if (wd === 6) return "a Saturday"; const h = HOLIDAYS.get(isoOf(dt)); return h ? h : null; }
+  function prettyDate(iso) { if (!iso) return "—"; const p = iso.split("-").map(Number); return new Date(p[0], p[1]-1, p[2]).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" }); }
+  function tnSeries(ti) { return TN.rows.filter(r => r[1+ti] != null).map(r => ({ date: r[0], val: r[1+ti] })); }
+
+  // populate tenor select
+  const tnTenorSel = document.getElementById("tnTenor");
+  if (tnTenorSel && TN.tenors.length) {
+    TN.tenors.forEach((t, i) => { const o = document.createElement("option"); o.value = t; o.textContent = t + " Treasury"; if (t === "10Y") o.selected = true; tnTenorSel.appendChild(o); });
+    document.getElementById("tnSource").textContent = TN.source;
+    document.getElementById("tnRange").textContent = TN.start + " to " + TN.end;
+  }
+
+  let tnResult = null; // for CSV export
+  function computeTnote() {
+    if (!TN.rows.length) return;
+    const dstr = document.getElementById("tnDate").value;
+    const lookback = parseInt(document.getElementById("tnLookback").value);
+    const tenor = document.getElementById("tnTenor").value;
+    const ti = TN.tenors.indexOf(tenor);
+    const V = document.getElementById("tnVerdict");
+    document.getElementById("tnRateLabel").textContent = tenor + " T-Note rate";
+    document.getElementById("tnLegend").textContent = tenor;
+    document.getElementById("tnHistTenor").textContent = tenor;
+
+    if (!dstr || isNaN(lookback)) {
+      document.getElementById("tnRate").textContent = "—";
+      V.className = "verdict good"; V.innerHTML = "<span class='dot'>&#9679;</span><div>Enter a reference date and lookback to resolve a rate.</div>";
+      return;
+    }
+    const [y,m,d] = dstr.split("-").map(Number);
+    const raw = new Date(y, m-1, d); raw.setDate(raw.getDate() - lookback);
+    const rawIso = isoOf(raw);
+
+    // roll back over weekend / federal holiday to previous business day
+    let cur = new Date(raw), firstReason = null, adjusted = false, guard = 0;
+    while (nonBusinessReason(cur) && guard++ < 30) { if (!firstReason) firstReason = nonBusinessReason(cur); adjusted = true; cur.setDate(cur.getDate()-1); }
+    const bizIso = isoOf(cur);
+
+    // find the published rate on or before the business day (handles rare no-print days)
+    let probe = new Date(cur), usedIso = null, val = null, dataFallback = false, g2 = 0;
+    while (g2++ < 60) {
+      const row = tnoteMap.get(isoOf(probe));
+      if (row && row[1+ti] != null) { usedIso = isoOf(probe); val = row[1+ti]; break; }
+      if (isoOf(probe) !== bizIso) dataFallback = true;
+      probe.setDate(probe.getDate()-1);
+    }
+
+    document.getElementById("tnRawOut").textContent = prettyDate(rawIso);
+    document.getElementById("tnRawNote").textContent = DAYNAMES[raw.getDay()] + (adjusted ? " (adjusted)" : " (business day)");
+
+    if (val == null) {
+      const before = rawIso < TN.start;
+      document.getElementById("tnRate").textContent = "—";
+      document.getElementById("tnRateNote").textContent = "no data";
+      document.getElementById("tnDateOut").textContent = "—";
+      V.className = "verdict warn";
+      V.innerHTML = `<span class='dot'>&#9650;</span><div><b>No rate available.</b> ${before ? "The resolved date is before the bundled data begins (" + TN.start + ")." : "The resolved date is outside the bundled data range (ends " + TN.end + ")."} Pick a reference date whose lookback lands within ${TN.start} to ${TN.end}.</div>`;
+      document.getElementById("tnCurve").innerHTML = ""; document.getElementById("tnHist").innerHTML = "";
+      drawTnoteChart([], -1); tnResult = null;
+      return;
+    }
+
+    document.getElementById("tnRate").textContent = val.toFixed(2) + "%";
+    document.getElementById("tnRateNote").textContent = "as of " + prettyDate(usedIso);
+    document.getElementById("tnDateOut").textContent = prettyDate(usedIso);
+    document.getElementById("tnDateOutNote").textContent = DAYNAMES[new Date(usedIso.split("-")[0], usedIso.split("-")[1]-1, usedIso.split("-")[2]).getDay()];
+
+    // verdict / explanation
+    let steps = [`You entered <b>${prettyDate(dstr)}</b>. Minus ${lookback} days is <b>${prettyDate(rawIso)}</b>`];
+    if (adjusted) steps.push(`which is ${firstReason}, so it rolls back to the previous business day <b>${prettyDate(bizIso)}</b>`);
+    else steps.push(`which is a business day`);
+    if (dataFallback) steps.push(`no rate was published that day, so the last prior published date <b>${prettyDate(usedIso)}</b> is used`);
+    V.className = "verdict good";
+    V.innerHTML = `<span class='dot'>&#9679;</span><div>${steps.join("; ")}. The <b>${tenor}</b> Treasury rate was <b>${val.toFixed(2)}%</b>.</div>`;
+
+    // full curve on the rate date
+    const row = tnoteMap.get(usedIso);
+    document.getElementById("tnCurve").innerHTML = TN.tenors.map((t, i) => {
+      const v = row[1+i];
+      return `<tr class="${t === tenor ? "hl" : ""}"><td>${t}</td><td>${v == null ? "&mdash;" : v.toFixed(2) + "%"}</td></tr>`;
+    }).join("");
+
+    // recent business days (up to and including the rate date), most recent first
+    const series = tnSeries(ti);
+    const idx = series.findIndex(s => s.date === usedIso);
+    const hist = series.slice(Math.max(0, idx-14), idx+1);
+    document.getElementById("tnHist").innerHTML = hist.slice().reverse().map(s =>
+      `<tr class="${s.date === usedIso ? "hl" : ""}"><td>${prettyDate(s.date)}</td><td>${s.val.toFixed(2)}%</td></tr>`).join("");
+
+    // chart: ~90 business days ending at the rate date
+    const win = series.slice(Math.max(0, idx-89), idx+1);
+    drawTnoteChart(win, win.length-1);
+
+    tnResult = { entered: dstr, lookback, rawIso, bizIso, adjusted, reason: firstReason, dataFallback, usedIso, tenor, rate: val, curve: TN.tenors.map((t,i)=>[t, row[1+i]]), hist };
+  }
+
+  function drawTnoteChart(points, hi) {
+    const cv = document.getElementById("tnChart"), dpr = window.devicePixelRatio || 1;
+    const cssW = cv.clientWidth || 760, cssH = 220;
+    cv.width = cssW*dpr; cv.height = cssH*dpr;
+    const ctx = cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,cssW,cssH);
+    if (!points.length) return;
+    const css = getComputedStyle(document.documentElement);
+    const cAccent = css.getPropertyValue("--accent").trim(), cLine = css.getPropertyValue("--line").trim(), cFaint = css.getPropertyValue("--faint").trim(), cCard = css.getPropertyValue("--card").trim(), cShort = css.getPropertyValue("--shortage").trim();
+    const padL = 48, padR = 14, padT = 14, padB = 24, W = cssW-padL-padR, H = cssH-padT-padB;
+    const vals = points.map(p => p.val); let lo = Math.min(...vals), hiv = Math.max(...vals);
+    if (lo === hiv) { hiv += 0.5; lo -= 0.5; } const range = hiv-lo; lo -= range*0.12; hiv += range*0.12;
+    const x = i => padL + (points.length<=1?0:i/(points.length-1))*W, yv = v => padT + (1-(v-lo)/(hiv-lo))*H;
+    ctx.font = "11px ui-monospace, monospace"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (let s=0; s<=4; s++){ const v = lo+(hiv-lo)*s/4, yy = yv(v);
+      ctx.strokeStyle = cLine; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(cssW-padR,yy); ctx.stroke();
+      ctx.fillStyle = cFaint; ctx.fillText(v.toFixed(2)+"%", padL-8, yy); }
+    const grad = ctx.createLinearGradient(0,padT,0,padT+H); grad.addColorStop(0, cAccent+"33"); grad.addColorStop(1, cAccent+"05");
+    ctx.beginPath(); points.forEach((p,i)=>{ const px=x(i),py=yv(p.val); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
+    ctx.lineTo(x(points.length-1),padT+H); ctx.lineTo(x(0),padT+H); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+    ctx.strokeStyle = cAccent; ctx.lineWidth = 2.5; ctx.lineJoin = "round"; ctx.beginPath();
+    points.forEach((p,i)=>{ const px=x(i),py=yv(p.val); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke();
+    if (hi >= 0) { const px = x(hi), py = yv(points[hi].val);
+      ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2); ctx.fillStyle = cShort; ctx.fill(); ctx.strokeStyle = cCard; ctx.lineWidth = 2; ctx.stroke(); }
+    ctx.fillStyle = cFaint; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.font = "10px system-ui, sans-serif";
+    const step = Math.max(1, Math.floor(points.length/6));
+    for (let i=0; i<points.length; i+=step) { const mo = points[i].date.slice(0,7); ctx.fillText(mo, x(i), padT+H+6); }
+  }
+
+  // presets + wiring
+  document.querySelectorAll(".tn-presets button").forEach(b => b.addEventListener("click", () => {
+    document.getElementById("tnLookback").value = b.dataset.lb; syncTnPresets(); computeTnote();
+  }));
+  function syncTnPresets() { const lb = document.getElementById("tnLookback").value; document.querySelectorAll(".tn-presets button").forEach(b => b.classList.toggle("active", b.dataset.lb === String(lb))); }
+  ["tnDate","tnLookback","tnTenor"].forEach(id => document.getElementById(id).addEventListener("input", () => { syncTnPresets(); computeTnote(); }));
+
   // ---------- tabs ----------
   document.querySelectorAll(".tab").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -1102,7 +1356,8 @@
       const tab = btn.dataset.tab;
       document.getElementById("view-escrow").classList.toggle("hidden", tab !== "escrow");
       document.getElementById("view-amort").classList.toggle("hidden", tab !== "amort");
-      if (tab === "amort") computeAmort(); else compute();
+      document.getElementById("view-tnote").classList.toggle("hidden", tab !== "tnote");
+      if (tab === "amort") computeAmort(); else if (tab === "tnote") computeTnote(); else compute();
     });
   });
   function setAmortMode(m) {
@@ -1119,7 +1374,11 @@
   const themeBtn = document.getElementById("themeBtn");
   function currentDark() { const t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; }
   function syncBtn(){ themeBtn.textContent = currentDark() ? "Light" : "Dark"; }
-  function recomputeVisible(){ if (document.getElementById("view-amort").classList.contains("hidden")) compute(); else computeAmort(); }
+  function recomputeVisible(){
+    if (!document.getElementById("view-tnote").classList.contains("hidden")) computeTnote();
+    else if (!document.getElementById("view-amort").classList.contains("hidden")) computeAmort();
+    else compute();
+  }
   themeBtn.addEventListener("click", () => { document.documentElement.setAttribute("data-theme", currentDark() ? "light" : "dark"); syncBtn(); recomputeVisible(); });
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncBtn(); recomputeVisible(); });
 
@@ -1131,6 +1390,17 @@
   });
   ["loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear"].forEach(id => document.getElementById(id).addEventListener("input", computeAmort));
   window.addEventListener("resize", recomputeVisible);
+
+  // default the T-Note reference date to today (clamped to available data), preselect the 45-day preset
+  (function initTnote() {
+    if (!TN.rows.length) return;
+    const t = new Date();
+    let iso = isoOf(t);
+    if (iso > TN.end) iso = TN.end;
+    document.getElementById("tnDate").value = iso;
+    syncTnPresets();
+    computeTnote();
+  })();
 
   renderDisb(); syncBtn();
   compute();
