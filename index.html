@@ -1,0 +1,1138 @@
+<title>Mortgage Tool Kit</title>
+<style>
+  :root {
+    --paper: #f3f5f3;
+    --card: #ffffff;
+    --ink: #141c18;
+    --muted: #5c6b63;
+    --faint: #8a988f;
+    --line: #dde3df;
+    --line-strong: #c6cfc9;
+    --accent: #1f6e4f;
+    --accent-soft: #e4efe9;
+    --shortage: #b7791f;
+    --shortage-soft: #f7ecd6;
+    --surplus: #2f7d5b;
+    --surplus-soft: #e2f0e8;
+    --danger: #b23b3b;
+    --shadow: 0 1px 2px rgba(20,28,24,.06), 0 8px 24px rgba(20,28,24,.05);
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0e1512; --card: #16201b; --ink: #e8ede9; --muted: #9aa89f; --faint: #6f7d74;
+      --line: #253029; --line-strong: #34423a; --accent: #4bbf8e; --accent-soft: #17281f;
+      --shortage: #d9a441; --shortage-soft: #2b2312; --surplus: #5cc793; --surplus-soft: #14271d;
+      --danger: #e06767; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --paper: #f3f5f3; --card: #ffffff; --ink: #141c18; --muted: #5c6b63; --faint: #8a988f;
+    --line: #dde3df; --line-strong: #c6cfc9; --accent: #1f6e4f; --accent-soft: #e4efe9;
+    --shortage: #b7791f; --shortage-soft: #f7ecd6; --surplus: #2f7d5b; --surplus-soft: #e2f0e8;
+    --danger: #b23b3b; --shadow: 0 1px 2px rgba(20,28,24,.06), 0 8px 24px rgba(20,28,24,.05);
+  }
+  :root[data-theme="dark"] {
+    --paper: #0e1512; --card: #16201b; --ink: #e8ede9; --muted: #9aa89f; --faint: #6f7d74;
+    --line: #253029; --line-strong: #34423a; --accent: #4bbf8e; --accent-soft: #17281f;
+    --shortage: #d9a441; --shortage-soft: #2b2312; --surplus: #5cc793; --surplus-soft: #14271d;
+    --danger: #e06767; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
+  .hidden { display: none !important; }
+
+  header.masthead {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; padding-bottom: 14px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand h1 { font-family: var(--serif); font-weight: 600; font-size: 27px; margin: 0; letter-spacing: -.01em; }
+  .brand .tag { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--accent); font-weight: 700; }
+  .masthead .sub { color: var(--muted); font-size: 13px; max-width: 40ch; text-align: right; }
+  .theme-btn { background: none; border: 1px solid var(--line-strong); color: var(--muted); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: var(--sans); }
+  .theme-btn:hover { color: var(--ink); border-color: var(--ink); }
+
+  /* Tabs */
+  nav.tabs { display: flex; gap: 4px; align-items: center; border-bottom: 2px solid var(--ink); margin-bottom: 28px; }
+  .tab-actions { margin-left: auto; display: flex; gap: 8px; padding-bottom: 6px; }
+  @media (max-width: 620px) { .tab-actions { width: 100%; padding-bottom: 10px; } }
+  .ghost-btn.accent-btn { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong)); }
+  .ghost-btn.accent-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .tab {
+    appearance: none; background: none; border: none; cursor: pointer; font-family: var(--sans);
+    font-size: 14px; font-weight: 600; color: var(--muted); padding: 10px 18px;
+    border-bottom: 2px solid transparent; margin-bottom: -2px; letter-spacing: .01em;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+  /* Segmented toggle */
+  .seg { display: inline-flex; gap: 3px; padding: 3px; background: var(--paper); border: 1px solid var(--line-strong); border-radius: 9px; }
+  .seg-btn { appearance: none; border: none; background: none; cursor: pointer; font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: var(--muted); padding: 6px 16px; border-radius: 6px; transition: color .12s, background .12s; }
+  .seg-btn:hover { color: var(--ink); }
+  .seg-btn.active { background: var(--card); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+  .seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .grid { display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+  .panel { padding: 20px; }
+  .panel + .panel { border-top: 1px solid var(--line); }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .panel-head .eyebrow { margin: 0; }
+
+  .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .13em; color: var(--faint); font-weight: 700; margin: 0 0 14px; }
+
+  label.field { display: block; margin-bottom: 14px; }
+  label.field span.lbl { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
+  .money-input { position: relative; }
+  .money-input::before { content: "$"; position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); font-family: var(--mono); font-size: 14px; pointer-events: none; }
+  .money-input input { padding-left: 24px; }
+  input[type="number"], input[type="text"], select, textarea {
+    width: 100%; padding: 9px 11px; font-size: 14px; font-family: var(--mono); color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line-strong); border-radius: 8px; font-variant-numeric: tabular-nums;
+  }
+  input[type="text"] { font-family: var(--sans); }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  select { font-family: var(--sans); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .suffix-input { position: relative; }
+  .suffix-input .sfx { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); font-family: var(--mono); font-size: 13px; pointer-events: none; }
+
+  /* Disbursements editor */
+  .disb-head, .disb-row { display: grid; grid-template-columns: 1fr 82px 78px 62px 26px; gap: 8px; align-items: center; }
+  .disb-head { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); margin-bottom: 8px; font-weight: 700; }
+  .disb-row { margin-bottom: 9px; }
+  .disb-row input, .disb-row select { padding: 7px 8px; font-size: 12.5px; }
+  .disb-row .money-input::before { font-size: 12px; left: 8px; }
+  .disb-row .money-input input { padding-left: 19px; }
+  .del { border: none; background: none; color: var(--faint); cursor: pointer; font-size: 17px; line-height: 1; padding: 4px; border-radius: 6px; }
+  .del:hover { color: var(--danger); background: var(--paper); }
+  .add-btn { margin-top: 4px; width: 100%; padding: 8px; font-size: 13px; cursor: pointer; background: var(--accent-soft); color: var(--accent); border: 1px dashed var(--accent); border-radius: 8px; font-weight: 600; font-family: var(--sans); }
+  .add-btn:hover { filter: brightness(.97); }
+
+  .cushion-row { display: flex; align-items: center; gap: 12px; }
+  .cushion-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+  .cushion-val { font-family: var(--mono); font-size: 14px; min-width: 74px; text-align: right; color: var(--ink); }
+
+  .import-btn { width: 100%; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); background: var(--card); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .import-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Payment comparison band */
+  .compare { display: flex; align-items: center; gap: 18px; padding: 16px 20px; margin-bottom: 16px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); flex-wrap: wrap; }
+  .cmp-col { display: flex; flex-direction: column; gap: 3px; }
+  .cmp-l { font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); font-weight: 700; }
+  .cmp-v { font-family: var(--mono); font-size: 24px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .cmp-v.accent { color: var(--accent); }
+  .cmp-arrow { font-size: 22px; color: var(--faint); }
+  .cmp-delta { margin-left: auto; text-align: right; display: flex; flex-direction: column; gap: 2px; }
+  .cmp-chip { font-family: var(--mono); font-size: 16px; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .cmp-chip.up { background: var(--shortage-soft); color: var(--shortage); }
+  .cmp-chip.down { background: var(--surplus-soft); color: var(--surplus); }
+  .cmp-chip.same { background: var(--accent-soft); color: var(--accent); }
+  .cmp-sub { font-size: 11.5px; color: var(--faint); font-family: var(--mono); }
+
+  /* Summary tiles */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 620px) { .tiles { grid-template-columns: 1fr 1fr; } }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+  .tile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
+  .tile.warn::before { background: var(--shortage); }
+  .tile.good::before { background: var(--surplus); }
+  .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
+  .tile .v { font-family: var(--mono); font-size: 25px; font-weight: 600; margin-top: 8px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .tile .n { font-size: 12px; color: var(--faint); margin-top: 3px; }
+  .tile.warn .v { color: var(--shortage); }
+  .tile.good .v { color: var(--surplus); }
+
+  .verdict { margin-top: 16px; padding: 14px 16px; border-radius: 10px; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .verdict.warn { background: var(--shortage-soft); color: var(--shortage); border: 1px solid color-mix(in srgb, var(--shortage) 30%, transparent); }
+  .verdict.good { background: var(--surplus-soft); color: var(--surplus); border: 1px solid color-mix(in srgb, var(--surplus) 30%, transparent); }
+  .verdict b { font-weight: 700; }
+  .verdict .dot { font-size: 18px; line-height: 1.1; }
+
+  .chart-card { margin-top: 24px; }
+  .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; gap: 10px; }
+  .legend { display: flex; gap: 16px; font-size: 11.5px; color: var(--muted); flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 20px; height: 0; vertical-align: middle; margin-right: 5px; }
+  .legend .bar { border-top: 3px solid var(--accent); }
+  .legend .cush { border-top: 2px dashed var(--shortage); }
+  .legend .int { border-top: 3px solid var(--shortage); }
+  canvas { width: 100%; height: auto; display: block; }
+
+  .table-card { margin-top: 24px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+  thead th { text-align: right; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--faint); font-weight: 700; padding: 12px 14px 10px; border-bottom: 2px solid var(--line-strong); position: sticky; top: 0; background: var(--card); }
+  thead th:first-child { text-align: left; }
+  tbody td { padding: 9px 14px; border-bottom: 1px solid var(--line); text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  tbody td:first-child { text-align: left; font-family: var(--sans); color: var(--muted); }
+  tbody tr.low td { background: var(--shortage-soft); }
+  tbody tr.neg td { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  tbody tr.yr td { font-weight: 600; }
+  tbody td.disb { color: var(--accent); }
+  tbody td.end { font-weight: 600; color: var(--ink); }
+  .low-flag { font-size: 9.5px; font-family: var(--sans); text-transform: uppercase; letter-spacing: .06em; color: var(--shortage); font-weight: 700; margin-left: 6px; }
+  .neg-flag { color: var(--danger); }
+  tfoot td { padding: 11px 14px; font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; border-top: 2px solid var(--line-strong); }
+  tfoot td:first-child { text-align: left; font-family: var(--sans); text-transform: uppercase; font-size: 11px; letter-spacing: .08em; color: var(--muted); }
+  .scroll-body { max-height: 460px; overflow-y: auto; }
+
+  .foot-note { margin-top: 18px; font-size: 12px; color: var(--faint); max-width: 72ch; line-height: 1.6; }
+  .foot-note b { color: var(--muted); }
+
+  /* Historical activity card */
+  .hist-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 620px) { .hist-stats { grid-template-columns: 1fr 1fr; } }
+  .hstat { background: var(--paper); border: 1px solid var(--line); border-radius: 9px; padding: 11px 13px; }
+  .hstat .k { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); font-weight: 700; }
+  .hstat .v { font-family: var(--mono); font-size: 18px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .hstat .v.out { color: var(--shortage); }
+  .hstat .v.in { color: var(--surplus); }
+
+  .ghost-btn { background: none; border: 1px solid var(--line-strong); color: var(--muted); border-radius: 7px; padding: 6px 12px; font-size: 12.5px; cursor: pointer; font-family: var(--sans); font-weight: 600; }
+  .ghost-btn:hover { color: var(--ink); border-color: var(--ink); }
+  .ghost-btn.sm { padding: 4px 10px; font-size: 11.5px; }
+
+  /* Import modal */
+  .modal-overlay { position: fixed; inset: 0; background: color-mix(in srgb, #000 55%, transparent); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+  .modal { background: var(--card); border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.4); width: min(680px, 100%); max-height: 90vh; overflow-y: auto; padding: 24px; }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .modal-head h3 { font-family: var(--serif); font-size: 20px; margin: 0; font-weight: 600; }
+  .modal-x { background: none; border: none; color: var(--faint); font-size: 24px; cursor: pointer; line-height: 1; padding: 2px 8px; border-radius: 6px; }
+  .modal-x:hover { color: var(--danger); background: var(--paper); }
+  .modal-sub { font-size: 13px; color: var(--muted); margin: 0 0 16px; line-height: 1.55; }
+  .modal-sub code { font-family: var(--mono); background: var(--paper); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .modal-actions-top { display: flex; gap: 10px; margin-bottom: 12px; }
+  .file-btn { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .file-btn:hover { filter: brightness(.97); }
+  textarea#importText { min-height: 130px; font-family: var(--mono); font-size: 12.5px; resize: vertical; line-height: 1.5; }
+  #importPreview { margin-top: 14px; }
+  .parse-msg { font-size: 12.5px; margin: 10px 0; padding: 9px 12px; border-radius: 8px; }
+  .parse-msg.ok { background: var(--surplus-soft); color: var(--surplus); }
+  .parse-msg.err { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
+  .modal-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+  .primary-btn { padding: 9px 16px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; font-family: var(--sans); border: 1px solid var(--line-strong); background: var(--card); color: var(--ink); }
+  .primary-btn:hover:not(:disabled) { border-color: var(--ink); }
+  .primary-btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+  :root[data-theme="dark"] .primary-btn.accent, .primary-btn.accent { color: #fff; }
+  @media (prefers-color-scheme: dark) { .primary-btn.accent { color: #0e1512; } }
+  :root[data-theme="dark"] .primary-btn.accent { color: #0e1512; }
+  :root[data-theme="light"] .primary-btn.accent { color: #fff; }
+  .primary-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .prev-table-wrap { max-height: 240px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+  .prev-table-wrap table { min-width: 0; }
+  .prev-table-wrap tbody td { padding: 6px 12px; font-size: 12px; }
+  .pill { font-size: 10px; font-family: var(--sans); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; padding: 2px 7px; border-radius: 999px; }
+  .pill.in { background: var(--surplus-soft); color: var(--surplus); }
+  .pill.out { background: var(--shortage-soft); color: var(--shortage); }
+
+  .link-note { font-size: 12px; color: var(--muted); background: var(--paper); border: 1px solid var(--line); border-radius: 9px; padding: 11px 13px; margin-bottom: 16px; display: flex; gap: 8px; align-items: baseline; }
+  .link-note b { color: var(--ink); font-family: var(--mono); }
+
+  /* Statement modal */
+  .modal.modal-lg { width: min(940px, 100%); }
+  .stmt-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-bottom: 16px; }
+  @media (max-width: 560px) { .stmt-fields { grid-template-columns: 1fr; } }
+  .stmt-fields input[type="date"] { font-family: var(--sans); }
+  .stmt-preview-wrap { border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; height: 48vh; background: #fff; }
+  #stmtPreview { width: 100%; height: 100%; border: none; display: block; background: #fff; }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="brand"><h1>Mortgage Tool Kit</h1><span class="tag">Ledger</span></div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <p class="sub">Project escrow, size the RESPA cushion, compare payments, and amortize the loan.</p>
+      <button class="theme-btn" id="themeBtn" type="button">Dark</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="escrow" type="button">Escrow Analysis</button>
+    <button class="tab" data-tab="amort" type="button">Amortization Schedule</button>
+    <div class="tab-actions">
+      <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
+      <button class="ghost-btn sm accent-btn" id="exportStmt" type="button">&#128196; Escrow statement</button>
+    </div>
+  </nav>
+
+  <!-- ================= ESCROW VIEW ================= -->
+  <div id="view-escrow" class="view">
+    <div class="grid">
+      <!-- CONTROLS -->
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Account</p>
+            <label class="field"><span class="lbl">Starting escrow balance</span>
+              <div class="money-input"><input type="number" id="startBal" value="1200" step="50"></div></label>
+            <label class="field"><span class="lbl">Current monthly escrow payment</span>
+              <div class="money-input"><input type="number" id="curPay" value="650" step="10"></div></label>
+            <label class="field"><span class="lbl">Analysis starts in</span>
+              <select id="startMonth"></select></label>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Cushion (RESPA)</p>
+            <div class="cushion-row">
+              <input type="range" id="cushion" min="0" max="2" step="0.5" value="2">
+              <span class="cushion-val" id="cushionVal">2 months</span>
+            </div>
+            <p class="foot-note" style="margin-top:10px;">Federal law caps the cushion at 2 months of escrow payments.</p>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Annual disbursements</p>
+            <div class="disb-head"><span>Item</span><span>Annual $</span><span>Frequency</span><span>1st mo.</span><span></span></div>
+            <div id="disbList"></div>
+            <button class="add-btn" id="addDisb" type="button">+ Add disbursement</button>
+          </div>
+          <div class="panel">
+            <button class="import-btn" id="openImport" type="button">&#8595;&nbsp; Import historical activity</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYSIS -->
+      <div>
+        <div class="compare" id="compare">
+          <div class="cmp-col"><span class="cmp-l">Current payment</span><span class="cmp-v" id="cmpOld">$0</span></div>
+          <div class="cmp-arrow">&rarr;</div>
+          <div class="cmp-col"><span class="cmp-l">Recommended payment</span><span class="cmp-v accent" id="cmpNew">$0</span></div>
+          <div class="cmp-delta">
+            <span class="cmp-chip same" id="cmpChip">$0/mo</span>
+            <span class="cmp-sub" id="cmpSub">no change</span>
+          </div>
+        </div>
+
+        <div class="tiles">
+          <div class="tile" id="tilePay"><div class="k">New monthly payment</div><div class="v" id="mNewPay">$0</div><div class="n" id="mNewPayNote">escrow portion</div></div>
+          <div class="tile"><div class="k">Annual disbursed</div><div class="v" id="mAnnual">$0</div><div class="n">taxes, insurance &amp; fees</div></div>
+          <div class="tile"><div class="k">Required cushion</div><div class="v" id="mCushion">$0</div><div class="n" id="mCushionNote">target low point</div></div>
+          <div class="tile" id="tileBalance"><div class="k" id="mBalLabel">Shortage / surplus</div><div class="v" id="mBalance">$0</div><div class="n" id="mBalNote">vs. required cushion</div></div>
+        </div>
+
+        <div class="verdict" id="verdict"></div>
+
+        <div class="card chart-card">
+          <div class="panel">
+            <div class="chart-head">
+              <p class="eyebrow" style="margin:0;">Projected running balance</p>
+              <div class="legend"><span><i class="bar"></i>Balance</span><span><i class="cush"></i>Cushion floor</span></div>
+            </div>
+            <canvas id="chart" width="760" height="240"></canvas>
+          </div>
+        </div>
+
+        <!-- Imported historical activity -->
+        <div class="card table-card hidden" id="histCard">
+          <div class="panel" style="padding-bottom:0;">
+            <div class="chart-head"><p class="eyebrow" style="margin:0;">Imported historical activity</p><button class="ghost-btn sm" id="histClear" type="button">Clear</button></div>
+            <div class="hist-stats" id="histStats"></div>
+          </div>
+          <div class="scroll-body">
+            <table>
+              <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th><th>Balance</th></tr></thead>
+              <tbody id="histBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <table>
+            <thead><tr><th>Month</th><th>Starting</th><th>Deposit</th><th>Disbursed</th><th>Ending</th></tr></thead>
+            <tbody id="tbody"></tbody>
+            <tfoot><tr><td>12-month total</td><td></td><td id="ftDep">$0</td><td id="ftDisb">$0</td><td></td></tr></tfoot>
+          </table>
+        </div>
+
+        <p class="foot-note">
+          <b>How this works.</b> The projection runs your account month by month at the base deposit (annual disbursements &divide; 12),
+          finds the lowest point over the year, and compares it to the required cushion. A projected low point below the cushion is a
+          <b>shortage</b>, spread over 12 months to catch up; above it is a <b>surplus</b>. Estimate for planning &mdash; your servicer's
+          statement governs. Not financial advice.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= AMORTIZATION VIEW ================= -->
+  <div id="view-amort" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Loan</p>
+            <label class="field"><span class="lbl">Loan amount</span>
+              <div class="money-input"><input type="number" id="loanAmt" value="360000" step="1000"></div></label>
+            <label class="field"><span class="lbl">Interest rate (APR)</span>
+              <div class="suffix-input"><input type="number" id="loanRate" value="6.5" step="0.125"><span class="sfx">%</span></div></label>
+            <div class="two">
+              <label class="field"><span class="lbl">Term (years)</span>
+                <input type="number" id="loanTerm" value="30" step="1"></label>
+              <label class="field"><span class="lbl">Extra / month</span>
+                <div class="money-input"><input type="number" id="loanExtra" value="0" step="25"></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">First payment</span>
+                <select id="loanStartMonth"></select></label>
+              <label class="field"><span class="lbl">Year</span>
+                <input type="number" id="loanStartYear" value="2026" step="1"></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="link-note">
+          <span>&#128279;</span>
+          <span>Escrow from the Analysis tab: <b id="amEscrowRef">$0</b>/mo. Combined with principal &amp; interest below to show your full monthly <b>PITI</b>.</span>
+        </div>
+
+        <div class="tiles">
+          <div class="tile"><div class="k">Principal &amp; interest</div><div class="v" id="amPI">$0</div><div class="n">per month</div></div>
+          <div class="tile"><div class="k">Full PITI payment</div><div class="v" id="amPITI">$0</div><div class="n" id="amPITINote">P&amp;I + escrow</div></div>
+          <div class="tile"><div class="k">Total interest</div><div class="v" id="amInterest">$0</div><div class="n" id="amIntNote">over the loan</div></div>
+          <div class="tile"><div class="k">Payoff</div><div class="v" id="amPayoff">&mdash;</div><div class="n" id="amPayoffNote"></div></div>
+        </div>
+
+        <div class="verdict good hidden" id="amSaved"></div>
+
+        <div class="card chart-card">
+          <div class="panel">
+            <div class="chart-head">
+              <p class="eyebrow" style="margin:0;">Balance &amp; cumulative interest</p>
+              <div class="legend"><span><i class="bar"></i>Balance</span><span><i class="int"></i>Cumulative interest</span></div>
+            </div>
+            <canvas id="amChart" width="760" height="240"></canvas>
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <div class="panel" style="padding-bottom:14px;">
+            <div class="chart-head">
+              <p class="eyebrow" style="margin:0;">Payment schedule</p>
+              <div class="seg" role="tablist" aria-label="Schedule detail">
+                <button class="seg-btn active" id="viewYearly" type="button" role="tab" aria-selected="true">Yearly</button>
+                <button class="seg-btn" id="viewMonthly" type="button" role="tab" aria-selected="false">Monthly</button>
+              </div>
+            </div>
+          </div>
+          <div class="scroll-body">
+            <table>
+              <thead><tr><th id="amCol0">Year</th><th>Payment</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead>
+              <tbody id="amBody"></tbody>
+              <tfoot><tr><td>Total</td><td id="amFtPay">$0</td><td id="amFtPrin">$0</td><td id="amFtInt">$0</td><td></td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <p class="foot-note">
+          <b>Amortization.</b> Each payment covers the month's interest first (balance &times; rate &divide; 12); the rest reduces principal.
+          Any extra goes straight to principal, shortening the term and cutting total interest. PITI adds the recommended monthly escrow
+          from the Analysis tab. Estimate only &mdash; excludes PMI and any lender fees.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="modal-overlay hidden" id="importModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Import historical activity</h3><button class="modal-x" id="importClose" type="button">&times;</button></div>
+    <p class="modal-sub">Paste a CSV export from your servicer or upload a file. Columns: <code>Date</code>, <code>Description</code>, and either <code>Amount</code> (negative = paid out) or separate <code>Deposit</code> / <code>Withdrawal</code> columns. A <code>Balance</code> column is used if present.</p>
+    <div class="modal-actions-top">
+      <label class="file-btn">Upload CSV<input type="file" id="importFile" accept=".csv,text/csv" hidden></label>
+      <button class="ghost-btn" id="loadExample" type="button">Load example</button>
+    </div>
+    <textarea id="importText" placeholder="Date,Description,Deposit,Withdrawal&#10;2025-01-15,Monthly escrow deposit,650,&#10;2025-04-01,County property tax,,3000"></textarea>
+    <div id="importPreview"></div>
+    <div class="modal-foot">
+      <button class="primary-btn" id="parseBtn" type="button">Parse &amp; preview</button>
+      <button class="primary-btn accent" id="applyBtn" type="button" disabled>Apply to analysis</button>
+    </div>
+  </div>
+</div>
+
+<!-- Statement modal -->
+<div class="modal-overlay hidden" id="stmtModal">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3>Escrow statement</h3><button class="modal-x" id="stmtClose" type="button">&times;</button></div>
+    <p class="modal-sub">Add optional account details, then preview and print (Save as PDF) or download the statement.</p>
+    <div class="stmt-fields">
+      <label class="field"><span class="lbl">Prepared for</span><input type="text" id="stmtName" placeholder="Borrower name"></label>
+      <label class="field"><span class="lbl">Property address</span><input type="text" id="stmtAddr" placeholder="123 Main St, City, ST"></label>
+      <label class="field"><span class="lbl">Loan number</span><input type="text" id="stmtLoan" placeholder="Optional"></label>
+      <label class="field"><span class="lbl">Statement date</span><input type="date" id="stmtDate"></label>
+    </div>
+    <div class="stmt-preview-wrap"><iframe id="stmtPreview" title="Escrow statement preview"></iframe></div>
+    <div class="modal-foot">
+      <button class="primary-btn" id="stmtDownload" type="button">&#8681; Download .html</button>
+      <button class="primary-btn accent" id="stmtPrint" type="button">&#128424; Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const FREQ = { annual: 1, "semi-annual": 2, quarterly: 4, monthly: 12 };
+
+  let disbursements = [
+    { name: "Property taxes", amount: 6000, freq: "semi-annual", first: 3 },
+    { name: "Homeowners insurance", amount: 1800, freq: "annual", first: 5 },
+  ];
+  let history = null;                 // parsed historical activity
+  const state = { escrowMonthly: 0 }; // shared with amortization tab
+  let amortMode = "yearly";
+
+  // ---------- helpers ----------
+  const fmt = (n) => { const v = Math.round(n); return (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US"); };
+  const parseNum = (s) => { const v = parseFloat(String(s).replace(/[^0-9.\-]/g, "")); return isNaN(v) ? 0 : v; };
+
+  // populate month selects
+  const startMonthSel = document.getElementById("startMonth");
+  const loanStartSel = document.getElementById("loanStartMonth");
+  MONTHS.forEach((m, i) => {
+    const a = document.createElement("option"); a.value = i; a.textContent = m; startMonthSel.appendChild(a);
+    const b = document.createElement("option"); b.value = i; b.textContent = m; loanStartSel.appendChild(b);
+  });
+  startMonthSel.value = 0; loanStartSel.value = 0;
+
+  // ---------- disbursement editor ----------
+  const disbList = document.getElementById("disbList");
+  function renderDisb() {
+    disbList.innerHTML = "";
+    disbursements.forEach((d, idx) => {
+      const row = document.createElement("div");
+      row.className = "disb-row";
+      row.innerHTML = `
+        <input type="text" data-k="name" value="${String(d.name).replace(/"/g,'&quot;')}" placeholder="Item">
+        <div class="money-input"><input type="number" data-k="amount" value="${d.amount}" step="50"></div>
+        <select data-k="freq">${Object.keys(FREQ).map(f => `<option value="${f}" ${f===d.freq?"selected":""}>${f}</option>`).join("")}</select>
+        <select data-k="first">${MONTHS.map((m,i) => `<option value="${i}" ${i===d.first?"selected":""}>${m}</option>`).join("")}</select>
+        <button class="del" title="Remove" type="button">&times;</button>`;
+      row.querySelectorAll("[data-k]").forEach(el => {
+        el.addEventListener("input", () => {
+          const k = el.dataset.k;
+          disbursements[idx][k] = (k === "amount") ? (parseFloat(el.value) || 0) : (k === "first") ? parseInt(el.value) : el.value;
+          compute();
+        });
+      });
+      row.querySelector(".del").addEventListener("click", () => { disbursements.splice(idx, 1); renderDisb(); compute(); });
+      disbList.appendChild(row);
+    });
+  }
+  document.getElementById("addDisb").addEventListener("click", () => {
+    disbursements.push({ name: "New item", amount: 1200, freq: "annual", first: 0 });
+    renderDisb(); compute();
+  });
+
+  function monthlySchedule() {
+    const sched = new Array(12).fill(0);
+    disbursements.forEach(d => {
+      const times = FREQ[d.freq], per = d.amount / times, gap = 12 / times;
+      for (let t = 0; t < times; t++) { const m = ((d.first + Math.round(t * gap)) % 12 + 12) % 12; sched[m] += per; }
+    });
+    return sched;
+  }
+
+  // ---------- escrow computation ----------
+  function compute() {
+    const startBal = parseFloat(document.getElementById("startBal").value) || 0;
+    const curPay = parseFloat(document.getElementById("curPay").value) || 0;
+    const startMo = parseInt(startMonthSel.value);
+    const cushionMonths = parseFloat(document.getElementById("cushion").value);
+
+    const calSched = monthlySchedule();
+    const annual = calSched.reduce((a,b) => a+b, 0);
+    const baseDeposit = annual / 12;
+    const cushionAmt = baseDeposit * cushionMonths;
+
+    const order = Array.from({length:12}, (_,i) => (startMo + i) % 12);
+    let bal = startBal, low = Infinity;
+    order.forEach(m => { bal += baseDeposit; bal -= calSched[m]; if (bal < low) low = bal; });
+
+    const diff = cushionAmt - low;
+    const isShortage = diff > 0.5, isSurplus = diff < -0.5;
+    const adjust = diff / 12;
+    const newPay = baseDeposit + adjust;
+    state.escrowMonthly = newPay;
+
+    // tiles
+    document.getElementById("mNewPay").textContent = fmt(newPay);
+    document.getElementById("mNewPayNote").textContent = "base " + fmt(baseDeposit) + (Math.abs(adjust) >= 0.5 ? ` ${adjust>0?"+":"-"} ${fmt(Math.abs(adjust))}` : "");
+    document.getElementById("mAnnual").textContent = fmt(annual);
+    document.getElementById("mCushion").textContent = fmt(cushionAmt);
+    document.getElementById("mCushionNote").textContent = cushionMonths + "-mo target floor";
+
+    const tileBal = document.getElementById("tileBalance");
+    tileBal.classList.remove("warn","good");
+    const balEl = document.getElementById("mBalance"), balLabel = document.getElementById("mBalLabel"), balNote = document.getElementById("mBalNote");
+    if (isShortage) { tileBal.classList.add("warn"); balLabel.textContent = "Escrow shortage"; balEl.textContent = fmt(Math.abs(diff)); balNote.textContent = "low point below cushion"; }
+    else if (isSurplus) { tileBal.classList.add("good"); balLabel.textContent = "Escrow surplus"; balEl.textContent = fmt(Math.abs(diff)); balNote.textContent = "above required cushion"; }
+    else { balLabel.textContent = "Balanced"; balEl.textContent = fmt(0); balNote.textContent = "at required cushion"; }
+
+    // payment comparison band
+    const cmpDelta = newPay - curPay;
+    document.getElementById("cmpOld").textContent = fmt(curPay);
+    document.getElementById("cmpNew").textContent = fmt(newPay);
+    const chip = document.getElementById("cmpChip"), sub = document.getElementById("cmpSub");
+    chip.classList.remove("up","down","same");
+    if (cmpDelta > 0.5) {
+      chip.classList.add("up"); chip.textContent = "+" + fmt(cmpDelta) + "/mo";
+      const pct = curPay > 0 ? Math.round(cmpDelta/curPay*100) : 0;
+      sub.textContent = "+" + fmt(cmpDelta*12) + "/yr  (+" + pct + "%)";
+    } else if (cmpDelta < -0.5) {
+      chip.classList.add("down"); chip.textContent = "-" + fmt(Math.abs(cmpDelta)) + "/mo";
+      const pct = curPay > 0 ? Math.round(Math.abs(cmpDelta)/curPay*100) : 0;
+      sub.textContent = "-" + fmt(Math.abs(cmpDelta)*12) + "/yr  (-" + pct + "%)";
+    } else { chip.classList.add("same"); chip.textContent = "no change"; sub.textContent = "payment stays the same"; }
+
+    // verdict
+    const v = document.getElementById("verdict");
+    v.className = "verdict " + (isShortage ? "warn" : "good");
+    if (isShortage) v.innerHTML = `<span class="dot">&#9650;</span><div><b>Shortage of ${fmt(Math.abs(diff))}.</b> The projected low point (${fmt(low)}) falls below the ${fmt(cushionAmt)} cushion. Raising the payment to <b>${fmt(newPay)}</b> spreads the catch-up over 12 months. A one-time ${fmt(Math.abs(diff))} deposit would keep it at ${fmt(baseDeposit)}.</div>`;
+    else if (isSurplus) v.innerHTML = `<span class="dot">&#9660;</span><div><b>Surplus of ${fmt(Math.abs(diff))}.</b> The projected low point (${fmt(low)}) sits above the required cushion. Surpluses of $50+ are typically refunded; the payment can ease to <b>${fmt(newPay)}</b>.</div>`;
+    else v.innerHTML = `<span class="dot">&#9679;</span><div><b>Right on target.</b> The projected low point matches the ${fmt(cushionAmt)} cushion. Keep the payment near <b>${fmt(newPay)}</b>.</div>`;
+
+    // projection table at new payment
+    const tbody = document.getElementById("tbody"); tbody.innerHTML = "";
+    let b2 = startBal, totDep = 0, totDisb = 0;
+    const rows = order.map(m => { const start = b2, dep = newPay, out = calSched[m]; b2 = start + dep - out; totDep += dep; totDisb += out; return { m, start, dep, out, end: b2 }; });
+    const minEnd = Math.min(...rows.map(r => r.end));
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+      const isLow = Math.abs(r.end - minEnd) < 0.01, isNeg = r.end < 0;
+      if (isNeg) tr.className = "neg"; else if (isLow) tr.className = "low";
+      tr.innerHTML = `<td>${MONTHS[r.m]}${isNeg ? '<span class="low-flag neg-flag">negative</span>' : isLow ? '<span class="low-flag">low</span>' : ''}</td>
+        <td>${fmt(r.start)}</td><td>${fmt(r.dep)}</td><td class="disb">${r.out > 0 ? "-"+fmt(r.out) : "&mdash;"}</td><td class="end">${fmt(r.end)}</td>`;
+      tbody.appendChild(tr);
+    });
+    document.getElementById("ftDep").textContent = fmt(totDep);
+    document.getElementById("ftDisb").textContent = "-"+fmt(totDisb);
+
+    state.escrow = {
+      startBal, curPay, newPay, baseDeposit, cushionAmt, cushionMonths, annual, low, diff,
+      isShortage, isSurplus, order: order.slice(), rows: rows.map(r => ({...r})),
+      totDep, totDisb, disb: disbursements.map(d => ({...d})), startMoLabel: MONTHS[order[0]]
+    };
+
+    drawLineChart("chart", rows.map(r => r.end), order.map(m => MONTHS[m]), cushionAmt);
+    document.getElementById("amEscrowRef").textContent = fmt(newPay);
+    if (!document.getElementById("view-amort").classList.contains("hidden")) computeAmort();
+  }
+
+  // ---------- escrow chart ----------
+  function drawLineChart(id, balances, labels, cushion) {
+    const cv = document.getElementById(id), dpr = window.devicePixelRatio || 1;
+    const cssW = cv.clientWidth || 760, cssH = 240;
+    cv.width = cssW*dpr; cv.height = cssH*dpr;
+    const ctx = cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,cssW,cssH);
+    const css = getComputedStyle(document.documentElement);
+    const cAccent = css.getPropertyValue("--accent").trim(), cShort = css.getPropertyValue("--shortage").trim();
+    const cLine = css.getPropertyValue("--line").trim(), cFaint = css.getPropertyValue("--faint").trim(), cCard = css.getPropertyValue("--card").trim();
+    const padL = 56, padR = 14, padT = 16, padB = 26, W = cssW-padL-padR, H = cssH-padT-padB;
+    const vals = balances.concat([cushion, 0]); let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (lo === hi) { hi += 100; lo -= 100; } const range = hi-lo; lo -= range*0.08; hi += range*0.08;
+    const x = i => padL + (i/(balances.length-1))*W, y = val => padT + (1-(val-lo)/(hi-lo))*H;
+    ctx.font = "11px ui-monospace, monospace"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (let s=0; s<=4; s++){ const val = lo+(hi-lo)*s/4, yy = y(val);
+      ctx.strokeStyle = cLine; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(cssW-padR,yy); ctx.stroke();
+      ctx.fillStyle = cFaint; ctx.fillText("$"+Math.round(val).toLocaleString(), padL-8, yy); }
+    if (lo < 0 && hi > 0) { ctx.strokeStyle = cShort; ctx.globalAlpha = .4; ctx.beginPath(); ctx.moveTo(padL,y(0)); ctx.lineTo(cssW-padR,y(0)); ctx.stroke(); ctx.globalAlpha = 1; }
+    ctx.strokeStyle = cShort; ctx.setLineDash([5,4]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(padL,y(cushion)); ctx.lineTo(cssW-padR,y(cushion)); ctx.stroke(); ctx.setLineDash([]);
+    const grad = ctx.createLinearGradient(0,padT,0,padT+H); grad.addColorStop(0, cAccent+"44"); grad.addColorStop(1, cAccent+"05");
+    ctx.beginPath(); balances.forEach((b,i) => { const px=x(i),py=y(b); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
+    ctx.lineTo(x(balances.length-1),padT+H); ctx.lineTo(x(0),padT+H); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+    ctx.strokeStyle = cAccent; ctx.lineWidth = 2.5; ctx.lineJoin = "round"; ctx.beginPath();
+    balances.forEach((b,i) => { const px=x(i),py=y(b); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke();
+    const minEnd = Math.min(...balances);
+    balances.forEach((b,i) => { const px=x(i),py=y(b), isLow = Math.abs(b-minEnd)<0.01;
+      ctx.beginPath(); ctx.arc(px,py,isLow?4.5:3,0,Math.PI*2); ctx.fillStyle = isLow?cShort:cAccent; ctx.fill(); ctx.strokeStyle = cCard; ctx.lineWidth = 1.5; ctx.stroke(); });
+    ctx.fillStyle = cFaint; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.font = "10px system-ui, sans-serif";
+    labels.forEach((l,i) => { if (i%2===0 || balances.length<=8) ctx.fillText(l, x(i), padT+H+7); });
+  }
+
+  // ---------- amortization ----------
+  function buildAmort() {
+    const P = parseFloat(document.getElementById("loanAmt").value) || 0;
+    const rate = parseFloat(document.getElementById("loanRate").value) || 0;
+    const term = parseFloat(document.getElementById("loanTerm").value) || 0;
+    const extra = parseFloat(document.getElementById("loanExtra").value) || 0;
+    const r = rate/1200, n = Math.max(1, Math.round(term*12));
+    const basePmt = r === 0 ? P/n : P*r / (1 - Math.pow(1+r, -n));
+    const sched = []; let bal = P, totInt = 0, totPrin = 0;
+    for (let i = 0; i < n*2 && bal > 0.005; i++) {
+      const interest = bal * r; let principal = basePmt - interest + extra;
+      if (principal > bal) principal = bal;
+      const pay = principal + interest; bal -= principal; totInt += interest; totPrin += principal;
+      sched.push({ i: i+1, pay, principal, interest, bal: Math.max(0, bal) });
+      if (sched.length > 1200) break;
+    }
+    return { basePmt, sched, totInt, totPrin, extra, P, r, n };
+  }
+
+  function computeAmort() {
+    const a = buildAmort();
+    const startMo = parseInt(document.getElementById("loanStartMonth").value);
+    const startYr = parseInt(document.getElementById("loanStartYear").value) || 2026;
+    const escrow = state.escrowMonthly;
+
+    document.getElementById("amPI").textContent = fmt(a.basePmt);
+    document.getElementById("amPITI").textContent = fmt(a.basePmt + escrow);
+    document.getElementById("amPITINote").textContent = fmt(a.basePmt) + " + " + fmt(escrow) + " escrow";
+    document.getElementById("amInterest").textContent = fmt(a.totInt);
+    document.getElementById("amEscrowRef").textContent = fmt(escrow);
+
+    const months = a.sched.length;
+    const endIdx = (startMo + months - 1);
+    const payYr = startYr + Math.floor(endIdx/12), payMo = MONTHS[((endIdx%12)+12)%12];
+    document.getElementById("amPayoff").textContent = payMo + " " + payYr;
+    const yrs = Math.floor(months/12), rem = months%12;
+    document.getElementById("amPayoffNote").textContent = months + " payments (" + yrs + "y " + rem + "m)";
+    document.getElementById("amIntNote").textContent = "on " + fmt(a.P) + " borrowed";
+
+    // interest saved from extra payments
+    const savedEl = document.getElementById("amSaved");
+    if (a.extra > 0) {
+      const noExtra = (function(){ let bal=a.P, ti=0; const pmt=a.basePmt;
+        for (let i=0;i<a.n && bal>0.005;i++){ const it=bal*a.r; let pr=pmt-it; if(pr>bal)pr=bal; bal-=pr; ti+=it; } return ti; })();
+      const saved = noExtra - a.totInt, fewer = a.n - months;
+      savedEl.classList.remove("hidden");
+      savedEl.innerHTML = `<span class="dot">&#9660;</span><div><b>Extra ${fmt(a.extra)}/mo saves ${fmt(saved)}</b> in interest and retires the loan <b>${fewer} payments</b> (${Math.floor(fewer/12)}y ${fewer%12}m) early.</div>`;
+    } else savedEl.classList.add("hidden");
+
+    state.amort = { a, startMo, startYr, escrow, months, payoffLabel: payMo + " " + payYr,
+      rate: parseFloat(document.getElementById("loanRate").value) || 0,
+      term: parseFloat(document.getElementById("loanTerm").value) || 0 };
+
+    renderAmortTable(a, startMo, startYr);
+    drawAmortChart(a);
+  }
+
+  // build display rows for the amortization table (yearly aggregate or monthly)
+  function amortRows(a, startMo, startYr, mode) {
+    if (mode === "yearly") {
+      const map = new Map();
+      a.sched.forEach((s, idx) => {
+        const cal = startMo + idx, yr = startYr + Math.floor(cal/12);
+        if (!map.has(yr)) map.set(yr, { label: String(yr), pay:0, principal:0, interest:0, bal:s.bal });
+        const g = map.get(yr); g.pay += s.pay; g.principal += s.principal; g.interest += s.interest; g.bal = s.bal;
+      });
+      return [...map.values()];
+    }
+    return a.sched.map((s, idx) => { const cal = startMo + idx; return { label: MONTHS[((cal%12)+12)%12] + " " + (startYr+Math.floor(cal/12)), pay:s.pay, principal:s.principal, interest:s.interest, bal:s.bal }; });
+  }
+
+  function renderAmortTable(a, startMo, startYr) {
+    const body = document.getElementById("amBody"); body.innerHTML = "";
+    document.getElementById("amCol0").textContent = amortMode === "yearly" ? "Year" : "Month";
+    const rows = amortRows(a, startMo, startYr, amortMode);
+    const frag = document.createDocumentFragment();
+    rows.forEach(r => {
+      const tr = document.createElement("tr"); if (amortMode === "yearly") tr.className = "yr";
+      tr.innerHTML = `<td>${r.label}</td><td>${fmt(r.pay)}</td><td class="disb">${fmt(r.principal)}</td><td>${fmt(r.interest)}</td><td class="end">${fmt(r.bal)}</td>`;
+      frag.appendChild(tr);
+    });
+    body.appendChild(frag);
+    document.getElementById("amFtPay").textContent = fmt(a.totPrin + a.totInt);
+    document.getElementById("amFtPrin").textContent = fmt(a.totPrin);
+    document.getElementById("amFtInt").textContent = fmt(a.totInt);
+  }
+
+  function drawAmortChart(a) {
+    const cv = document.getElementById("amChart"), dpr = window.devicePixelRatio || 1;
+    const cssW = cv.clientWidth || 760, cssH = 240;
+    cv.width = cssW*dpr; cv.height = cssH*dpr;
+    const ctx = cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,cssW,cssH);
+    const css = getComputedStyle(document.documentElement);
+    const cAccent = css.getPropertyValue("--accent").trim(), cShort = css.getPropertyValue("--shortage").trim();
+    const cLine = css.getPropertyValue("--line").trim(), cFaint = css.getPropertyValue("--faint").trim();
+    const padL = 60, padR = 14, padT = 16, padB = 26, W = cssW-padL-padR, H = cssH-padT-padB;
+    const bal = a.sched.map(s => s.bal); let cum = 0; const ci = a.sched.map(s => cum += s.interest);
+    const hi = Math.max(a.P, ci[ci.length-1] || 0, 1), lo = 0, N = a.sched.length;
+    const x = i => padL + (N<=1?0:i/(N-1))*W, y = val => padT + (1-(val-lo)/(hi-lo))*H;
+    ctx.font = "11px ui-monospace, monospace"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (let s=0; s<=4; s++){ const val = lo+(hi-lo)*s/4, yy = y(val);
+      ctx.strokeStyle = cLine; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(cssW-padR,yy); ctx.stroke();
+      ctx.fillStyle = cFaint; const k = val>=1000 ? "$"+Math.round(val/1000)+"k" : "$"+Math.round(val); ctx.fillText(k, padL-8, yy); }
+    // balance area + line
+    const grad = ctx.createLinearGradient(0,padT,0,padT+H); grad.addColorStop(0, cAccent+"3a"); grad.addColorStop(1, cAccent+"05");
+    ctx.beginPath(); bal.forEach((b,i)=>{ const px=x(i),py=y(b); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
+    ctx.lineTo(x(N-1),padT+H); ctx.lineTo(x(0),padT+H); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+    ctx.strokeStyle = cAccent; ctx.lineWidth = 2.5; ctx.beginPath(); bal.forEach((b,i)=>{ const px=x(i),py=y(b); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke();
+    // cumulative interest line
+    ctx.strokeStyle = cShort; ctx.lineWidth = 2.5; ctx.beginPath(); ci.forEach((b,i)=>{ const px=x(i),py=y(b); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke();
+    // x labels (years)
+    ctx.fillStyle = cFaint; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.font = "10px system-ui, sans-serif";
+    const yrTotal = Math.ceil(N/12);
+    for (let yr=0; yr<=yrTotal; yr+=Math.max(1, Math.round(yrTotal/8))) { const idx = Math.min(N-1, yr*12); ctx.fillText("Y"+yr, x(idx), padT+H+7); }
+  }
+
+  // ---------- CSV import ----------
+  const importModal = document.getElementById("importModal");
+  document.getElementById("openImport").addEventListener("click", () => importModal.classList.remove("hidden"));
+  document.getElementById("importClose").addEventListener("click", () => importModal.classList.add("hidden"));
+  importModal.addEventListener("click", e => { if (e.target === importModal) importModal.classList.add("hidden"); });
+
+  function exampleCSV() {
+    const lines = ["Date,Description,Deposit,Withdrawal"];
+    for (let m = 1; m <= 12; m++) {
+      const mm = String(m).padStart(2,"0");
+      lines.push(`2025-${mm}-15,Monthly escrow deposit,650,`);
+      if (m === 4 || m === 10) lines.push(`2025-${mm}-01,County property tax,,3000`);
+      if (m === 6) lines.push(`2025-${mm}-01,Homeowners insurance,,1800`);
+    }
+    return lines.join("\n");
+  }
+  document.getElementById("loadExample").addEventListener("click", () => { document.getElementById("importText").value = exampleCSV(); });
+  document.getElementById("importFile").addEventListener("change", e => {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader(); rd.onload = () => { document.getElementById("importText").value = rd.result; }; rd.readAsText(f);
+  });
+
+  function splitCSVLine(line) {
+    const out = []; let cur = "", q = false;
+    for (let i = 0; i < line.length; i++) { const c = line[i];
+      if (q) { if (c === '"' && line[i+1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; }
+      else { if (c === '"') q = true; else if (c === ",") { out.push(cur); cur = ""; } else cur += c; } }
+    out.push(cur); return out.map(s => s.trim());
+  }
+
+  let parsed = null;
+  function parseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length);
+    if (lines.length < 2) throw new Error("Need a header row and at least one activity row.");
+    const header = splitCSVLine(lines[0]).map(h => h.toLowerCase());
+    const idx = (names) => { for (const n of names) { const i = header.indexOf(n); if (i >= 0) return i; } return -1; };
+    const iDate = idx(["date","posted","posting date"]);
+    const iDesc = idx(["description","desc","memo","payee","detail"]);
+    const iAmt = idx(["amount","amt"]);
+    const iDep = idx(["deposit","credit","credits","payment in","in"]);
+    const iWdr = idx(["withdrawal","withdrawl","debit","debits","paid out","disbursement","out"]);
+    const iBal = idx(["balance","running balance","bal"]);
+    if (iDesc < 0) throw new Error("Couldn't find a Description column.");
+    if (iAmt < 0 && iDep < 0 && iWdr < 0) throw new Error("Need an Amount column, or Deposit / Withdrawal columns.");
+    const txns = [];
+    for (let r = 1; r < lines.length; r++) {
+      const c = splitCSVLine(lines[r]); if (!c.length || !c.join("").trim()) continue;
+      const desc = (iDesc>=0 ? c[iDesc] : "") || "(no description)";
+      const date = iDate>=0 ? c[iDate] : "";
+      let amount;
+      if (iAmt >= 0) amount = parseNum(c[iAmt]);
+      else { const dep = iDep>=0 ? parseNum(c[iDep]) : 0, wdr = iWdr>=0 ? parseNum(c[iWdr]) : 0; amount = dep - Math.abs(wdr); }
+      const bal = iBal>=0 && c[iBal] !== undefined && c[iBal] !== "" ? parseNum(c[iBal]) : null;
+      const d = new Date(date); const mo = isNaN(d) ? null : d.getMonth();
+      txns.push({ date, desc, amount, bal, mo });
+    }
+    if (!txns.length) throw new Error("No activity rows found.");
+    // running balance if not supplied
+    let hasBal = txns.every(t => t.bal !== null);
+    if (!hasBal) { let run = 0; txns.forEach(t => { run += t.amount; t.bal = run; }); }
+    // group outflows into disbursements
+    const groups = new Map();
+    txns.filter(t => t.amount < 0).forEach(t => {
+      const key = t.desc.toLowerCase().replace(/[0-9]/g,"").trim();
+      if (!groups.has(key)) groups.set(key, { name: t.desc, total: 0, count: 0, firstMo: t.mo });
+      const g = groups.get(key); g.total += Math.abs(t.amount); g.count++;
+      if (t.mo !== null && (g.firstMo === null || t.mo < g.firstMo)) g.firstMo = t.mo;
+    });
+    const freqFor = (n) => n >= 12 ? "monthly" : n >= 4 ? "quarterly" : n === 2 || n === 3 ? "semi-annual" : "annual";
+    const derived = [...groups.values()].map(g => ({ name: g.name, amount: Math.round(g.total), freq: freqFor(g.count), first: g.firstMo == null ? 0 : g.firstMo, count: g.count }));
+    const totalIn = txns.filter(t=>t.amount>0).reduce((a,t)=>a+t.amount,0);
+    const totalOut = txns.filter(t=>t.amount<0).reduce((a,t)=>a+Math.abs(t.amount),0);
+    return { txns, derived, totalIn, totalOut, endBal: txns[txns.length-1].bal };
+  }
+
+  document.getElementById("parseBtn").addEventListener("click", () => {
+    const prev = document.getElementById("importPreview");
+    try {
+      parsed = parseCSV(document.getElementById("importText").value);
+      const rowsHtml = parsed.txns.slice(0, 60).map(t => `
+        <tr><td>${t.date||"&mdash;"}</td><td style="text-align:left;font-family:var(--sans)">${t.desc}</td>
+        <td><span class="pill ${t.amount<0?"out":"in"}">${t.amount<0?"out":"in"}</span></td>
+        <td>${t.amount<0?"-":""}${fmt(Math.abs(t.amount))}</td><td>${fmt(t.bal)}</td></tr>`).join("");
+      prev.innerHTML = `
+        <div class="parse-msg ok">Parsed <b>${parsed.txns.length}</b> transactions &mdash; detected <b>${parsed.derived.length}</b> disbursement group(s). In: ${fmt(parsed.totalIn)} &middot; Out: ${fmt(parsed.totalOut)} &middot; Ending balance: ${fmt(parsed.endBal)}.</div>
+        <div class="prev-table-wrap"><table><thead><tr><th>Date</th><th style="text-align:left">Description</th><th>Type</th><th>Amount</th><th>Balance</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
+        ${parsed.txns.length>60 ? '<p class="foot-note">Showing first 60 rows.</p>' : ''}`;
+      document.getElementById("applyBtn").disabled = false;
+    } catch (err) {
+      parsed = null; document.getElementById("applyBtn").disabled = true;
+      prev.innerHTML = `<div class="parse-msg err">${err.message}</div>`;
+    }
+  });
+
+  document.getElementById("applyBtn").addEventListener("click", () => {
+    if (!parsed) return;
+    if (parsed.derived.length) disbursements = parsed.derived.map(d => ({ name: d.name, amount: d.amount, freq: d.freq, first: d.first }));
+    document.getElementById("startBal").value = Math.round(parsed.endBal);
+    history = parsed;
+    renderDisb(); renderHistory(); compute();
+    importModal.classList.add("hidden");
+  });
+
+  function renderHistory() {
+    const card = document.getElementById("histCard");
+    if (!history) { card.classList.add("hidden"); return; }
+    card.classList.remove("hidden");
+    document.getElementById("histStats").innerHTML = `
+      <div class="hstat"><div class="k">Transactions</div><div class="v">${history.txns.length}</div></div>
+      <div class="hstat"><div class="k">Deposited in</div><div class="v in">${fmt(history.totalIn)}</div></div>
+      <div class="hstat"><div class="k">Paid out</div><div class="v out">${fmt(history.totalOut)}</div></div>
+      <div class="hstat"><div class="k">Ending balance</div><div class="v">${fmt(history.endBal)}</div></div>`;
+    document.getElementById("histBody").innerHTML = history.txns.map(t => `
+      <tr><td>${t.date||"&mdash;"}</td><td>${t.desc}</td>
+      <td style="text-align:right"><span class="pill ${t.amount<0?"out":"in"}">${t.amount<0?"out":"in"}</span></td>
+      <td>${t.amount<0?"-":""}${fmt(Math.abs(t.amount))}</td><td class="end">${fmt(t.bal)}</td></tr>`).join("");
+  }
+  document.getElementById("histClear").addEventListener("click", () => { history = null; renderHistory(); });
+
+  // ---------- export: CSV + statement ----------
+  function downloadBlob(filename, text, mime) {
+    const blob = new Blob([text], { type: mime || "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+  function toCSV(rows) {
+    return rows.map(r => r.map(c => { const s = String(c == null ? "" : c); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(",")).join("\r\n");
+  }
+  const money = (n) => Math.round(n); // plain numbers for CSV cells
+
+  function escrowCSV() {
+    const se = state.escrow, rows = [];
+    rows.push(["Escrow Analysis - 12-month projection"]);
+    rows.push(["Starting balance", money(se.startBal)]);
+    rows.push(["Current monthly payment", money(se.curPay)]);
+    rows.push(["Recommended monthly payment", money(se.newPay)]);
+    rows.push(["Annual disbursements", money(se.annual)]);
+    rows.push(["Required cushion (" + se.cushionMonths + " mo)", money(se.cushionAmt)]);
+    rows.push([se.isShortage ? "Shortage" : se.isSurplus ? "Surplus" : "Balance", money(Math.abs(se.diff))]);
+    rows.push([]);
+    rows.push(["Month", "Starting Balance", "Deposit", "Disbursed", "Ending Balance"]);
+    se.rows.forEach(r => rows.push([MONTHS[r.m], money(r.start), money(r.dep), money(r.out), money(r.end)]));
+    rows.push(["Total", "", money(se.totDep), money(se.totDisb), ""]);
+    return toCSV(rows);
+  }
+  function amortCSV() {
+    const am = state.amort, a = am.a, rows = [];
+    rows.push(["Amortization Schedule (" + amortMode + ")"]);
+    rows.push(["Loan amount", money(a.P)]);
+    rows.push(["Interest rate (APR %)", am.rate]);
+    rows.push(["Term (years)", am.term]);
+    rows.push(["Extra per month", money(a.extra)]);
+    rows.push(["Monthly principal & interest", money(a.basePmt)]);
+    rows.push(["Monthly escrow", money(am.escrow)]);
+    rows.push(["Full PITI", money(a.basePmt + am.escrow)]);
+    rows.push(["Total interest", money(a.totInt)]);
+    rows.push(["Payoff", am.payoffLabel + " (" + am.months + " payments)"]);
+    rows.push([]);
+    rows.push([amortMode === "yearly" ? "Year" : "Month", "Payment", "Principal", "Interest", "Balance"]);
+    amortRows(a, am.startMo, am.startYr, amortMode).forEach(r => rows.push([r.label, money(r.pay), money(r.principal), money(r.interest), money(r.bal)]));
+    rows.push(["Total", money(a.totPrin + a.totInt), money(a.totPrin), money(a.totInt), ""]);
+    return toCSV(rows);
+  }
+  document.getElementById("exportCsv").addEventListener("click", () => {
+    const amortVisible = !document.getElementById("view-amort").classList.contains("hidden");
+    if (amortVisible) { computeAmort(); downloadBlob("amortization-schedule.csv", amortCSV(), "text/csv;charset=utf-8"); }
+    else { compute(); downloadBlob("escrow-projection.csv", escrowCSV(), "text/csv;charset=utf-8"); }
+  });
+
+  // --- statement document ---
+  function fmtDate(iso) { if (!iso) return ""; const p = iso.split("-").map(Number); const dt = new Date(p[0], p[1]-1, p[2]); return dt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }); }
+  function dollars(n) { const v = Math.round(n); return (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US"); }
+  function disbMonths(d) {
+    const times = FREQ[d.freq], gap = 12 / times;
+    return Array.from({ length: times }, (_, t) => MONTHS[((d.first + Math.round(t * gap)) % 12 + 12) % 12]).join(", ");
+  }
+  function statementFields() {
+    return { name: document.getElementById("stmtName").value.trim(), addr: document.getElementById("stmtAddr").value.trim(),
+      loan: document.getElementById("stmtLoan").value.trim(), date: document.getElementById("stmtDate").value };
+  }
+  function statementHTML(f) {
+    compute();
+    const se = state.escrow;
+    const am = state.amort;
+    const infoRows = [];
+    if (f.name) infoRows.push(["Prepared for", f.name]);
+    if (f.addr) infoRows.push(["Property address", f.addr]);
+    if (f.loan) infoRows.push(["Loan number", f.loan]);
+    infoRows.push(["Statement date", f.date ? fmtDate(f.date) : "&mdash;"]);
+    const info = infoRows.map(r => `<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join("");
+
+    const diffLabel = se.isShortage ? "Escrow shortage" : se.isSurplus ? "Escrow surplus" : "Account in balance";
+    const diffTreat = se.isShortage
+      ? `Your account is projected to fall <b>${dollars(Math.abs(se.diff))}</b> below the required cushion. To restore it, your monthly escrow rises to <b>${dollars(se.newPay)}</b> (spreading the shortage over 12 months). You may instead pay the shortage in one payment of <b>${dollars(Math.abs(se.diff))}</b> and keep the base deposit of ${dollars(se.baseDeposit)}.`
+      : se.isSurplus
+      ? `Your account is projected to hold <b>${dollars(Math.abs(se.diff))}</b> more than the required cushion. Surpluses of $50 or more are generally refunded within 30 days, and your monthly escrow can decrease to <b>${dollars(se.newPay)}</b>.`
+      : `Your account is projected to meet the required cushion exactly. Your monthly escrow is <b>${dollars(se.newPay)}</b>.`;
+
+    const projRows = se.rows.map(r => `<tr><td class="l">${MONTHS[r.m]}</td><td>${dollars(r.start)}</td><td>${dollars(r.dep)}</td><td>${r.out > 0 ? "-" + dollars(r.out) : "&mdash;"}</td><td class="b">${dollars(r.end)}</td></tr>`).join("");
+    const disbRows = se.disb.map(d => `<tr><td class="l">${d.name}</td><td>${dollars(d.amount)}</td><td class="l">${d.freq}</td><td class="l">${disbMonths(d)}</td></tr>`).join("");
+
+    const pitiSection = am ? `
+      <h2>Monthly payment breakdown (PITI)</h2>
+      <table class="kv">
+        <tr><th>Principal &amp; interest</th><td>${dollars(am.a.basePmt)}</td></tr>
+        <tr><th>Escrow (taxes &amp; insurance)</th><td>${dollars(se.newPay)}</td></tr>
+        <tr class="tot"><th>Total monthly payment</th><td>${dollars(am.a.basePmt + se.newPay)}</td></tr>
+      </table>
+      <p class="fine">Based on a ${dollars(am.a.P)} loan at ${am.rate}% over ${am.term} years. Excludes PMI and lender fees.</p>` : "";
+
+    const chg = se.newPay - se.curPay;
+    const chgTxt = Math.abs(chg) < 0.5 ? "no change" : (chg > 0 ? "+" : "-") + dollars(Math.abs(chg)) + "/mo";
+
+    const css = `
+      *{box-sizing:border-box} html,body{margin:0}
+      body{font:14px/1.5 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;color:#1a2420;background:#fff;padding:40px 44px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .doc{max-width:720px;margin:0 auto}
+      .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1f6e4f;padding-bottom:14px;margin-bottom:6px}
+      .brand{font:700 11px/1 sans-serif;letter-spacing:.16em;color:#1f6e4f;text-transform:uppercase}
+      .head .r{text-align:right;font-size:12px;color:#5c6b63}
+      h1{font:600 22px/1.25 Georgia,"Times New Roman",serif;margin:16px 0 4px}
+      .sub{color:#5c6b63;font-size:12.5px;margin:0 0 20px}
+      h2{font:600 14px/1.3 Georgia,serif;text-transform:uppercase;letter-spacing:.04em;color:#1f6e4f;margin:26px 0 10px;padding-bottom:5px;border-bottom:1px solid #dde3df}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      table.info th,table.info td{text-align:left;padding:4px 0;font-size:12.5px}
+      table.info th{color:#5c6b63;font-weight:600;width:150px}
+      .cards{display:flex;gap:12px;margin:4px 0 6px}
+      .card{flex:1;border:1px solid #dde3df;border-radius:8px;padding:12px 14px}
+      .card .k{font:700 10px/1 sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8a988f}
+      .card .v{font:600 21px/1.1 ui-monospace,Menlo,monospace;margin-top:7px}
+      .card .v.accent{color:#1f6e4f}
+      .card .n{font-size:11px;color:#8a988f;margin-top:4px}
+      .money th,.money td{padding:7px 10px;border-bottom:1px solid #e7ebe8;text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace}
+      .money th{background:#f3f5f3;color:#5c6b63;font:700 10.5px/1 sans-serif;letter-spacing:.05em;text-transform:uppercase;border-bottom:2px solid #c6cfc9}
+      .money th.l,.money td.l{text-align:left;font-family:sans-serif}
+      .money td.b{font-weight:700}
+      .money tr:last-child td{border-top:2px solid #c6cfc9}
+      table.kv th,table.kv td{padding:7px 10px;border-bottom:1px solid #e7ebe8;font-size:13px}
+      table.kv th{text-align:left;color:#5c6b63;font-weight:600}
+      table.kv td{text-align:right;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+      table.kv tr.tot th{color:#1a2420;font-weight:700}
+      table.kv tr.tot td{font-weight:700;color:#1f6e4f;border-top:2px solid #c6cfc9}
+      .callout{background:#f6f8f6;border:1px solid #dde3df;border-left:4px solid #1f6e4f;border-radius:6px;padding:13px 15px;font-size:13px;margin:6px 0}
+      .callout.warn{border-left-color:#b7791f;background:#fbf6ec}
+      .fine{font-size:11px;color:#8a988f;margin-top:8px;line-height:1.5}
+      .disc{margin-top:30px;padding-top:14px;border-top:1px solid #dde3df;font-size:10.5px;color:#8a988f;line-height:1.55}
+      @media print{body{padding:0}.doc{max-width:none}}`;
+
+    const body = `
+      <div class="doc">
+        <div class="head">
+          <div><div class="brand">Escrow Analysis</div></div>
+          <div class="r">${f.date ? fmtDate(f.date) : ""}</div>
+        </div>
+        <h1>Annual Escrow Account Disclosure Statement</h1>
+        <p class="sub">A projection of your escrow account for the next 12 months, beginning ${se.startMoLabel}.</p>
+        <table class="info">${info}</table>
+
+        <h2>Escrow payment summary</h2>
+        <div class="cards">
+          <div class="card"><div class="k">Current payment</div><div class="v">${dollars(se.curPay)}</div><div class="n">per month</div></div>
+          <div class="card"><div class="k">New payment</div><div class="v accent">${dollars(se.newPay)}</div><div class="n">${chgTxt}</div></div>
+          <div class="card"><div class="k">Required cushion</div><div class="v">${dollars(se.cushionAmt)}</div><div class="n">${se.cushionMonths}-month floor</div></div>
+        </div>
+
+        <h2>Account determination</h2>
+        <div class="callout ${se.isShortage ? "warn" : ""}"><b>${diffLabel}${se.isShortage || se.isSurplus ? " of " + dollars(Math.abs(se.diff)) : ""}.</b> ${diffTreat}</div>
+        <table class="kv">
+          <tr><th>Annual disbursements</th><td>${dollars(se.annual)}</td></tr>
+          <tr><th>Base monthly deposit</th><td>${dollars(se.baseDeposit)}</td></tr>
+          <tr><th>Lowest projected balance</th><td>${dollars(se.low)}</td></tr>
+          <tr><th>Required cushion (${se.cushionMonths} mo)</th><td>${dollars(se.cushionAmt)}</td></tr>
+        </table>
+
+        <h2>Projected escrow activity</h2>
+        <table class="money">
+          <thead><tr><th class="l">Month</th><th>Starting</th><th>Deposit</th><th>Disbursed</th><th>Ending</th></tr></thead>
+          <tbody>${projRows}</tbody>
+          <tfoot><tr><td class="l">Total</td><td></td><td>${dollars(se.totDep)}</td><td>-${dollars(se.totDisb)}</td><td></td></tr></tfoot>
+        </table>
+
+        <h2>Disbursement schedule</h2>
+        <table class="money">
+          <thead><tr><th class="l">Item</th><th>Annual amount</th><th class="l">Frequency</th><th class="l">Months due</th></tr></thead>
+          <tbody>${disbRows}</tbody>
+        </table>
+
+        ${pitiSection}
+
+        <p class="disc">This statement is an estimate prepared for planning purposes and is not an official servicer document. Actual escrow requirements are determined by your mortgage servicer under RESPA (Regulation X) and may differ. Figures assume disbursements occur as scheduled. Not tax, legal, or financial advice.</p>
+      </div>`;
+    return "<!doctype html><html><head><meta charset=\"utf-8\"><title>Escrow Statement</title><style>" + css + "</style></head><body>" + body + "</body></html>";
+  }
+
+  const stmtModal = document.getElementById("stmtModal");
+  function refreshStmt() { document.getElementById("stmtPreview").srcdoc = statementHTML(statementFields()); }
+  document.getElementById("exportStmt").addEventListener("click", () => {
+    const di = document.getElementById("stmtDate");
+    if (!di.value) { const n = new Date(); di.value = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; }
+    stmtModal.classList.remove("hidden"); refreshStmt();
+  });
+  document.getElementById("stmtClose").addEventListener("click", () => stmtModal.classList.add("hidden"));
+  stmtModal.addEventListener("click", e => { if (e.target === stmtModal) stmtModal.classList.add("hidden"); });
+  ["stmtName","stmtAddr","stmtLoan","stmtDate"].forEach(id => document.getElementById(id).addEventListener("input", refreshStmt));
+  document.getElementById("stmtDownload").addEventListener("click", () => {
+    const f = statementFields();
+    const slug = (f.name || "escrow").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    downloadBlob(slug + "-escrow-statement.html", statementHTML(f), "text/html;charset=utf-8");
+  });
+  document.getElementById("stmtPrint").addEventListener("click", () => {
+    const html = statementHTML(statementFields());
+    const f = document.createElement("iframe");
+    f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(f);
+    f.srcdoc = html;
+    f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 2000); };
+  });
+
+  // ---------- tabs ----------
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.dataset.tab;
+      document.getElementById("view-escrow").classList.toggle("hidden", tab !== "escrow");
+      document.getElementById("view-amort").classList.toggle("hidden", tab !== "amort");
+      if (tab === "amort") computeAmort(); else compute();
+    });
+  });
+  function setAmortMode(m) {
+    amortMode = m;
+    const yBtn = document.getElementById("viewYearly"), mBtn = document.getElementById("viewMonthly");
+    yBtn.classList.toggle("active", m==="yearly"); yBtn.setAttribute("aria-selected", m==="yearly");
+    mBtn.classList.toggle("active", m==="monthly"); mBtn.setAttribute("aria-selected", m==="monthly");
+    computeAmort();
+  }
+  document.getElementById("viewYearly").addEventListener("click", () => setAmortMode("yearly"));
+  document.getElementById("viewMonthly").addEventListener("click", () => setAmortMode("monthly"));
+
+  // ---------- theme ----------
+  const themeBtn = document.getElementById("themeBtn");
+  function currentDark() { const t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; }
+  function syncBtn(){ themeBtn.textContent = currentDark() ? "Light" : "Dark"; }
+  function recomputeVisible(){ if (document.getElementById("view-amort").classList.contains("hidden")) compute(); else computeAmort(); }
+  themeBtn.addEventListener("click", () => { document.documentElement.setAttribute("data-theme", currentDark() ? "light" : "dark"); syncBtn(); recomputeVisible(); });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncBtn(); recomputeVisible(); });
+
+  // ---------- wire inputs ----------
+  ["startBal","curPay","startMonth"].forEach(id => document.getElementById(id).addEventListener("input", compute));
+  document.getElementById("cushion").addEventListener("input", () => {
+    const v = parseFloat(document.getElementById("cushion").value);
+    document.getElementById("cushionVal").textContent = v + (v===1?" month":" months"); compute();
+  });
+  ["loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear"].forEach(id => document.getElementById(id).addEventListener("input", computeAmort));
+  window.addEventListener("resize", recomputeVisible);
+
+  renderDisb(); syncBtn();
+  compute();
+  computeAmort(); // populate state.amort so the statement's PITI section is ready
+</script>

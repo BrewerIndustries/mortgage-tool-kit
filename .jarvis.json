@@ -1,0 +1,12 @@
+{
+  "id": "mtk",
+  "name": "Mortgage Tool Kit",
+  "description": "A ledger-styled mortgage toolkit: annual escrow analysis (RESPA cushion sizing, shortage/surplus, 12-month projection), historical-activity CSV import, current-vs-recommended payment comparison, and a full PITI amortization schedule. Exports CSV and a printable escrow statement.",
+  "category": "standalone",
+  "tech": ["Vanilla JS", "HTML5 Canvas", "static site", "GitHub Pages"],
+  "status": { "prod": "in_progress", "dev": "live" },
+  "deploy": {
+    "prod": { "url": "https://mtk.dabrewer.dev/" },
+    "dev": { "url": "https://mtk.dabrewer.dev/dev/" }
+  }
+}

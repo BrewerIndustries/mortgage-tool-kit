@@ -1,0 +1,50 @@
+name: Deploy to GitHub Pages
+
+# Publishes BOTH versions to one Pages site:
+#   main -> /        (prod)   https://mtk.dabrewer.dev/
+#   dev  -> /dev/    (dev)    https://mtk.dabrewer.dev/dev/
+# Lives on the dev branch only; it checks out both branches itself. Pushing to
+# main does not auto-redeploy — re-run via "Run workflow" or push to dev.
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout main (prod) into site root
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: _site
+      - name: Checkout dev into /dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          path: _site/dev
+      - name: Strip git/CI dirs and set custom domain
+        run: |
+          rm -rf _site/.git _site/.github _site/dev/.git _site/dev/.github
+          echo "mtk.dabrewer.dev" > _site/CNAME
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
