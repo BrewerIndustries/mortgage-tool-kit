@@ -1,0 +1,20 @@
+{
+  "name": "mtk-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:dev": "wrangler deploy --env dev",
+    "migrate:prod": "wrangler d1 migrations apply mtk-prod --remote",
+    "migrate:dev": "wrangler d1 migrations apply mtk-dev --remote --env dev",
+    "create-user": "node scripts/create-user.mjs"
+  },
+  "dependencies": {
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "wrangler": "^3.99.0"
+  }
+}

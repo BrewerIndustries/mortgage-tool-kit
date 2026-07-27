@@ -94,11 +94,11 @@
   .money-input { position: relative; }
   .money-input::before { content: "$"; position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); font-family: var(--mono); font-size: 14px; pointer-events: none; }
   .money-input input { padding-left: 24px; }
-  input[type="number"], input[type="text"], select, textarea {
+  input[type="number"], input[type="text"], input[type="email"], input[type="password"], input[type="date"], select, textarea {
     width: 100%; padding: 9px 11px; font-size: 14px; font-family: var(--mono); color: var(--ink);
     background: var(--paper); border: 1px solid var(--line-strong); border-radius: 8px; font-variant-numeric: tabular-nums;
   }
-  input[type="text"] { font-family: var(--sans); }
+  input[type="text"], input[type="email"], input[type="password"] { font-family: var(--sans); }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
   select { font-family: var(--sans); }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -254,19 +254,77 @@
   .stmt-fields input[type="date"] { font-family: var(--sans); }
   .stmt-preview-wrap { border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; height: 48vh; background: #fff; }
   #stmtPreview { width: 100%; height: 100%; border: none; display: block; background: #fff; }
+
+  /* Settings gear + DEV badge */
+  .icon-btn { background: none; border: 1px solid var(--line-strong); color: var(--muted); border-radius: 999px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; padding: 0; }
+  .icon-btn:hover { color: var(--ink); border-color: var(--ink); }
+  .dev-badge { font-size: 10px; font-weight: 800; letter-spacing: .12em; background: var(--shortage); color: #fff; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; align-self: center; }
+  @media (prefers-color-scheme: dark) { .dev-badge { color: #1a1206; } }
+  :root[data-theme="dark"] .dev-badge { color: #1a1206; }
+  :root[data-theme="light"] .dev-badge { color: #fff; }
+
+  /* Auth gate */
+  .auth-gate { position: fixed; inset: 0; z-index: 100; background: var(--paper); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .auth-card { width: min(380px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 30px 28px; }
+  .auth-card .brand-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 2px; }
+  .auth-card h2 { font-family: var(--serif); font-size: 22px; margin: 0; font-weight: 600; }
+  .auth-card .muted { color: var(--muted); font-size: 13px; margin: 4px 0 18px; }
+  .auth-card label { display: block; font-size: 12.5px; color: var(--muted); margin: 14px 0 5px; }
+  .auth-msg { font-size: 12.5px; margin-top: 12px; min-height: 1.2em; line-height: 1.4; }
+  .auth-msg.err { color: var(--danger); }
+  .auth-msg.ok { color: var(--surplus); }
+  .btn-primary { width: 100%; margin-top: 18px; padding: 11px; border: none; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; font-family: var(--sans); }
+  @media (prefers-color-scheme: dark) { .btn-primary { color: #0e1512; } }
+  :root[data-theme="dark"] .btn-primary { color: #0e1512; }
+  :root[data-theme="light"] .btn-primary { color: #fff; }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Settings modal */
+  .settings-section + .settings-section { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .settings-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); font-weight: 700; margin: 0 0 14px; }
+  .set-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 4px 0; }
+  .set-label { font-size: 13.5px; }
+  .set-label small { display: block; color: var(--faint); font-size: 11.5px; margin-top: 1px; }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+  .swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid var(--line-strong); outline: 2px solid transparent; outline-offset: 2px; }
+  .swatch.active { outline-color: var(--ink); border-color: var(--card); }
+  .seg.small { padding: 2px; }
+  .seg.small .seg-btn { padding: 5px 11px; font-size: 12px; }
+  .link-btn { background: none; border: none; color: var(--accent); font-weight: 600; font-size: 13px; cursor: pointer; padding: 0; font-family: var(--sans); }
+  .link-btn:hover { text-decoration: underline; }
+  .danger-btn { background: none; border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line-strong)); color: var(--danger); border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); }
+  .danger-btn:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+  .pw-form { margin-top: 12px; display: none; }
+  .pw-form.open { display: block; }
+  .pw-form label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+
+  /* Payment tab breakdown */
+  .pay-breakdown { display: flex; gap: 26px; align-items: center; flex-wrap: wrap; }
+  .pay-breakdown canvas { flex: 0 0 200px; width: 200px; height: 200px; }
+  .pay-legend { flex: 1; min-width: 220px; }
+  .pay-legend .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .pay-legend .row:last-child { border-bottom: none; }
+  .pay-legend .lbl { display: flex; align-items: center; gap: 9px; color: var(--muted); }
+  .pay-legend .dot2 { width: 11px; height: 11px; border-radius: 3px; display: inline-block; flex: none; }
+  .pay-legend .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+  .pay-legend .amt small { color: var(--faint); font-weight: 400; margin-left: 6px; }
+  .pay-legend .row.total { border-top: 2px solid var(--line-strong); border-bottom: none; margin-top: 4px; padding-top: 11px; font-size: 14px; }
+  .pay-legend .row.total .amt { font-size: 17px; color: var(--accent); }
 </style>
 
 <div class="wrap">
   <header class="masthead">
-    <div class="brand"><h1>Mortgage Tool Kit</h1></div>
-    <div style="display:flex; align-items:center; gap:14px;">
+    <div class="brand"><h1>Mortgage Tool Kit</h1><span class="dev-badge hidden" id="devBadge">Dev</span></div>
+    <div style="display:flex; align-items:center; gap:10px;">
       <button class="theme-btn" id="themeBtn" type="button">Dark</button>
+      <button class="icon-btn" id="settingsBtn" type="button" title="Settings" aria-label="Settings">&#9881;</button>
     </div>
   </header>
 
   <nav class="tabs">
     <button class="tab active" data-tab="escrow" type="button">Escrow Analysis</button>
     <button class="tab" data-tab="amort" type="button">Amortization Schedule</button>
+    <button class="tab" data-tab="payment" type="button">Payment</button>
     <button class="tab" data-tab="tnote" type="button">T-Note Lookup</button>
     <div class="tab-actions">
       <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
@@ -452,6 +510,73 @@
     </div>
   </div>
 
+  <!-- ================= PAYMENT VIEW ================= -->
+  <div id="view-payment" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Home &amp; loan</p>
+            <label class="field"><span class="lbl">Home price</span>
+              <div class="money-input"><input type="number" id="payPrice" value="400000" step="5000"></div></label>
+            <div class="two">
+              <label class="field"><span class="lbl">Down payment</span>
+                <div class="money-input"><input type="number" id="payDownAmt" value="80000" step="1000"></div></label>
+              <label class="field"><span class="lbl">Down %</span>
+                <div class="suffix-input"><input type="number" id="payDownPct" value="20" step="1"><span class="sfx">%</span></div></label>
+            </div>
+            <label class="field"><span class="lbl">Interest rate (APR)</span>
+              <div class="suffix-input"><input type="number" id="payRate" value="6.5" step="0.125"><span class="sfx">%</span></div></label>
+            <label class="field"><span class="lbl">Loan term</span>
+              <div class="suffix-input"><input type="number" id="payTerm" value="30" step="1"><span class="sfx">yrs</span></div></label>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Taxes, insurance &amp; fees</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Property tax / yr</span>
+                <div class="money-input"><input type="number" id="payTax" value="5000" step="100"></div></label>
+              <label class="field"><span class="lbl">Home insurance / yr</span>
+                <div class="money-input"><input type="number" id="payIns" value="1800" step="100"></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">HOA / mo</span>
+                <div class="money-input"><input type="number" id="payHoa" value="0" step="10"></div></label>
+              <label class="field"><span class="lbl">PMI / mo</span>
+                <div class="money-input"><input type="number" id="payPmi" value="0" step="5"></div></label>
+            </div>
+            <p class="foot-note" style="margin-top:6px;" id="payPmiNote"></p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles">
+          <div class="tile"><div class="k">Total monthly payment</div><div class="v" id="payTotal">$0</div><div class="n">PITI + HOA + PMI</div></div>
+          <div class="tile"><div class="k">Principal &amp; interest</div><div class="v" id="payPI">$0</div><div class="n" id="payPINote">per month</div></div>
+          <div class="tile"><div class="k">Loan amount</div><div class="v" id="payLoan">$0</div><div class="n" id="payLtvNote">&mdash; LTV</div></div>
+          <div class="tile"><div class="k">Down payment</div><div class="v" id="payDownTile">$0</div><div class="n" id="payDownPctNote">&mdash;</div></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="panel">
+            <p class="eyebrow" style="margin-bottom:16px;">Monthly payment breakdown</p>
+            <div class="pay-breakdown">
+              <canvas id="payDonut" width="200" height="200"></canvas>
+              <div class="pay-legend" id="payLegend"></div>
+            </div>
+          </div>
+        </div>
+
+        <p class="foot-note">
+          <b>Full monthly payment.</b> Principal &amp; interest come from the loan amount, rate, and term; taxes and insurance
+          are the monthly share of their annual costs; HOA and PMI are added as entered. PMI is auto-estimated at ~0.6%/yr of the
+          loan when your down payment is under 20% &mdash; edit it to match your quote, and it typically drops off once you reach
+          ~20% equity. Estimate only &mdash; not financial advice.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= T-NOTE LOOKUP VIEW ================= -->
   <div id="view-tnote" class="view hidden">
     <div class="grid">
@@ -548,6 +673,67 @@
     <div class="modal-foot">
       <button class="primary-btn" id="stmtDownload" type="button">&#8681; Download .html</button>
       <button class="primary-btn accent" id="stmtPrint" type="button">&#128424; Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Auth gate (login) -->
+<div class="auth-gate hidden" id="authGate">
+  <div class="auth-card">
+    <div class="brand-row"><h2>Mortgage Tool Kit</h2><span class="dev-badge hidden" id="devBadge2">Dev</span></div>
+    <p class="muted">Sign in to continue.</p>
+    <form id="loginForm" autocomplete="on">
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" autocomplete="username" required>
+      <label for="loginPassword">Password</label>
+      <input type="password" id="loginPassword" autocomplete="current-password" required>
+      <button class="btn-primary" id="loginBtn" type="submit">Sign in</button>
+      <div class="auth-msg" id="loginMsg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Settings</h3><button class="modal-x" id="settingsClose" type="button">&times;</button></div>
+
+    <div class="settings-section">
+      <h4>Appearance</h4>
+      <div class="set-row">
+        <div class="set-label">Theme</div>
+        <div class="seg small" id="themeSeg" role="tablist">
+          <button class="seg-btn" data-mode="auto" type="button">Auto</button>
+          <button class="seg-btn" data-mode="light" type="button">Light</button>
+          <button class="seg-btn" data-mode="dark" type="button">Dark</button>
+        </div>
+      </div>
+      <div class="set-row" style="align-items:flex-start;">
+        <div class="set-label">Accent color<small>Applies in light &amp; dark</small></div>
+        <div class="swatches" id="accentSwatches"></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h4>Account</h4>
+      <div class="set-row">
+        <div class="set-label">Signed in as<small id="setEmail">&mdash;</small></div>
+        <button class="danger-btn" id="logoutBtn" type="button">Log out</button>
+      </div>
+      <div class="set-row">
+        <div class="set-label">Password</div>
+        <button class="link-btn" id="changePwToggle" type="button">Change password</button>
+      </div>
+      <form class="pw-form" id="pwForm" autocomplete="off">
+        <label>Current password</label>
+        <input type="password" id="pwCurrent" autocomplete="current-password">
+        <label>New password</label>
+        <input type="password" id="pwNew" autocomplete="new-password">
+        <label>Confirm new password</label>
+        <input type="password" id="pwConfirm" autocomplete="new-password">
+        <button class="btn-primary" id="pwSubmit" type="submit" style="margin-top:14px;">Update password</button>
+        <div class="auth-msg" id="pwMsg"></div>
+      </form>
     </div>
   </div>
 </div>
@@ -1035,8 +1221,26 @@
     t.hist.slice().reverse().forEach(h => rows.push([h.date, h.val]));
     return toCSV(rows);
   }
+  function paymentCSV() {
+    const p = payResult, rows = [];
+    rows.push(["Mortgage Payment"]);
+    if (!p) return toCSV(rows);
+    rows.push(["Home price", Math.round(p.price)]);
+    rows.push(["Down payment", Math.round(p.downAmt)]);
+    rows.push(["Down %", p.downPct.toFixed(1)]);
+    rows.push(["Loan amount", Math.round(p.loan)]);
+    rows.push(["LTV %", p.ltv.toFixed(1)]);
+    rows.push(["Interest rate (APR %)", p.rate]);
+    rows.push(["Term (years)", p.term]);
+    rows.push([]);
+    rows.push(["Component", "Monthly", "% of payment"]);
+    p.segs.forEach(s => rows.push([s.label, Math.round(s.value), p.total > 0 ? Math.round(s.value / p.total * 100) : 0]));
+    rows.push(["Total monthly payment", Math.round(p.total), 100]);
+    return toCSV(rows);
+  }
   document.getElementById("exportCsv").addEventListener("click", () => {
-    if (!document.getElementById("view-tnote").classList.contains("hidden")) { computeTnote(); downloadBlob("tnote-lookup.csv", tnoteCSV(), "text/csv;charset=utf-8"); }
+    if (!document.getElementById("view-payment").classList.contains("hidden")) { computePayment(); downloadBlob("mortgage-payment.csv", paymentCSV(), "text/csv;charset=utf-8"); }
+    else if (!document.getElementById("view-tnote").classList.contains("hidden")) { computeTnote(); downloadBlob("tnote-lookup.csv", tnoteCSV(), "text/csv;charset=utf-8"); }
     else if (!document.getElementById("view-amort").classList.contains("hidden")) { computeAmort(); downloadBlob("amortization-schedule.csv", amortCSV(), "text/csv;charset=utf-8"); }
     else { compute(); downloadBlob("escrow-projection.csv", escrowCSV(), "text/csv;charset=utf-8"); }
   });
@@ -1217,7 +1421,7 @@
   })();
   const DAYNAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   function nonBusinessReason(dt) { const wd = dt.getDay(); if (wd === 0) return "a Sunday"; if (wd === 6) return "a Saturday"; const h = HOLIDAYS.get(isoOf(dt)); return h ? h : null; }
-  function prettyDate(iso) { if (!iso) return "—"; const p = iso.split("-").map(Number); return new Date(p[0], p[1]-1, p[2]).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" }); }
+  function prettyDate(iso) { if (!iso) return "\u2014"; const p = iso.split("-").map(Number); return new Date(p[0], p[1]-1, p[2]).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" }); }
   function tnSeries(ti) { return TN.rows.filter(r => r[1+ti] != null).map(r => ({ date: r[0], val: r[1+ti] })); }
 
   // populate tenor select
@@ -1241,7 +1445,7 @@
     document.getElementById("tnHistTenor").textContent = tenor;
 
     if (!dstr || isNaN(lookback)) {
-      document.getElementById("tnRate").textContent = "—";
+      document.getElementById("tnRate").textContent = "\u2014";
       V.className = "verdict good"; V.innerHTML = "<span class='dot'>&#9679;</span><div>Enter a reference date and lookback to resolve a rate.</div>";
       return;
     }
@@ -1268,9 +1472,9 @@
 
     if (val == null) {
       const before = rawIso < TN.start;
-      document.getElementById("tnRate").textContent = "—";
+      document.getElementById("tnRate").textContent = "\u2014";
       document.getElementById("tnRateNote").textContent = "no data";
-      document.getElementById("tnDateOut").textContent = "—";
+      document.getElementById("tnDateOut").textContent = "\u2014";
       V.className = "verdict warn";
       V.innerHTML = `<span class='dot'>&#9650;</span><div><b>No rate available.</b> ${before ? "The resolved date is before the bundled data begins (" + TN.start + ")." : "The resolved date is outside the bundled data range (ends " + TN.end + ")."} Pick a reference date whose lookback lands within ${TN.start} to ${TN.end}.</div>`;
       document.getElementById("tnCurve").innerHTML = ""; document.getElementById("tnHist").innerHTML = "";
@@ -1347,16 +1551,234 @@
   function syncTnPresets() { const lb = document.getElementById("tnLookback").value; document.querySelectorAll(".tn-presets button").forEach(b => b.classList.toggle("active", b.dataset.lb === String(lb))); }
   ["tnDate","tnLookback","tnTenor"].forEach(id => document.getElementById(id).addEventListener("input", () => { syncTnPresets(); computeTnote(); }));
 
+  // ---------- API base + auth ----------
+  const IS_DEV = !(location.hostname === "mtk.dabrewer.dev" && !location.pathname.startsWith("/dev/"));
+  const API_BASE = IS_DEV ? "https://mtk-api-dev.dabrewer.dev" : "https://mtk-api.dabrewer.dev";
+
+  async function api(path, opts = {}) {
+    const res = await fetch(API_BASE + path, {
+      credentials: "include",
+      headers: opts.body ? { "Content-Type": "application/json" } : {},
+      ...opts,
+    });
+    let data = null; try { data = await res.json(); } catch (e) {}
+    if (!res.ok) throw new Error((data && data.error) || ("HTTP " + res.status));
+    return data;
+  }
+
+  const authGate = document.getElementById("authGate");
+  function showGate(show) { authGate.classList.toggle("hidden", !show); }
+
+  async function checkAuth() {
+    try {
+      const me = await api("/auth/me");
+      document.getElementById("setEmail").textContent = me.user.email;
+      showGate(false);
+    } catch (e) { showGate(true); }
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("loginBtn"), msg = document.getElementById("loginMsg");
+    btn.disabled = true; msg.className = "auth-msg"; msg.textContent = "Signing in...";
+    try {
+      const r = await api("/auth/login", { method: "POST", body: JSON.stringify({
+        email: document.getElementById("loginEmail").value.trim(),
+        password: document.getElementById("loginPassword").value,
+      }) });
+      document.getElementById("setEmail").textContent = r.user.email;
+      document.getElementById("loginPassword").value = "";
+      msg.className = "auth-msg"; msg.textContent = "";
+      showGate(false);
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Sign in failed."; }
+    finally { btn.disabled = false; }
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    try { await api("/auth/logout", { method: "POST" }); } catch (e) {}
+    document.getElementById("settingsModal").classList.add("hidden");
+    showGate(true);
+  });
+
+  document.getElementById("changePwToggle").addEventListener("click", () =>
+    document.getElementById("pwForm").classList.toggle("open"));
+
+  document.getElementById("pwForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("pwMsg");
+    const cur = document.getElementById("pwCurrent").value;
+    const nw = document.getElementById("pwNew").value;
+    const cf = document.getElementById("pwConfirm").value;
+    msg.className = "auth-msg";
+    if (nw.length < 8) { msg.className = "auth-msg err"; msg.textContent = "New password must be at least 8 characters."; return; }
+    if (nw !== cf) { msg.className = "auth-msg err"; msg.textContent = "New passwords don't match."; return; }
+    const btn = document.getElementById("pwSubmit"); btn.disabled = true; msg.textContent = "Updating...";
+    try {
+      await api("/auth/change-password", { method: "POST", body: JSON.stringify({ current_password: cur, new_password: nw }) });
+      msg.className = "auth-msg ok"; msg.textContent = "Password updated. Other devices were signed out.";
+      ["pwCurrent", "pwNew", "pwConfirm"].forEach(id => document.getElementById(id).value = "");
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Update failed."; }
+    finally { btn.disabled = false; }
+  });
+
+  // ---------- settings modal ----------
+  const settingsModal = document.getElementById("settingsModal");
+  document.getElementById("settingsBtn").addEventListener("click", () => settingsModal.classList.remove("hidden"));
+  document.getElementById("settingsClose").addEventListener("click", () => settingsModal.classList.add("hidden"));
+  settingsModal.addEventListener("click", e => { if (e.target === settingsModal) settingsModal.classList.add("hidden"); });
+
+  // ---------- accent themes ----------
+  const ACCENTS = {
+    green:  { name: "Ledger Green", light: { a: "#1f6e4f", s: "#e4efe9" }, dark: { a: "#4bbf8e", s: "#17281f" } },
+    blue:   { name: "Slate Blue",   light: { a: "#2f5fb0", s: "#e4ebf6" }, dark: { a: "#6fa6ff", s: "#16233c" } },
+    teal:   { name: "Teal",         light: { a: "#0e7c76", s: "#dcefed" }, dark: { a: "#45c7c0", s: "#10231f" } },
+    violet: { name: "Violet",       light: { a: "#6b40b3", s: "#ece4f7" }, dark: { a: "#b18cff", s: "#221a3a" } },
+    rose:   { name: "Rose",         light: { a: "#b03a5b", s: "#f6e2e9" }, dark: { a: "#f07aa0", s: "#2c1720" } },
+  };
+  let accentKey = localStorage.getItem("mtk-accent") || "green";
+  if (!ACCENTS[accentKey]) accentKey = "green";
+  function applyAccent() {
+    const pal = ACCENTS[accentKey][currentDark() ? "dark" : "light"];
+    document.documentElement.style.setProperty("--accent", pal.a);
+    document.documentElement.style.setProperty("--accent-soft", pal.s);
+  }
+  function buildSwatches() {
+    const wrap = document.getElementById("accentSwatches"); wrap.innerHTML = "";
+    Object.entries(ACCENTS).forEach(([key, def]) => {
+      const sw = document.createElement("button");
+      sw.type = "button"; sw.className = "swatch" + (key === accentKey ? " active" : "");
+      sw.title = def.name;
+      sw.style.background = def[currentDark() ? "dark" : "light"].a;
+      sw.addEventListener("click", () => {
+        accentKey = key; localStorage.setItem("mtk-accent", key);
+        applyAccent(); buildSwatches(); recomputeVisible();
+      });
+      wrap.appendChild(sw);
+    });
+  }
+
+  // ---------- theme mode (auto / light / dark) ----------
+  function themeMode() { return localStorage.getItem("mtk-theme") || "auto"; }
+  function applyThemeMode(mode) {
+    localStorage.setItem("mtk-theme", mode);
+    if (mode === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", mode);
+    syncThemeUI(); applyAccent(); buildSwatches(); recomputeVisible();
+  }
+  function syncThemeUI() {
+    const mode = themeMode();
+    document.querySelectorAll("#themeSeg .seg-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === mode));
+    syncBtn();
+  }
+  document.querySelectorAll("#themeSeg .seg-btn").forEach(b => b.addEventListener("click", () => applyThemeMode(b.dataset.mode)));
+
+  // ---------- Payment calculator ----------
+  const PAY_COLORS = { tax: "#c99a3b", ins: "#4a90c2", hoa: "#8a6fb0", pmi: "#c25b6e" };
+  let pmiUserSet = false;
+  let payResult = null;
+  const gv = (id) => parseFloat(document.getElementById(id).value) || 0;
+
+  function computePayment() {
+    const price = gv("payPrice"), rate = gv("payRate"), term = gv("payTerm");
+    let downAmt = gv("payDownAmt"); if (downAmt > price) downAmt = price;
+    const loan = Math.max(0, price - downAmt);
+    const downPct = price > 0 ? (downAmt / price) * 100 : 0;
+    const ltv = price > 0 ? (loan / price) * 100 : 0;
+    const r = rate / 1200, n = Math.max(1, Math.round(term * 12));
+    const pi = loan <= 0 ? 0 : (r === 0 ? loan / n : loan * r / (1 - Math.pow(1 + r, -n)));
+
+    // Auto-estimate PMI (~0.6%/yr of loan) when LTV > 80%, unless the user set it.
+    if (!pmiUserSet) {
+      const auto = ltv > 80 ? (loan * 0.006) / 12 : 0;
+      document.getElementById("payPmi").value = Math.round(auto);
+    }
+    const tax = gv("payTax") / 12, ins = gv("payIns") / 12, hoa = gv("payHoa"), pmi = gv("payPmi");
+    const total = pi + tax + ins + hoa + pmi;
+
+    document.getElementById("payTotal").textContent = fmt(total);
+    document.getElementById("payPI").textContent = fmt(pi);
+    document.getElementById("payPINote").textContent = fmt(loan) + " over " + (term || 0) + " yrs";
+    document.getElementById("payLoan").textContent = fmt(loan);
+    document.getElementById("payLtvNote").textContent = ltv.toFixed(0) + "% LTV";
+    document.getElementById("payDownTile").textContent = fmt(downAmt);
+    document.getElementById("payDownPctNote").textContent = downPct.toFixed(1) + "% down";
+    document.getElementById("payPmiNote").textContent = ltv > 80
+      ? "PMI auto-estimated at ~0.6%/yr while under 20% down \u2014 edit to match your quote."
+      : "No PMI \u2014 down payment is 20% or more.";
+
+    const segs = [
+      { key: "pi",  label: "Principal & interest", value: pi,  color: getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() },
+      { key: "tax", label: "Property tax",         value: tax, color: PAY_COLORS.tax },
+      { key: "ins", label: "Home insurance",       value: ins, color: PAY_COLORS.ins },
+      { key: "hoa", label: "HOA",                  value: hoa, color: PAY_COLORS.hoa },
+      { key: "pmi", label: "PMI",                  value: pmi, color: PAY_COLORS.pmi },
+    ].filter(s => s.value > 0.5);
+
+    const legend = document.getElementById("payLegend");
+    legend.innerHTML = segs.map(s =>
+      `<div class="row"><span class="lbl"><span class="dot2" style="background:${s.color}"></span>${s.label}</span>
+       <span class="amt">${fmt(s.value)}<small>${total > 0 ? Math.round(s.value / total * 100) : 0}%</small></span></div>`).join("")
+      + `<div class="row total"><span class="lbl" style="color:var(--ink);font-weight:600">Total / month</span><span class="amt">${fmt(total)}</span></div>`;
+
+    payResult = { price, downAmt, downPct, loan, ltv, rate, term, pi, tax, ins, hoa, pmi, total, segs };
+    drawDonut(segs, total);
+  }
+
+  function drawDonut(segs, total) {
+    const cv = document.getElementById("payDonut"), dpr = window.devicePixelRatio || 1;
+    const size = 200; cv.width = size * dpr; cv.height = size * dpr;
+    const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, size, size);
+    const cx = size / 2, cy = size / 2, rOut = 92, rIn = 58;
+    const cardBg = getComputedStyle(document.documentElement).getPropertyValue("--card").trim();
+    if (total <= 0) return;
+    let a0 = -Math.PI / 2;
+    segs.forEach(s => {
+      const a1 = a0 + (s.value / total) * Math.PI * 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, rOut, a0, a1); ctx.closePath();
+      ctx.fillStyle = s.color; ctx.fill();
+      a0 = a1;
+    });
+    // punch the hole
+    ctx.beginPath(); ctx.arc(cx, cy, rIn, 0, Math.PI * 2); ctx.fillStyle = cardBg; ctx.fill();
+    // center label
+    const ink = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+    const faint = getComputedStyle(document.documentElement).getPropertyValue("--faint").trim();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = faint; ctx.font = "10px system-ui, sans-serif"; ctx.fillText("PER MONTH", cx, cy - 12);
+    ctx.fillStyle = ink; ctx.font = "600 20px ui-monospace, monospace"; ctx.fillText(fmt(total), cx, cy + 6);
+  }
+
+  document.getElementById("payPmi").addEventListener("input", () => { pmiUserSet = true; computePayment(); });
+  document.getElementById("payPrice").addEventListener("input", () => {
+    const price = gv("payPrice"), pct = gv("payDownPct");
+    document.getElementById("payDownAmt").value = Math.round(price * pct / 100);
+    computePayment();
+  });
+  document.getElementById("payDownAmt").addEventListener("input", () => {
+    const price = gv("payPrice"), amt = gv("payDownAmt");
+    document.getElementById("payDownPct").value = price > 0 ? +(amt / price * 100).toFixed(1) : 0;
+    computePayment();
+  });
+  document.getElementById("payDownPct").addEventListener("input", () => {
+    const price = gv("payPrice"), pct = gv("payDownPct");
+    document.getElementById("payDownAmt").value = Math.round(price * pct / 100);
+    computePayment();
+  });
+  ["payRate", "payTerm", "payTax", "payIns", "payHoa"].forEach(id =>
+    document.getElementById(id).addEventListener("input", computePayment));
+
   // ---------- tabs ----------
   document.querySelectorAll(".tab").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       const tab = btn.dataset.tab;
-      document.getElementById("view-escrow").classList.toggle("hidden", tab !== "escrow");
-      document.getElementById("view-amort").classList.toggle("hidden", tab !== "amort");
-      document.getElementById("view-tnote").classList.toggle("hidden", tab !== "tnote");
-      if (tab === "amort") computeAmort(); else if (tab === "tnote") computeTnote(); else compute();
+      ["escrow", "amort", "payment", "tnote"].forEach(t =>
+        document.getElementById("view-" + t).classList.toggle("hidden", tab !== t));
+      if (tab === "amort") computeAmort();
+      else if (tab === "tnote") computeTnote();
+      else if (tab === "payment") computePayment();
+      else compute();
     });
   });
   function setAmortMode(m) {
@@ -1374,12 +1796,13 @@
   function currentDark() { const t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; }
   function syncBtn(){ themeBtn.textContent = currentDark() ? "Light" : "Dark"; }
   function recomputeVisible(){
-    if (!document.getElementById("view-tnote").classList.contains("hidden")) computeTnote();
+    if (!document.getElementById("view-payment").classList.contains("hidden")) computePayment();
+    else if (!document.getElementById("view-tnote").classList.contains("hidden")) computeTnote();
     else if (!document.getElementById("view-amort").classList.contains("hidden")) computeAmort();
     else compute();
   }
-  themeBtn.addEventListener("click", () => { document.documentElement.setAttribute("data-theme", currentDark() ? "light" : "dark"); syncBtn(); recomputeVisible(); });
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncBtn(); recomputeVisible(); });
+  themeBtn.addEventListener("click", () => applyThemeMode(currentDark() ? "light" : "dark"));
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncBtn(); applyAccent(); buildSwatches(); recomputeVisible(); });
 
   // ---------- wire inputs ----------
   ["startBal","curPay","startMonth"].forEach(id => document.getElementById(id).addEventListener("input", compute));
@@ -1401,7 +1824,24 @@
     computeTnote();
   })();
 
+  // ---------- init ----------
+  // Apply stored theme mode + accent before first paint of computed colors.
+  (function initAppearance() {
+    const mode = themeMode();
+    if (mode !== "auto") document.documentElement.setAttribute("data-theme", mode);
+    applyAccent(); buildSwatches(); syncThemeUI();
+  })();
+
+  // DEV badge on the dev site.
+  if (IS_DEV) {
+    document.getElementById("devBadge").classList.remove("hidden");
+    document.getElementById("devBadge2").classList.remove("hidden");
+  }
+
   renderDisb(); syncBtn();
   compute();
-  computeAmort(); // populate state.amort so the statement's PITI section is ready
+  computeAmort();   // populate state.amort so the statement's PITI section is ready
+  computePayment(); // ready the Payment tab
+
+  checkAuth();      // gate the app until signed in
 </script>

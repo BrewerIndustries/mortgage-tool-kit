@@ -1,6 +1,7 @@
 # Mortgage Tool Kit
 
-A ledger-styled, single-file mortgage toolkit — no build step, no server. Two tabs:
+A ledger-styled mortgage toolkit — a static Pages frontend plus a small Cloudflare
+Worker for auth. Tabs:
 
 - **Escrow Analysis** — projects an escrow account 12 months out, sizes the RESPA
   cushion (0–2 months), and flags a **shortage** or **surplus** against the low
@@ -10,6 +11,9 @@ A ledger-styled, single-file mortgage toolkit — no build step, no server. Two 
 - **Amortization Schedule** — P&I payment, extra-payment savings, payoff date,
   and full **PITI** (P&I + the recommended escrow from the Analysis tab). Balance
   vs. cumulative-interest chart and a **Yearly / Monthly** schedule toggle.
+- **Payment** — full monthly payment calculator: home price, down payment ($/%),
+  rate, term, taxes, insurance, HOA, and PMI (auto-estimated under 20% down) →
+  total **PITI + HOA + PMI** with a breakdown donut, loan amount, and LTV.
 - **T-Note Lookup** — historical Treasury Constant Maturity rates (1Y–10Y) for an
   ARM-style lookback: enter a reference date and a lookback (e.g. 45 days); the
   tool takes the rate that many days earlier, and if that lands on a weekend or
@@ -24,11 +28,34 @@ A ledger-styled, single-file mortgage toolkit — no build step, no server. Two 
   `Description`, and either `Amount` or `Deposit`/`Withdrawal`, optional
   `Balance`). Reconstructs the ledger, auto-derives the disbursement list and
   starting balance, and shows the history in its own card.
-- **Export** — context-aware **CSV** (escrow projection or amortization schedule)
-  and a printable **Annual Escrow Account Disclosure Statement** (preview →
-  Print / Save PDF or Download `.html`).
+- **Export** — context-aware **CSV** (escrow projection, amortization schedule,
+  payment breakdown, or T-Note lookup) and a printable **Annual Escrow Account
+  Disclosure Statement** (preview → Print / Save PDF or Download `.html`).
+- **Accounts** — real login/logout + self-service password change, backed by a
+  Cloudflare Worker + D1 (see `api/`). The whole app is gated behind sign-in.
+- **Settings** (gear by the theme toggle) — Auto/Light/Dark theme, five accent
+  colors (each with light + dark variants), and the account controls.
 - Full light/dark theming; all figures use tabular monospace. Estimates only —
   not financial advice.
+
+## Backend (`api/`)
+
+A Cloudflare Worker (Hono) with a D1 database provides auth for the static
+frontend. PBKDF2-hashed passwords, HMAC-derived session ids, `SameSite=Lax`
+httpOnly session cookies. Prod = default env (`mtk-api.dabrewer.dev` + `mtk-prod`),
+dev = `[env.dev]` (`mtk-api-dev.dabrewer.dev` + `mtk-dev`). No open signup —
+users are seeded with `npm run create-user`.
+
+```bash
+cd api && npm install
+npm run migrate:prod        # apply D1 migrations (and migrate:dev)
+npx wrangler secret put SESSION_SECRET          # prod (and --env dev)
+npm run deploy              # prod worker (deploy:dev for dev)
+npm run create-user -- --env prod --email you@example.com --password 'min8chars'
+```
+
+The frontend picks its API base at runtime: the prod root uses `mtk-api`, the
+`/dev/` path and localhost use `mtk-api-dev`.
 
 ## Run locally
 
