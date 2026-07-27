@@ -29,6 +29,7 @@ const env = args.env === 'dev' ? 'dev' : 'prod';
 const email = String(args.email || '').trim().toLowerCase();
 const password = String(args.password || '');
 const name = args.name ? String(args.name) : null;
+const role = args.role === 'admin' ? 'admin' : 'user';
 const dbName = env === 'dev' ? 'mtk-dev' : 'mtk-prod';
 const target = args.local ? '--local' : '--remote';
 
@@ -45,8 +46,8 @@ const id = randomUUID();
 const q = (s) => (s === null ? 'NULL' : `'${String(s).replace(/'/g, "''")}'`);
 
 const sql =
-  `INSERT INTO users (id,email,password_hash,display_name,created_at) VALUES ` +
-  `(${q(id)},${q(email)},${q(stored)},${q(name)},${Date.now()});`;
+  `INSERT INTO users (id,email,password_hash,display_name,role,created_at) VALUES ` +
+  `(${q(id)},${q(email)},${q(stored)},${q(name)},${q(role)},${Date.now()});`;
 
 // The dev D1 binding lives under [env.dev], so remote dev commands need --env dev.
 const wranglerArgs = ['wrangler', 'd1', 'execute', dbName];

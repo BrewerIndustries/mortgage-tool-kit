@@ -10,7 +10,7 @@ type Bindings = {
   SESSION_SECRET: string;
 };
 
-type SessionUser = { id: string; email: string; display_name: string | null };
+type SessionUser = { id: string; email: string; display_name: string | null; role: string };
 
 const app = new Hono<{ Bindings: Bindings; Variables: { user: SessionUser } }>();
 
@@ -26,13 +26,13 @@ app.use('*', cors({
     return c.env.ALLOWED_ORIGIN;
   },
   credentials: true,
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type'],
 }));
 
 // ---------------- helpers ----------------
 function publicUser(row: any): SessionUser {
-  return { id: row.id, email: row.email, display_name: row.display_name ?? null };
+  return { id: row.id, email: row.email, display_name: row.display_name ?? null, role: row.role ?? 'user' };
 }
 
 async function currentUser(c: any): Promise<SessionUser | null> {
@@ -40,7 +40,7 @@ async function currentUser(c: any): Promise<SessionUser | null> {
   if (!token) return null;
   const id = await sessionId(token, c.env.SESSION_SECRET);
   const row = await c.env.DB.prepare(
-    `SELECT u.id, u.email, u.display_name, s.expires_at
+    `SELECT u.id, u.email, u.display_name, u.role, s.expires_at
      FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ?`,
   ).bind(id).first();
   if (!row) return null;
@@ -52,6 +52,11 @@ const auth = async (c: any, next: any) => {
   const user = await currentUser(c);
   if (!user) return c.json({ error: 'unauthorized' }, 401);
   c.set('user', user);
+  await next();
+};
+
+const requireAdmin = async (c: any, next: any) => {
+  if (c.get('user').role !== 'admin') return c.json({ error: 'forbidden' }, 403);
   await next();
 };
 
@@ -117,6 +122,43 @@ app.post('/auth/change-password', auth, async (c) => {
     .bind(await hashPassword(next), user.id).run();
   await c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(user.id).run();
   await startSession(c, user.id);
+  return c.json({ ok: true });
+});
+
+// ---------------- admin: users ----------------
+app.get('/admin/users', auth, requireAdmin, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    'SELECT id, email, display_name, role, created_at FROM users ORDER BY created_at',
+  ).all();
+  return c.json({ users: results });
+});
+
+app.post('/admin/users', auth, requireAdmin, async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  const email = String(b.email ?? '').trim().toLowerCase();
+  const password = String(b.password ?? '');
+  const role = b.role === 'admin' ? 'admin' : 'user';
+  const display_name = b.display_name ? String(b.display_name).trim() : null;
+  if (!email || !email.includes('@')) return c.json({ error: 'a valid email is required' }, 400);
+  if (password.length < 8) return c.json({ error: 'password must be at least 8 characters' }, 400);
+  const dupe = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
+  if (dupe) return c.json({ error: 'a user with that email already exists' }, 409);
+  const id = uuid();
+  await c.env.DB.prepare(
+    'INSERT INTO users (id, email, password_hash, display_name, role, created_at) VALUES (?,?,?,?,?,?)',
+  ).bind(id, email, await hashPassword(password), display_name, role, Date.now()).run();
+  return c.json({ user: { id, email, display_name, role, created_at: Date.now() } }, 201);
+});
+
+app.delete('/admin/users/:id', auth, requireAdmin, async (c) => {
+  const id = c.req.param('id');
+  if (id === c.get('user').id) return c.json({ error: 'you cannot delete your own account' }, 400);
+  const target = await c.env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(id).first();
+  if (!target) return c.json({ error: 'not found' }, 404);
+  await c.env.DB.batch([
+    c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id),
+    c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id),
+  ]);
   return c.json({ ok: true });
 });
 

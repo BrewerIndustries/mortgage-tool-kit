@@ -298,6 +298,18 @@
   .pw-form.open { display: block; }
   .pw-form label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
 
+  /* Admin: user management */
+  .user-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .user-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 11px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; font-size: 13px; }
+  .user-row .email { font-weight: 600; word-break: break-all; }
+  .user-row .right { display: flex; align-items: center; gap: 10px; flex: none; }
+  .role-tag { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .role-tag.user { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
+  .user-del { background: none; border: none; color: var(--faint); cursor: pointer; font-size: 17px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+  .user-del:hover { color: var(--danger); background: var(--card); }
+  .add-user label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  .add-user .two { gap: 12px; }
+
   /* Payment tab breakdown */
   .pay-breakdown { display: flex; gap: 26px; align-items: center; flex-wrap: wrap; }
   .pay-breakdown canvas { flex: 0 0 200px; width: 200px; height: 200px; }
@@ -733,6 +745,23 @@
         <input type="password" id="pwConfirm" autocomplete="new-password">
         <button class="btn-primary" id="pwSubmit" type="submit" style="margin-top:14px;">Update password</button>
         <div class="auth-msg" id="pwMsg"></div>
+      </form>
+    </div>
+
+    <div class="settings-section hidden" id="adminSection">
+      <h4>Users &middot; admin</h4>
+      <div class="user-list" id="userList"></div>
+      <form class="add-user" id="addUserForm" autocomplete="off">
+        <div class="two">
+          <div><label>Email</label><input type="email" id="newUserEmail" placeholder="person@example.com"></div>
+          <div><label>Temporary password</label><input type="password" id="newUserPw" placeholder="min 8 characters"></div>
+        </div>
+        <div class="two">
+          <div><label>Display name (optional)</label><input type="text" id="newUserName"></div>
+          <div><label>Role</label><select id="newUserRole"><option value="user">User</option><option value="admin">Admin</option></select></div>
+        </div>
+        <button class="btn-primary" type="submit" style="margin-top:14px;">Add user</button>
+        <div class="auth-msg" id="addUserMsg"></div>
       </form>
     </div>
   </div>
@@ -1568,11 +1597,14 @@
 
   const authGate = document.getElementById("authGate");
   function showGate(show) { authGate.classList.toggle("hidden", !show); }
+  let isAdmin = false;
+  let myEmail = null;
+  function setUser(u) { myEmail = u.email; isAdmin = u.role === "admin"; document.getElementById("setEmail").textContent = u.email; document.getElementById("adminSection").classList.toggle("hidden", !isAdmin); }
 
   async function checkAuth() {
     try {
       const me = await api("/auth/me");
-      document.getElementById("setEmail").textContent = me.user.email;
+      setUser(me.user);
       showGate(false);
     } catch (e) { showGate(true); }
   }
@@ -1586,7 +1618,7 @@
         email: document.getElementById("loginEmail").value.trim(),
         password: document.getElementById("loginPassword").value,
       }) });
-      document.getElementById("setEmail").textContent = r.user.email;
+      setUser(r.user);
       document.getElementById("loginPassword").value = "";
       msg.className = "auth-msg"; msg.textContent = "";
       showGate(false);
@@ -1623,9 +1655,49 @@
 
   // ---------- settings modal ----------
   const settingsModal = document.getElementById("settingsModal");
-  document.getElementById("settingsBtn").addEventListener("click", () => settingsModal.classList.remove("hidden"));
+  document.getElementById("settingsBtn").addEventListener("click", () => { settingsModal.classList.remove("hidden"); if (isAdmin) refreshAdmin(); });
   document.getElementById("settingsClose").addEventListener("click", () => settingsModal.classList.add("hidden"));
   settingsModal.addEventListener("click", e => { if (e.target === settingsModal) settingsModal.classList.add("hidden"); });
+
+  // ---------- admin: user management ----------
+  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  async function refreshAdmin() {
+    if (!isAdmin) return;
+    const list = document.getElementById("userList");
+    try {
+      const { users } = await api("/admin/users");
+      list.innerHTML = users.map(u => `
+        <div class="user-row">
+          <span class="email">${esc(u.email)}</span>
+          <span class="right">
+            <span class="role-tag ${u.role === "admin" ? "admin" : "user"}">${u.role}</span>
+            ${u.email === myEmail ? "" : `<button class="user-del" data-id="${u.id}" data-email="${esc(u.email)}" title="Delete user" type="button">&times;</button>`}
+          </span>
+        </div>`).join("");
+      list.querySelectorAll(".user-del").forEach(b => b.addEventListener("click", async () => {
+        if (!confirm(`Delete ${b.dataset.email}? This cannot be undone.`)) return;
+        try { await api("/admin/users/" + b.dataset.id, { method: "DELETE" }); refreshAdmin(); }
+        catch (e) { alert(e.message || "Delete failed."); }
+      }));
+    } catch (e) { list.innerHTML = ""; }
+  }
+  document.getElementById("addUserForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("addUserMsg");
+    const email = document.getElementById("newUserEmail").value.trim();
+    const password = document.getElementById("newUserPw").value;
+    const display_name = document.getElementById("newUserName").value.trim();
+    const role = document.getElementById("newUserRole").value;
+    msg.className = "auth-msg";
+    if (!email || !email.includes("@")) { msg.className = "auth-msg err"; msg.textContent = "Enter a valid email."; return; }
+    if (password.length < 8) { msg.className = "auth-msg err"; msg.textContent = "Password must be at least 8 characters."; return; }
+    try {
+      await api("/admin/users", { method: "POST", body: JSON.stringify({ email, password, display_name, role }) });
+      msg.className = "auth-msg ok"; msg.textContent = "Added " + email + ".";
+      ["newUserEmail", "newUserPw", "newUserName"].forEach(id => document.getElementById(id).value = "");
+      refreshAdmin();
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Could not add user."; }
+  });
 
   // ---------- accent themes ----------
   const ACCENTS = {
