@@ -1,0 +1,3 @@
+# Copy to `.dev.vars` for local `wrangler dev`. The real secret is set in
+# Cloudflare via `wrangler secret put SESSION_SECRET` (and `--env dev`).
+SESSION_SECRET=local-dev-secret-change-me

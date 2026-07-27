@@ -93,12 +93,14 @@
   label.field span.lbl { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
   .money-input { position: relative; }
   .money-input::before { content: "$"; position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); font-family: var(--mono); font-size: 14px; pointer-events: none; }
-  .money-input input { padding-left: 24px; }
-  input[type="number"], input[type="text"], select, textarea {
+  input[type="number"], input[type="text"], input[type="email"], input[type="password"], input[type="date"], select, textarea {
     width: 100%; padding: 9px 11px; font-size: 14px; font-family: var(--mono); color: var(--ink);
     background: var(--paper); border: 1px solid var(--line-strong); border-radius: 8px; font-variant-numeric: tabular-nums;
   }
-  input[type="text"] { font-family: var(--sans); }
+  input[type="text"], input[type="email"], input[type="password"] { font-family: var(--sans); }
+  /* These two come AFTER the base rule so their padding wins (equal specificity). */
+  .money-input input { padding-left: 24px; }
+  .suffix-input input { padding-right: 30px; }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
   select { font-family: var(--sans); }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -254,20 +256,115 @@
   .stmt-fields input[type="date"] { font-family: var(--sans); }
   .stmt-preview-wrap { border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; height: 48vh; background: #fff; }
   #stmtPreview { width: 100%; height: 100%; border: none; display: block; background: #fff; }
+
+  /* Settings gear + DEV badge */
+  .icon-btn { background: none; border: 1px solid var(--line-strong); color: var(--muted); border-radius: 999px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; padding: 0; }
+  .icon-btn:hover { color: var(--ink); border-color: var(--ink); }
+  .dev-badge { font-size: 10px; font-weight: 800; letter-spacing: .12em; background: var(--shortage); color: #fff; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; align-self: center; }
+  @media (prefers-color-scheme: dark) { .dev-badge { color: #1a1206; } }
+  :root[data-theme="dark"] .dev-badge { color: #1a1206; }
+  :root[data-theme="light"] .dev-badge { color: #fff; }
+
+  /* Auth gate */
+  .auth-gate { position: fixed; inset: 0; z-index: 100; background: var(--paper); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .auth-card { width: min(380px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 30px 28px; }
+  .auth-card .brand-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 2px; }
+  .auth-card h2 { font-family: var(--serif); font-size: 22px; margin: 0; font-weight: 600; }
+  .auth-card .muted { color: var(--muted); font-size: 13px; margin: 4px 0 18px; }
+  .auth-card label { display: block; font-size: 12.5px; color: var(--muted); margin: 14px 0 5px; }
+  .auth-msg { font-size: 12.5px; margin-top: 12px; min-height: 1.2em; line-height: 1.4; }
+  .auth-msg.err { color: var(--danger); }
+  .auth-msg.ok { color: var(--surplus); }
+  .btn-primary { width: 100%; margin-top: 18px; padding: 11px; border: none; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; font-family: var(--sans); }
+  @media (prefers-color-scheme: dark) { .btn-primary { color: #0e1512; } }
+  :root[data-theme="dark"] .btn-primary { color: #0e1512; }
+  :root[data-theme="light"] .btn-primary { color: #fff; }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Settings modal */
+  .settings-section + .settings-section { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .settings-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); font-weight: 700; margin: 0 0 14px; }
+  .set-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 4px 0; }
+  .set-label { font-size: 13.5px; }
+  .set-label small { display: block; color: var(--faint); font-size: 11.5px; margin-top: 1px; }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+  .swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid var(--line-strong); outline: 2px solid transparent; outline-offset: 2px; }
+  .swatch.active { outline-color: var(--ink); border-color: var(--card); }
+  .seg.small { padding: 2px; }
+  .seg.small .seg-btn { padding: 5px 11px; font-size: 12px; }
+  .link-btn { background: none; border: none; color: var(--accent); font-weight: 600; font-size: 13px; cursor: pointer; padding: 0; font-family: var(--sans); }
+  .link-btn:hover { text-decoration: underline; }
+  .danger-btn { background: none; border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line-strong)); color: var(--danger); border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); }
+  .danger-btn:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+  .pw-form { margin-top: 12px; display: none; }
+  .pw-form.open { display: block; }
+  .pw-form label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+
+  /* Admin: user management */
+  .user-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .user-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 11px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; font-size: 13px; }
+  .user-row .email { font-weight: 600; word-break: break-all; }
+  .user-row .right { display: flex; align-items: center; gap: 10px; flex: none; }
+  .role-tag { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .role-tag.user { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
+  .user-del { background: none; border: none; color: var(--faint); cursor: pointer; font-size: 17px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+  .user-del:hover { color: var(--danger); background: var(--card); }
+  .add-user label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  .add-user .two { gap: 12px; }
+
+  /* Payment tab breakdown */
+  .pay-breakdown { display: flex; gap: 26px; align-items: center; flex-wrap: wrap; }
+  .pay-breakdown canvas { flex: 0 0 200px; width: 200px; height: 200px; }
+  .pay-legend { flex: 1; min-width: 220px; }
+  .pay-legend .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .pay-legend .row:last-child { border-bottom: none; }
+  .pay-legend .lbl { display: flex; align-items: center; gap: 9px; color: var(--muted); }
+  .pay-legend .dot2 { width: 11px; height: 11px; border-radius: 3px; display: inline-block; flex: none; }
+  .pay-legend .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+  .pay-legend .amt small { color: var(--faint); font-weight: 400; margin-left: 6px; }
+  .pay-legend .row.total { border-top: 2px solid var(--line-strong); border-bottom: none; margin-top: 4px; padding-top: 11px; font-size: 14px; }
+  .pay-legend .row.total .amt { font-size: 17px; color: var(--accent); }
+
+  /* Toggle switch */
+  .toggle-row { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: var(--muted); margin-top: 2px; user-select: none; }
+  .toggle-row input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .switch { width: 38px; height: 22px; border-radius: 999px; background: var(--line-strong); position: relative; transition: background .15s; flex: none; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--card); transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .toggle-row input:checked + .switch { background: var(--accent); }
+  .toggle-row input:checked + .switch::after { transform: translateX(16px); }
+  .toggle-row input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Cash to close */
+  .cash-card { margin-bottom: 24px; }
+  .cash-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .cash-row:first-of-type { padding-top: 0; }
+  .cash-row .lbl { color: var(--muted); }
+  .cash-row > span:last-child { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); }
+  .cash-row.financed .lbl, .cash-row.financed > span:last-child { color: var(--faint); font-weight: 400; }
+  .cash-row.total { border-bottom: none; border-top: 2px solid var(--line-strong); margin-top: 4px; padding-top: 12px; }
+  .cash-row.total .lbl { color: var(--ink); font-weight: 600; }
+  .cash-row.total > span:last-child { color: var(--accent); font-size: 20px; }
+
+  /* Inline label with a tiny toggle (property-tax $/%, HOA mo/yr) */
+  .lbl-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .seg.tiny { padding: 2px; }
+  .seg.tiny .seg-btn { padding: 2px 8px; font-size: 11px; min-width: 26px; }
+  .field-note { font-size: 11.5px; color: var(--faint); font-family: var(--mono); margin-top: 5px; }
 </style>
 
 <div class="wrap">
   <header class="masthead">
-    <div class="brand"><h1>Mortgage Tool Kit</h1><span class="tag">Ledger</span></div>
-    <div style="display:flex; align-items:center; gap:14px;">
-      <p class="sub">Project escrow, size the RESPA cushion, compare payments, and amortize the loan.</p>
+    <div class="brand"><h1>Mortgage Tool Kit</h1><span class="dev-badge hidden" id="devBadge">Dev</span></div>
+    <div style="display:flex; align-items:center; gap:10px;">
       <button class="theme-btn" id="themeBtn" type="button">Dark</button>
+      <button class="icon-btn" id="settingsBtn" type="button" title="Settings" aria-label="Settings">&#9881;</button>
     </div>
   </header>
 
   <nav class="tabs">
     <button class="tab active" data-tab="escrow" type="button">Escrow Analysis</button>
     <button class="tab" data-tab="amort" type="button">Amortization Schedule</button>
+    <button class="tab" data-tab="payment" type="button">Payment</button>
     <button class="tab" data-tab="tnote" type="button">T-Note Lookup</button>
     <div class="tab-actions">
       <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
@@ -453,6 +550,99 @@
     </div>
   </div>
 
+  <!-- ================= PAYMENT VIEW ================= -->
+  <div id="view-payment" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Home &amp; loan</p>
+            <label class="field"><span class="lbl">Home price</span>
+              <div class="money-input"><input type="number" id="payPrice" value="400000" step="5000"></div></label>
+            <div class="two">
+              <label class="field"><span class="lbl">Down payment</span>
+                <div class="money-input"><input type="number" id="payDownAmt" value="80000" step="1000"></div></label>
+              <label class="field"><span class="lbl">Down %</span>
+                <div class="suffix-input"><input type="number" id="payDownPct" value="20" step="1"><span class="sfx">%</span></div></label>
+            </div>
+            <label class="field"><span class="lbl">Interest rate (APR)</span>
+              <div class="suffix-input"><input type="number" id="payRate" value="6.5" step="0.125"><span class="sfx">%</span></div></label>
+            <label class="field"><span class="lbl">Loan term</span>
+              <div class="suffix-input"><input type="number" id="payTerm" value="30" step="1"><span class="sfx">yrs</span></div></label>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Taxes, insurance &amp; fees</p>
+            <div class="field">
+              <div class="lbl lbl-row"><span>Property tax / yr</span>
+                <span class="seg tiny" id="taxModeSeg"><button type="button" class="seg-btn active" data-m="amt">$</button><button type="button" class="seg-btn" data-m="pct">%</button></span></div>
+              <div class="money-input" id="taxAmtWrap"><input type="number" id="payTax" value="5000" step="100"></div>
+              <div class="suffix-input hidden" id="taxPctWrap"><input type="number" id="payTaxPct" value="1.1" step="0.05"><span class="sfx">%</span></div>
+              <div class="field-note hidden" id="payTaxNote"></div>
+            </div>
+            <label class="field hidden" id="homesteadField"><span class="lbl">Homestead exemption (optional)</span>
+              <div class="money-input"><input type="number" id="payHomestead" value="0" step="1000"></div></label>
+            <label class="field"><span class="lbl">Home insurance / yr</span>
+              <div class="money-input"><input type="number" id="payIns" value="1800" step="100"></div></label>
+            <div class="two">
+              <div class="field">
+                <div class="lbl lbl-row"><span>HOA</span>
+                  <span class="seg tiny" id="hoaFreqSeg"><button type="button" class="seg-btn active" data-f="mo">/mo</button><button type="button" class="seg-btn" data-f="yr">/yr</button></span></div>
+                <div class="money-input"><input type="number" id="payHoa" value="0" step="10"></div>
+              </div>
+              <label class="field"><span class="lbl">PMI / mo</span>
+                <div class="money-input"><input type="number" id="payPmi" value="0" step="5"></div></label>
+            </div>
+            <p class="foot-note" style="margin-top:6px;" id="payPmiNote"></p>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Closing costs</p>
+            <label class="field"><span class="lbl">Estimated closing costs (optional)</span>
+              <div class="money-input"><input type="number" id="payClosing" value="0" step="500"></div></label>
+            <label class="toggle-row"><input type="checkbox" id="payRoll"><span class="switch"></span><span>Roll closing costs into the loan</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles">
+          <div class="tile"><div class="k">Total monthly payment</div><div class="v" id="payTotal">$0</div><div class="n">PITI + HOA + PMI</div></div>
+          <div class="tile"><div class="k">Principal &amp; interest</div><div class="v" id="payPI">$0</div><div class="n" id="payPINote">per month</div></div>
+          <div class="tile"><div class="k">Loan amount</div><div class="v" id="payLoan">$0</div><div class="n" id="payLtvNote">&mdash; LTV</div></div>
+          <div class="tile"><div class="k">Down payment</div><div class="v" id="payDownTile">$0</div><div class="n" id="payDownPctNote">&mdash;</div></div>
+        </div>
+
+        <div class="card cash-card">
+          <div class="panel">
+            <p class="eyebrow" style="margin-bottom:12px;">Cash to close</p>
+            <div class="cash-row"><span class="lbl">Down payment</span><span id="cashDown">$0</span></div>
+            <div class="cash-row" id="cashClosingRow"><span class="lbl" id="cashClosingLabel">Closing costs</span><span id="cashClosing">$0</span></div>
+            <div class="cash-row total"><span class="lbl">Cash needed at closing</span><span id="cashTotal">$0</span></div>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="panel">
+            <div class="chart-head" style="margin-bottom:16px;">
+              <p class="eyebrow" style="margin:0;">Monthly payment breakdown</p>
+              <button class="ghost-btn sm" id="payPrintBtn" type="button">&#128424; Print</button>
+            </div>
+            <div class="pay-breakdown">
+              <canvas id="payDonut" width="200" height="200"></canvas>
+              <div class="pay-legend" id="payLegend"></div>
+            </div>
+          </div>
+        </div>
+
+        <p class="foot-note">
+          <b>Full monthly payment.</b> Principal &amp; interest come from the loan amount, rate, and term; taxes and insurance
+          are the monthly share of their annual costs; HOA and PMI are added as entered. PMI is auto-estimated at ~0.6%/yr of the
+          loan when your down payment is under 20% &mdash; edit it to match your quote, and it typically drops off once you reach
+          ~20% equity. Estimate only &mdash; not financial advice.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= T-NOTE LOOKUP VIEW ================= -->
   <div id="view-tnote" class="view hidden">
     <div class="grid">
@@ -549,6 +739,84 @@
     <div class="modal-foot">
       <button class="primary-btn" id="stmtDownload" type="button">&#8681; Download .html</button>
       <button class="primary-btn accent" id="stmtPrint" type="button">&#128424; Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Auth gate (login) -->
+<div class="auth-gate hidden" id="authGate">
+  <div class="auth-card">
+    <div class="brand-row"><h2>Mortgage Tool Kit</h2><span class="dev-badge hidden" id="devBadge2">Dev</span></div>
+    <p class="muted">Sign in to continue.</p>
+    <form id="loginForm" autocomplete="on">
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" autocomplete="username" required>
+      <label for="loginPassword">Password</label>
+      <input type="password" id="loginPassword" autocomplete="current-password" required>
+      <button class="btn-primary" id="loginBtn" type="submit">Sign in</button>
+      <div class="auth-msg" id="loginMsg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Settings</h3><button class="modal-x" id="settingsClose" type="button">&times;</button></div>
+
+    <div class="settings-section">
+      <h4>Appearance</h4>
+      <div class="set-row">
+        <div class="set-label">Theme</div>
+        <div class="seg small" id="themeSeg" role="tablist">
+          <button class="seg-btn" data-mode="auto" type="button">Auto</button>
+          <button class="seg-btn" data-mode="light" type="button">Light</button>
+          <button class="seg-btn" data-mode="dark" type="button">Dark</button>
+        </div>
+      </div>
+      <div class="set-row" style="align-items:flex-start;">
+        <div class="set-label">Accent color<small>Applies in light &amp; dark</small></div>
+        <div class="swatches" id="accentSwatches"></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h4>Account</h4>
+      <div class="set-row">
+        <div class="set-label">Signed in as<small id="setEmail">&mdash;</small></div>
+        <button class="danger-btn" id="logoutBtn" type="button">Log out</button>
+      </div>
+      <div class="set-row">
+        <div class="set-label">Password</div>
+        <button class="link-btn" id="changePwToggle" type="button">Change password</button>
+      </div>
+      <form class="pw-form" id="pwForm" autocomplete="off">
+        <label>Current password</label>
+        <input type="password" id="pwCurrent" autocomplete="current-password">
+        <label>New password</label>
+        <input type="password" id="pwNew" autocomplete="new-password">
+        <label>Confirm new password</label>
+        <input type="password" id="pwConfirm" autocomplete="new-password">
+        <button class="btn-primary" id="pwSubmit" type="submit" style="margin-top:14px;">Update password</button>
+        <div class="auth-msg" id="pwMsg"></div>
+      </form>
+    </div>
+
+    <div class="settings-section hidden" id="adminSection">
+      <h4>Users &middot; admin</h4>
+      <div class="user-list" id="userList"></div>
+      <form class="add-user" id="addUserForm" autocomplete="off">
+        <div class="two">
+          <div><label>Email</label><input type="email" id="newUserEmail" placeholder="person@example.com"></div>
+          <div><label>Temporary password</label><input type="password" id="newUserPw" placeholder="min 8 characters"></div>
+        </div>
+        <div class="two">
+          <div><label>Display name (optional)</label><input type="text" id="newUserName"></div>
+          <div><label>Role</label><select id="newUserRole"><option value="user">User</option><option value="admin">Admin</option></select></div>
+        </div>
+        <button class="btn-primary" type="submit" style="margin-top:14px;">Add user</button>
+        <div class="auth-msg" id="addUserMsg"></div>
+      </form>
     </div>
   </div>
 </div>
@@ -1036,8 +1304,32 @@
     t.hist.slice().reverse().forEach(h => rows.push([h.date, h.val]));
     return toCSV(rows);
   }
+  function paymentCSV() {
+    const p = payResult, rows = [];
+    rows.push(["Mortgage Payment"]);
+    if (!p) return toCSV(rows);
+    rows.push(["Home price", Math.round(p.price)]);
+    rows.push(["Down payment", Math.round(p.downAmt)]);
+    rows.push(["Down %", p.downPct.toFixed(1)]);
+    rows.push(["Loan amount", Math.round(p.loan)]);
+    rows.push(["LTV %", p.ltv.toFixed(1)]);
+    rows.push(["Interest rate (APR %)", p.rate]);
+    rows.push(["Term (years)", p.term]);
+    rows.push(["Property tax basis", p.taxMode === "pct" ? "percent" : "fixed"]);
+    rows.push(["Property tax / yr", Math.round(p.annualTax)]);
+    rows.push([]);
+    rows.push(["Component", "Monthly", "% of payment"]);
+    p.segs.forEach(s => rows.push([s.label, Math.round(s.value), p.total > 0 ? Math.round(s.value / p.total * 100) : 0]));
+    rows.push(["Total monthly payment", Math.round(p.total), 100]);
+    rows.push([]);
+    rows.push(["Closing costs", Math.round(p.closing)]);
+    rows.push(["Closing costs rolled into loan", p.roll ? "yes" : "no"]);
+    rows.push(["Cash to close", Math.round(p.cashToClose)]);
+    return toCSV(rows);
+  }
   document.getElementById("exportCsv").addEventListener("click", () => {
-    if (!document.getElementById("view-tnote").classList.contains("hidden")) { computeTnote(); downloadBlob("tnote-lookup.csv", tnoteCSV(), "text/csv;charset=utf-8"); }
+    if (!document.getElementById("view-payment").classList.contains("hidden")) { computePayment(); downloadBlob("mortgage-payment.csv", paymentCSV(), "text/csv;charset=utf-8"); }
+    else if (!document.getElementById("view-tnote").classList.contains("hidden")) { computeTnote(); downloadBlob("tnote-lookup.csv", tnoteCSV(), "text/csv;charset=utf-8"); }
     else if (!document.getElementById("view-amort").classList.contains("hidden")) { computeAmort(); downloadBlob("amortization-schedule.csv", amortCSV(), "text/csv;charset=utf-8"); }
     else { compute(); downloadBlob("escrow-projection.csv", escrowCSV(), "text/csv;charset=utf-8"); }
   });
@@ -1218,7 +1510,7 @@
   })();
   const DAYNAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   function nonBusinessReason(dt) { const wd = dt.getDay(); if (wd === 0) return "a Sunday"; if (wd === 6) return "a Saturday"; const h = HOLIDAYS.get(isoOf(dt)); return h ? h : null; }
-  function prettyDate(iso) { if (!iso) return "—"; const p = iso.split("-").map(Number); return new Date(p[0], p[1]-1, p[2]).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" }); }
+  function prettyDate(iso) { if (!iso) return "\u2014"; const p = iso.split("-").map(Number); return new Date(p[0], p[1]-1, p[2]).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" }); }
   function tnSeries(ti) { return TN.rows.filter(r => r[1+ti] != null).map(r => ({ date: r[0], val: r[1+ti] })); }
 
   // populate tenor select
@@ -1242,7 +1534,7 @@
     document.getElementById("tnHistTenor").textContent = tenor;
 
     if (!dstr || isNaN(lookback)) {
-      document.getElementById("tnRate").textContent = "—";
+      document.getElementById("tnRate").textContent = "\u2014";
       V.className = "verdict good"; V.innerHTML = "<span class='dot'>&#9679;</span><div>Enter a reference date and lookback to resolve a rate.</div>";
       return;
     }
@@ -1269,9 +1561,9 @@
 
     if (val == null) {
       const before = rawIso < TN.start;
-      document.getElementById("tnRate").textContent = "—";
+      document.getElementById("tnRate").textContent = "\u2014";
       document.getElementById("tnRateNote").textContent = "no data";
-      document.getElementById("tnDateOut").textContent = "—";
+      document.getElementById("tnDateOut").textContent = "\u2014";
       V.className = "verdict warn";
       V.innerHTML = `<span class='dot'>&#9650;</span><div><b>No rate available.</b> ${before ? "The resolved date is before the bundled data begins (" + TN.start + ")." : "The resolved date is outside the bundled data range (ends " + TN.end + ")."} Pick a reference date whose lookback lands within ${TN.start} to ${TN.end}.</div>`;
       document.getElementById("tnCurve").innerHTML = ""; document.getElementById("tnHist").innerHTML = "";
@@ -1348,16 +1640,388 @@
   function syncTnPresets() { const lb = document.getElementById("tnLookback").value; document.querySelectorAll(".tn-presets button").forEach(b => b.classList.toggle("active", b.dataset.lb === String(lb))); }
   ["tnDate","tnLookback","tnTenor"].forEach(id => document.getElementById(id).addEventListener("input", () => { syncTnPresets(); computeTnote(); }));
 
+  // ---------- API base + auth ----------
+  const IS_DEV = !(location.hostname === "mtk.dabrewer.dev" && !location.pathname.startsWith("/dev/"));
+  const API_BASE = IS_DEV ? "https://mtk-api-dev.dabrewer.dev" : "https://mtk-api.dabrewer.dev";
+
+  async function api(path, opts = {}) {
+    const res = await fetch(API_BASE + path, {
+      credentials: "include",
+      headers: opts.body ? { "Content-Type": "application/json" } : {},
+      ...opts,
+    });
+    let data = null; try { data = await res.json(); } catch (e) {}
+    if (!res.ok) throw new Error((data && data.error) || ("HTTP " + res.status));
+    return data;
+  }
+
+  const authGate = document.getElementById("authGate");
+  function showGate(show) { authGate.classList.toggle("hidden", !show); }
+  let isAdmin = false;
+  let myEmail = null;
+  function setUser(u) { myEmail = u.email; isAdmin = u.role === "admin"; document.getElementById("setEmail").textContent = u.email; document.getElementById("adminSection").classList.toggle("hidden", !isAdmin); }
+
+  async function checkAuth() {
+    try {
+      const me = await api("/auth/me");
+      setUser(me.user);
+      showGate(false);
+    } catch (e) { showGate(true); }
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("loginBtn"), msg = document.getElementById("loginMsg");
+    btn.disabled = true; msg.className = "auth-msg"; msg.textContent = "Signing in...";
+    try {
+      const r = await api("/auth/login", { method: "POST", body: JSON.stringify({
+        email: document.getElementById("loginEmail").value.trim(),
+        password: document.getElementById("loginPassword").value,
+      }) });
+      setUser(r.user);
+      document.getElementById("loginPassword").value = "";
+      msg.className = "auth-msg"; msg.textContent = "";
+      showGate(false);
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Sign in failed."; }
+    finally { btn.disabled = false; }
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    try { await api("/auth/logout", { method: "POST" }); } catch (e) {}
+    document.getElementById("settingsModal").classList.add("hidden");
+    showGate(true);
+  });
+
+  document.getElementById("changePwToggle").addEventListener("click", () =>
+    document.getElementById("pwForm").classList.toggle("open"));
+
+  document.getElementById("pwForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("pwMsg");
+    const cur = document.getElementById("pwCurrent").value;
+    const nw = document.getElementById("pwNew").value;
+    const cf = document.getElementById("pwConfirm").value;
+    msg.className = "auth-msg";
+    if (nw.length < 8) { msg.className = "auth-msg err"; msg.textContent = "New password must be at least 8 characters."; return; }
+    if (nw !== cf) { msg.className = "auth-msg err"; msg.textContent = "New passwords don't match."; return; }
+    const btn = document.getElementById("pwSubmit"); btn.disabled = true; msg.textContent = "Updating...";
+    try {
+      await api("/auth/change-password", { method: "POST", body: JSON.stringify({ current_password: cur, new_password: nw }) });
+      msg.className = "auth-msg ok"; msg.textContent = "Password updated. Other devices were signed out.";
+      ["pwCurrent", "pwNew", "pwConfirm"].forEach(id => document.getElementById(id).value = "");
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Update failed."; }
+    finally { btn.disabled = false; }
+  });
+
+  // ---------- settings modal ----------
+  const settingsModal = document.getElementById("settingsModal");
+  document.getElementById("settingsBtn").addEventListener("click", () => { settingsModal.classList.remove("hidden"); if (isAdmin) refreshAdmin(); });
+  document.getElementById("settingsClose").addEventListener("click", () => settingsModal.classList.add("hidden"));
+  settingsModal.addEventListener("click", e => { if (e.target === settingsModal) settingsModal.classList.add("hidden"); });
+
+  // ---------- admin: user management ----------
+  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  async function refreshAdmin() {
+    if (!isAdmin) return;
+    const list = document.getElementById("userList");
+    try {
+      const { users } = await api("/admin/users");
+      list.innerHTML = users.map(u => `
+        <div class="user-row">
+          <span class="email">${esc(u.email)}</span>
+          <span class="right">
+            <span class="role-tag ${u.role === "admin" ? "admin" : "user"}">${u.role}</span>
+            ${u.email === myEmail ? "" : `<button class="user-del" data-id="${u.id}" data-email="${esc(u.email)}" title="Delete user" type="button">&times;</button>`}
+          </span>
+        </div>`).join("");
+      list.querySelectorAll(".user-del").forEach(b => b.addEventListener("click", async () => {
+        if (!confirm(`Delete ${b.dataset.email}? This cannot be undone.`)) return;
+        try { await api("/admin/users/" + b.dataset.id, { method: "DELETE" }); refreshAdmin(); }
+        catch (e) { alert(e.message || "Delete failed."); }
+      }));
+    } catch (e) { list.innerHTML = ""; }
+  }
+  document.getElementById("addUserForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("addUserMsg");
+    const email = document.getElementById("newUserEmail").value.trim();
+    const password = document.getElementById("newUserPw").value;
+    const display_name = document.getElementById("newUserName").value.trim();
+    const role = document.getElementById("newUserRole").value;
+    msg.className = "auth-msg";
+    if (!email || !email.includes("@")) { msg.className = "auth-msg err"; msg.textContent = "Enter a valid email."; return; }
+    if (password.length < 8) { msg.className = "auth-msg err"; msg.textContent = "Password must be at least 8 characters."; return; }
+    try {
+      await api("/admin/users", { method: "POST", body: JSON.stringify({ email, password, display_name, role }) });
+      msg.className = "auth-msg ok"; msg.textContent = "Added " + email + ".";
+      ["newUserEmail", "newUserPw", "newUserName"].forEach(id => document.getElementById(id).value = "");
+      refreshAdmin();
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Could not add user."; }
+  });
+
+  // ---------- accent themes ----------
+  const ACCENTS = {
+    green:  { name: "Ledger Green", light: { a: "#1f6e4f", s: "#e4efe9" }, dark: { a: "#4bbf8e", s: "#17281f" } },
+    blue:   { name: "Slate Blue",   light: { a: "#2f5fb0", s: "#e4ebf6" }, dark: { a: "#6fa6ff", s: "#16233c" } },
+    teal:   { name: "Teal",         light: { a: "#0e7c76", s: "#dcefed" }, dark: { a: "#45c7c0", s: "#10231f" } },
+    violet: { name: "Violet",       light: { a: "#6b40b3", s: "#ece4f7" }, dark: { a: "#b18cff", s: "#221a3a" } },
+    rose:   { name: "Rose",         light: { a: "#b03a5b", s: "#f6e2e9" }, dark: { a: "#f07aa0", s: "#2c1720" } },
+  };
+  let accentKey = localStorage.getItem("mtk-accent") || "green";
+  if (!ACCENTS[accentKey]) accentKey = "green";
+  function applyAccent() {
+    const pal = ACCENTS[accentKey][currentDark() ? "dark" : "light"];
+    document.documentElement.style.setProperty("--accent", pal.a);
+    document.documentElement.style.setProperty("--accent-soft", pal.s);
+  }
+  function buildSwatches() {
+    const wrap = document.getElementById("accentSwatches"); wrap.innerHTML = "";
+    Object.entries(ACCENTS).forEach(([key, def]) => {
+      const sw = document.createElement("button");
+      sw.type = "button"; sw.className = "swatch" + (key === accentKey ? " active" : "");
+      sw.title = def.name;
+      sw.style.background = def[currentDark() ? "dark" : "light"].a;
+      sw.addEventListener("click", () => {
+        accentKey = key; localStorage.setItem("mtk-accent", key);
+        applyAccent(); buildSwatches(); recomputeVisible();
+      });
+      wrap.appendChild(sw);
+    });
+  }
+
+  // ---------- theme mode (auto / light / dark) ----------
+  function themeMode() { return localStorage.getItem("mtk-theme") || "auto"; }
+  function applyThemeMode(mode) {
+    localStorage.setItem("mtk-theme", mode);
+    if (mode === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", mode);
+    syncThemeUI(); applyAccent(); buildSwatches(); recomputeVisible();
+  }
+  function syncThemeUI() {
+    const mode = themeMode();
+    document.querySelectorAll("#themeSeg .seg-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === mode));
+    syncBtn();
+  }
+  document.querySelectorAll("#themeSeg .seg-btn").forEach(b => b.addEventListener("click", () => applyThemeMode(b.dataset.mode)));
+
+  // ---------- Payment calculator ----------
+  const PAY_COLORS = { tax: "#c99a3b", ins: "#4a90c2", hoa: "#8a6fb0", pmi: "#c25b6e" };
+  let pmiUserSet = false;
+  let payResult = null;
+  const gv = (id) => parseFloat(document.getElementById(id).value) || 0;
+
+  function computePayment() {
+    const price = gv("payPrice"), rate = gv("payRate"), term = gv("payTerm");
+    let downAmt = gv("payDownAmt"); if (downAmt > price) downAmt = price;
+    const closing = gv("payClosing");
+    const roll = document.getElementById("payRoll").checked;
+    const baseLoan = Math.max(0, price - downAmt);
+    const loan = baseLoan + (roll ? closing : 0);
+    const downPct = price > 0 ? (downAmt / price) * 100 : 0;
+    const ltv = price > 0 ? (loan / price) * 100 : 0;
+    const r = rate / 1200, n = Math.max(1, Math.round(term * 12));
+    const pi = loan <= 0 ? 0 : (r === 0 ? loan / n : loan * r / (1 - Math.pow(1 + r, -n)));
+
+    // Property tax: fixed $/yr, or % of (home value - homestead exemption).
+    const taxMode = document.querySelector("#taxModeSeg .seg-btn.active").dataset.m;
+    let annualTax;
+    if (taxMode === "pct") {
+      const pct = gv("payTaxPct"), homestead = gv("payHomestead");
+      const taxable = Math.max(0, price - homestead);
+      annualTax = taxable * pct / 100;
+      document.getElementById("payTaxNote").textContent = "= " + fmt(annualTax) + "/yr on " + fmt(taxable) + " taxable value";
+    } else {
+      annualTax = gv("payTax");
+    }
+    const tax = annualTax / 12;
+    const ins = gv("payIns") / 12;
+
+    // HOA entered as monthly or yearly.
+    const hoaFreq = document.querySelector("#hoaFreqSeg .seg-btn.active").dataset.f;
+    const hoa = hoaFreq === "yr" ? gv("payHoa") / 12 : gv("payHoa");
+
+    // Auto-estimate PMI (~0.6%/yr of loan) when LTV > 80%, unless the user set it.
+    if (!pmiUserSet) {
+      const auto = ltv > 80 ? (loan * 0.006) / 12 : 0;
+      document.getElementById("payPmi").value = Math.round(auto);
+    }
+    const pmi = gv("payPmi");
+    const total = pi + tax + ins + hoa + pmi;
+    const cashToClose = downAmt + (roll ? 0 : closing);
+
+    document.getElementById("payTotal").textContent = fmt(total);
+    document.getElementById("payPI").textContent = fmt(pi);
+    document.getElementById("payPINote").textContent = fmt(loan) + " over " + (term || 0) + " yrs";
+    document.getElementById("payLoan").textContent = fmt(loan);
+    document.getElementById("payLtvNote").textContent = ltv.toFixed(0) + "% LTV" + (roll && closing > 0 ? " (incl. costs)" : "");
+    document.getElementById("payDownTile").textContent = fmt(downAmt);
+    document.getElementById("payDownPctNote").textContent = downPct.toFixed(1) + "% down";
+    document.getElementById("payPmiNote").textContent = ltv > 80
+      ? "PMI auto-estimated at ~0.6%/yr while under 20% down \u2014 edit to match your quote."
+      : "No PMI \u2014 20% or more equity.";
+
+    // Cash to close
+    document.getElementById("cashDown").textContent = fmt(downAmt);
+    const ccRow = document.getElementById("cashClosingRow");
+    document.getElementById("cashClosingLabel").textContent = (closing > 0 && roll) ? "Closing costs (financed)" : "Closing costs";
+    document.getElementById("cashClosing").textContent = (closing > 0 && roll) ? "in loan" : fmt(closing);
+    ccRow.classList.toggle("financed", closing > 0 && roll);
+    document.getElementById("cashTotal").textContent = fmt(cashToClose);
+
+    const segs = [
+      { key: "pi",  label: "Principal & interest", value: pi,  color: getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() },
+      { key: "tax", label: "Property tax",         value: tax, color: PAY_COLORS.tax },
+      { key: "ins", label: "Home insurance",       value: ins, color: PAY_COLORS.ins },
+      { key: "hoa", label: "HOA",                  value: hoa, color: PAY_COLORS.hoa },
+      { key: "pmi", label: "PMI",                  value: pmi, color: PAY_COLORS.pmi },
+    ].filter(s => s.value > 0.5);
+
+    const legend = document.getElementById("payLegend");
+    legend.innerHTML = segs.map(s =>
+      `<div class="row"><span class="lbl"><span class="dot2" style="background:${s.color}"></span>${s.label}</span>
+       <span class="amt">${fmt(s.value)}<small>${total > 0 ? Math.round(s.value / total * 100) : 0}%</small></span></div>`).join("")
+      + `<div class="row total"><span class="lbl" style="color:var(--ink);font-weight:600">Total / month</span><span class="amt">${fmt(total)}</span></div>`;
+
+    payResult = { price, downAmt, downPct, loan, baseLoan, ltv, rate, term, pi, tax, ins, hoa, pmi, total, segs, closing, roll, cashToClose, annualTax, taxMode };
+    drawDonut(segs, total);
+  }
+
+  function drawDonut(segs, total) {
+    const cv = document.getElementById("payDonut"), dpr = window.devicePixelRatio || 1;
+    const size = 200; cv.width = size * dpr; cv.height = size * dpr;
+    const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, size, size);
+    const cx = size / 2, cy = size / 2, rOut = 92, rIn = 58;
+    const cardBg = getComputedStyle(document.documentElement).getPropertyValue("--card").trim();
+    if (total <= 0) return;
+    let a0 = -Math.PI / 2;
+    segs.forEach(s => {
+      const a1 = a0 + (s.value / total) * Math.PI * 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, rOut, a0, a1); ctx.closePath();
+      ctx.fillStyle = s.color; ctx.fill();
+      a0 = a1;
+    });
+    // punch the hole
+    ctx.beginPath(); ctx.arc(cx, cy, rIn, 0, Math.PI * 2); ctx.fillStyle = cardBg; ctx.fill();
+    // center label
+    const ink = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+    const faint = getComputedStyle(document.documentElement).getPropertyValue("--faint").trim();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = faint; ctx.font = "10px system-ui, sans-serif"; ctx.fillText("PER MONTH", cx, cy - 12);
+    ctx.fillStyle = ink; ctx.font = "600 20px ui-monospace, monospace"; ctx.fillText(fmt(total), cx, cy + 6);
+  }
+
+  document.getElementById("payPmi").addEventListener("input", () => { pmiUserSet = true; computePayment(); });
+  document.getElementById("payPrice").addEventListener("input", () => {
+    const price = gv("payPrice"), pct = gv("payDownPct");
+    document.getElementById("payDownAmt").value = Math.round(price * pct / 100);
+    computePayment();
+  });
+  document.getElementById("payDownAmt").addEventListener("input", () => {
+    const price = gv("payPrice"), amt = gv("payDownAmt");
+    document.getElementById("payDownPct").value = price > 0 ? +(amt / price * 100).toFixed(1) : 0;
+    computePayment();
+  });
+  document.getElementById("payDownPct").addEventListener("input", () => {
+    const price = gv("payPrice"), pct = gv("payDownPct");
+    document.getElementById("payDownAmt").value = Math.round(price * pct / 100);
+    computePayment();
+  });
+  ["payRate", "payTerm", "payTax", "payTaxPct", "payHomestead", "payIns", "payHoa", "payClosing"].forEach(id =>
+    document.getElementById(id).addEventListener("input", computePayment));
+  document.getElementById("payRoll").addEventListener("change", computePayment);
+
+  // Property tax $/% toggle (shows the % input + homestead exemption in % mode)
+  document.querySelectorAll("#taxModeSeg .seg-btn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#taxModeSeg .seg-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    const pct = b.dataset.m === "pct";
+    document.getElementById("taxAmtWrap").classList.toggle("hidden", pct);
+    document.getElementById("taxPctWrap").classList.toggle("hidden", !pct);
+    document.getElementById("homesteadField").classList.toggle("hidden", !pct);
+    document.getElementById("payTaxNote").classList.toggle("hidden", !pct);
+    computePayment();
+  }));
+
+  // HOA monthly/yearly toggle
+  document.querySelectorAll("#hoaFreqSeg .seg-btn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#hoaFreqSeg .seg-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    computePayment();
+  }));
+
+  // Payment summary printout
+  function paymentStatementHTML() {
+    const p = payResult;
+    const d = (n) => { const v = Math.round(n); return (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US"); };
+    const rows = p.segs.map(s => `<tr><td class="l">${s.label}</td><td>${d(s.value)}</td><td>${p.total > 0 ? Math.round(s.value / p.total * 100) : 0}%</td></tr>`).join("");
+    const taxLine = p.taxMode === "pct" ? `${d(p.annualTax)}/yr (rate on taxable value)` : `${d(p.annualTax)}/yr`;
+    const css = `
+      *{box-sizing:border-box} body{font:14px/1.5 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;color:#1a2420;background:#fff;padding:40px 44px;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0}
+      .doc{max-width:640px;margin:0 auto}
+      .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1f6e4f;padding-bottom:14px}
+      .brand{font:700 11px/1 sans-serif;letter-spacing:.16em;color:#1f6e4f;text-transform:uppercase}
+      h1{font:600 22px/1.25 Georgia,serif;margin:16px 0 20px}
+      h2{font:600 13px/1.3 Georgia,serif;text-transform:uppercase;letter-spacing:.04em;color:#1f6e4f;margin:24px 0 10px;padding-bottom:5px;border-bottom:1px solid #dde3df}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      table.kv th,table.kv td{padding:6px 0;text-align:left;font-size:13px}
+      table.kv th{color:#5c6b63;font-weight:600;width:55%}
+      table.kv td{text-align:right;font-family:ui-monospace,Menlo,monospace}
+      .money th,.money td{padding:7px 10px;border-bottom:1px solid #e7ebe8;text-align:right;font-family:ui-monospace,Menlo,monospace}
+      .money th{background:#f3f5f3;color:#5c6b63;font:700 10.5px/1 sans-serif;letter-spacing:.05em;text-transform:uppercase;border-bottom:2px solid #c6cfc9}
+      .money th.l,.money td.l{text-align:left;font-family:sans-serif}
+      .money tr:last-child td{border-top:2px solid #c6cfc9;font-weight:700}
+      .big{display:flex;justify-content:space-between;align-items:baseline;background:#f6f8f6;border:1px solid #dde3df;border-radius:8px;padding:14px 16px;margin:10px 0}
+      .big .v{font:600 24px/1 ui-monospace,Menlo,monospace;color:#1f6e4f}
+      .disc{margin-top:26px;padding-top:12px;border-top:1px solid #dde3df;font-size:10.5px;color:#8a988f;line-height:1.5}
+      @media print{body{padding:0}}`;
+    const body = `<div class="doc">
+      <div class="head"><div class="brand">Mortgage Tool Kit</div></div>
+      <h1>Mortgage Payment Summary</h1>
+      <div class="big"><span>Total monthly payment</span><span class="v">${d(p.total)}</span></div>
+      <h2>Home &amp; loan</h2>
+      <table class="kv">
+        <tr><th>Home price</th><td>${d(p.price)}</td></tr>
+        <tr><th>Down payment</th><td>${d(p.downAmt)} (${p.downPct.toFixed(1)}%)</td></tr>
+        <tr><th>Loan amount${p.roll && p.closing > 0 ? " (incl. financed costs)" : ""}</th><td>${d(p.loan)}</td></tr>
+        <tr><th>Loan-to-value</th><td>${p.ltv.toFixed(0)}%</td></tr>
+        <tr><th>Rate / term</th><td>${p.rate}% / ${p.term} yrs</td></tr>
+        <tr><th>Property tax</th><td>${taxLine}</td></tr>
+      </table>
+      <h2>Monthly payment breakdown</h2>
+      <table class="money"><thead><tr><th class="l">Component</th><th>Monthly</th><th>Share</th></tr></thead>
+        <tbody>${rows}<tr><td class="l">Total</td><td>${d(p.total)}</td><td>100%</td></tr></tbody></table>
+      <h2>Cash to close</h2>
+      <table class="money"><tbody>
+        <tr><td class="l">Down payment</td><td>${d(p.downAmt)}</td></tr>
+        <tr><td class="l">Closing costs${p.roll && p.closing > 0 ? " (financed into loan)" : ""}</td><td>${p.roll && p.closing > 0 ? "in loan" : d(p.closing)}</td></tr>
+        <tr><td class="l">Cash needed at closing</td><td>${d(p.cashToClose)}</td></tr>
+      </tbody></table>
+      <p class="disc">Estimate for planning only; excludes lender-specific fees, prepaids, and any credits. Not tax, legal, or financial advice.</p>
+    </div>`;
+    return "<!doctype html><html><head><meta charset=\"utf-8\"><title>Mortgage Payment Summary</title><style>" + css + "</style></head><body>" + body + "</body></html>";
+  }
+  document.getElementById("payPrintBtn").addEventListener("click", () => {
+    computePayment();
+    const html = paymentStatementHTML();
+    const f = document.createElement("iframe");
+    f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(f);
+    f.srcdoc = html;
+    f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 2000); };
+  });
+
   // ---------- tabs ----------
   document.querySelectorAll(".tab").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       const tab = btn.dataset.tab;
-      document.getElementById("view-escrow").classList.toggle("hidden", tab !== "escrow");
-      document.getElementById("view-amort").classList.toggle("hidden", tab !== "amort");
-      document.getElementById("view-tnote").classList.toggle("hidden", tab !== "tnote");
-      if (tab === "amort") computeAmort(); else if (tab === "tnote") computeTnote(); else compute();
+      ["escrow", "amort", "payment", "tnote"].forEach(t =>
+        document.getElementById("view-" + t).classList.toggle("hidden", tab !== t));
+      if (tab === "amort") computeAmort();
+      else if (tab === "tnote") computeTnote();
+      else if (tab === "payment") computePayment();
+      else compute();
     });
   });
   function setAmortMode(m) {
@@ -1375,12 +2039,13 @@
   function currentDark() { const t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; }
   function syncBtn(){ themeBtn.textContent = currentDark() ? "Light" : "Dark"; }
   function recomputeVisible(){
-    if (!document.getElementById("view-tnote").classList.contains("hidden")) computeTnote();
+    if (!document.getElementById("view-payment").classList.contains("hidden")) computePayment();
+    else if (!document.getElementById("view-tnote").classList.contains("hidden")) computeTnote();
     else if (!document.getElementById("view-amort").classList.contains("hidden")) computeAmort();
     else compute();
   }
-  themeBtn.addEventListener("click", () => { document.documentElement.setAttribute("data-theme", currentDark() ? "light" : "dark"); syncBtn(); recomputeVisible(); });
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncBtn(); recomputeVisible(); });
+  themeBtn.addEventListener("click", () => applyThemeMode(currentDark() ? "light" : "dark"));
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncBtn(); applyAccent(); buildSwatches(); recomputeVisible(); });
 
   // ---------- wire inputs ----------
   ["startBal","curPay","startMonth"].forEach(id => document.getElementById(id).addEventListener("input", compute));
@@ -1402,7 +2067,24 @@
     computeTnote();
   })();
 
+  // ---------- init ----------
+  // Apply stored theme mode + accent before first paint of computed colors.
+  (function initAppearance() {
+    const mode = themeMode();
+    if (mode !== "auto") document.documentElement.setAttribute("data-theme", mode);
+    applyAccent(); buildSwatches(); syncThemeUI();
+  })();
+
+  // DEV badge on the dev site.
+  if (IS_DEV) {
+    document.getElementById("devBadge").classList.remove("hidden");
+    document.getElementById("devBadge2").classList.remove("hidden");
+  }
+
   renderDisb(); syncBtn();
   compute();
-  computeAmort(); // populate state.amort so the statement's PITI section is ready
+  computeAmort();   // populate state.amort so the statement's PITI section is ready
+  computePayment(); // ready the Payment tab
+
+  checkAuth();      // gate the app until signed in
 </script>
