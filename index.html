@@ -1762,6 +1762,10 @@
   // ---------- accent themes ----------
   const ACCENTS = {
     green:  { name: "Ledger Green", light: { a: "#1f6e4f", s: "#e4efe9" }, dark: { a: "#4bbf8e", s: "#17281f" } },
+    forest: { name: "Forest",       light: { a: "#2e6b3c", s: "#e3efe6" }, dark: { a: "#4fa268", s: "#15241a" },
+              neutral: {  // the original deep dark-forest-green ground (not tinted), + a soft sage light
+                light: { paper: "#eaf0ea", card: "#ffffff", line: "#d6e0d9", "line-strong": "#bfccc4" },
+                dark:  { paper: "#0e1512", card: "#16201b", line: "#253029", "line-strong": "#34423a" } } },
     blue:   { name: "Slate Blue",   light: { a: "#2f5fb0", s: "#e4ebf6" }, dark: { a: "#6fa6ff", s: "#16233c" } },
     teal:   { name: "Teal",         light: { a: "#0e7c76", s: "#dcefed" }, dark: { a: "#45c7c0", s: "#10231f" } },
     violet: { name: "Violet",       light: { a: "#6b40b3", s: "#ece4f7" }, dark: { a: "#b18cff", s: "#221a3a" } },
@@ -1791,10 +1795,13 @@
     const S = document.documentElement.style;
     S.setProperty("--accent", pal.a);
     S.setProperty("--accent-soft", pal.s);
-    // Tint the neutrals toward the accent (computed to concrete hex so canvas charts can read them).
+    // Either use an accent's explicit neutral palette (e.g. Forest's deep original
+    // ground), or tint the base neutrals toward the accent. Computed to concrete hex
+    // so the canvas charts can read them.
+    const override = ACCENTS[accentKey].neutral && ACCENTS[accentKey].neutral[key];
     const base = NEUTRAL_BASE[key], t = TINT[key];
     for (const tok of ["paper", "card", "line", "line-strong"]) {
-      S.setProperty("--" + tok, mixHex(pal.a, base[tok], t[tok]));
+      S.setProperty("--" + tok, override ? override[tok] : mixHex(pal.a, base[tok], t[tok]));
     }
   }
   function buildSwatches() {
