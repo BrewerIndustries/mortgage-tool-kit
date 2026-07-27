@@ -33,6 +33,8 @@ Worker for auth. Tabs:
   Disclosure Statement** (preview → Print / Save PDF or Download `.html`).
 - **Accounts** — real login/logout + self-service password change, backed by a
   Cloudflare Worker + D1 (see `api/`). The whole app is gated behind sign-in.
+  **Admins** get a Users section in Settings to add or remove accounts (with a
+  User/Admin role each); non-admins never see it and the endpoints are role-gated.
 - **Settings** (gear by the theme toggle) — Auto/Light/Dark theme, five accent
   colors (each with light + dark variants), and the account controls.
 - Full light/dark theming; all figures use tabular monospace. Estimates only —
@@ -44,7 +46,9 @@ A Cloudflare Worker (Hono) with a D1 database provides auth for the static
 frontend. PBKDF2-hashed passwords, HMAC-derived session ids, `SameSite=Lax`
 httpOnly session cookies. Prod = default env (`mtk-api.dabrewer.dev` + `mtk-prod`),
 dev = `[env.dev]` (`mtk-api-dev.dabrewer.dev` + `mtk-dev`). No open signup —
-users are seeded with `npm run create-user`.
+users are seeded with `npm run create-user` (pass `--role admin` for an admin),
+or added in-app by an admin. Endpoints: `/auth/{login,logout,me,change-password}`
+and admin-only `/admin/users` (GET/POST/DELETE).
 
 ```bash
 cd api && npm install
