@@ -93,12 +93,14 @@
   label.field span.lbl { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
   .money-input { position: relative; }
   .money-input::before { content: "$"; position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); font-family: var(--mono); font-size: 14px; pointer-events: none; }
-  .money-input input { padding-left: 24px; }
   input[type="number"], input[type="text"], input[type="email"], input[type="password"], input[type="date"], select, textarea {
     width: 100%; padding: 9px 11px; font-size: 14px; font-family: var(--mono); color: var(--ink);
     background: var(--paper); border: 1px solid var(--line-strong); border-radius: 8px; font-variant-numeric: tabular-nums;
   }
   input[type="text"], input[type="email"], input[type="password"] { font-family: var(--sans); }
+  /* These two come AFTER the base rule so their padding wins (equal specificity). */
+  .money-input input { padding-left: 24px; }
+  .suffix-input input { padding-right: 30px; }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
   select { font-family: var(--sans); }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -322,6 +324,32 @@
   .pay-legend .amt small { color: var(--faint); font-weight: 400; margin-left: 6px; }
   .pay-legend .row.total { border-top: 2px solid var(--line-strong); border-bottom: none; margin-top: 4px; padding-top: 11px; font-size: 14px; }
   .pay-legend .row.total .amt { font-size: 17px; color: var(--accent); }
+
+  /* Toggle switch */
+  .toggle-row { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: var(--muted); margin-top: 2px; user-select: none; }
+  .toggle-row input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .switch { width: 38px; height: 22px; border-radius: 999px; background: var(--line-strong); position: relative; transition: background .15s; flex: none; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--card); transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .toggle-row input:checked + .switch { background: var(--accent); }
+  .toggle-row input:checked + .switch::after { transform: translateX(16px); }
+  .toggle-row input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Cash to close */
+  .cash-card { margin-bottom: 24px; }
+  .cash-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .cash-row:first-of-type { padding-top: 0; }
+  .cash-row .lbl { color: var(--muted); }
+  .cash-row > span:last-child { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); }
+  .cash-row.financed .lbl, .cash-row.financed > span:last-child { color: var(--faint); font-weight: 400; }
+  .cash-row.total { border-bottom: none; border-top: 2px solid var(--line-strong); margin-top: 4px; padding-top: 12px; }
+  .cash-row.total .lbl { color: var(--ink); font-weight: 600; }
+  .cash-row.total > span:last-child { color: var(--accent); font-size: 20px; }
+
+  /* Inline label with a tiny toggle (property-tax $/%, HOA mo/yr) */
+  .lbl-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .seg.tiny { padding: 2px; }
+  .seg.tiny .seg-btn { padding: 2px 8px; font-size: 11px; min-width: 26px; }
+  .field-note { font-size: 11.5px; color: var(--faint); font-family: var(--mono); margin-top: 5px; }
 </style>
 
 <div class="wrap">
@@ -544,19 +572,33 @@
           </div>
           <div class="panel">
             <p class="eyebrow">Taxes, insurance &amp; fees</p>
-            <div class="two">
-              <label class="field"><span class="lbl">Property tax / yr</span>
-                <div class="money-input"><input type="number" id="payTax" value="5000" step="100"></div></label>
-              <label class="field"><span class="lbl">Home insurance / yr</span>
-                <div class="money-input"><input type="number" id="payIns" value="1800" step="100"></div></label>
+            <div class="field">
+              <div class="lbl lbl-row"><span>Property tax / yr</span>
+                <span class="seg tiny" id="taxModeSeg"><button type="button" class="seg-btn active" data-m="amt">$</button><button type="button" class="seg-btn" data-m="pct">%</button></span></div>
+              <div class="money-input" id="taxAmtWrap"><input type="number" id="payTax" value="5000" step="100"></div>
+              <div class="suffix-input hidden" id="taxPctWrap"><input type="number" id="payTaxPct" value="1.1" step="0.05"><span class="sfx">%</span></div>
+              <div class="field-note hidden" id="payTaxNote"></div>
             </div>
+            <label class="field hidden" id="homesteadField"><span class="lbl">Homestead exemption (optional)</span>
+              <div class="money-input"><input type="number" id="payHomestead" value="0" step="1000"></div></label>
+            <label class="field"><span class="lbl">Home insurance / yr</span>
+              <div class="money-input"><input type="number" id="payIns" value="1800" step="100"></div></label>
             <div class="two">
-              <label class="field"><span class="lbl">HOA / mo</span>
-                <div class="money-input"><input type="number" id="payHoa" value="0" step="10"></div></label>
+              <div class="field">
+                <div class="lbl lbl-row"><span>HOA</span>
+                  <span class="seg tiny" id="hoaFreqSeg"><button type="button" class="seg-btn active" data-f="mo">/mo</button><button type="button" class="seg-btn" data-f="yr">/yr</button></span></div>
+                <div class="money-input"><input type="number" id="payHoa" value="0" step="10"></div>
+              </div>
               <label class="field"><span class="lbl">PMI / mo</span>
                 <div class="money-input"><input type="number" id="payPmi" value="0" step="5"></div></label>
             </div>
             <p class="foot-note" style="margin-top:6px;" id="payPmiNote"></p>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Closing costs</p>
+            <label class="field"><span class="lbl">Estimated closing costs (optional)</span>
+              <div class="money-input"><input type="number" id="payClosing" value="0" step="500"></div></label>
+            <label class="toggle-row"><input type="checkbox" id="payRoll"><span class="switch"></span><span>Roll closing costs into the loan</span></label>
           </div>
         </div>
       </div>
@@ -569,9 +611,21 @@
           <div class="tile"><div class="k">Down payment</div><div class="v" id="payDownTile">$0</div><div class="n" id="payDownPctNote">&mdash;</div></div>
         </div>
 
+        <div class="card cash-card">
+          <div class="panel">
+            <p class="eyebrow" style="margin-bottom:12px;">Cash to close</p>
+            <div class="cash-row"><span class="lbl">Down payment</span><span id="cashDown">$0</span></div>
+            <div class="cash-row" id="cashClosingRow"><span class="lbl" id="cashClosingLabel">Closing costs</span><span id="cashClosing">$0</span></div>
+            <div class="cash-row total"><span class="lbl">Cash needed at closing</span><span id="cashTotal">$0</span></div>
+          </div>
+        </div>
+
         <div class="card chart-card">
           <div class="panel">
-            <p class="eyebrow" style="margin-bottom:16px;">Monthly payment breakdown</p>
+            <div class="chart-head" style="margin-bottom:16px;">
+              <p class="eyebrow" style="margin:0;">Monthly payment breakdown</p>
+              <button class="ghost-btn sm" id="payPrintBtn" type="button">&#128424; Print</button>
+            </div>
             <div class="pay-breakdown">
               <canvas id="payDonut" width="200" height="200"></canvas>
               <div class="pay-legend" id="payLegend"></div>
@@ -1261,10 +1315,16 @@
     rows.push(["LTV %", p.ltv.toFixed(1)]);
     rows.push(["Interest rate (APR %)", p.rate]);
     rows.push(["Term (years)", p.term]);
+    rows.push(["Property tax basis", p.taxMode === "pct" ? "percent" : "fixed"]);
+    rows.push(["Property tax / yr", Math.round(p.annualTax)]);
     rows.push([]);
     rows.push(["Component", "Monthly", "% of payment"]);
     p.segs.forEach(s => rows.push([s.label, Math.round(s.value), p.total > 0 ? Math.round(s.value / p.total * 100) : 0]));
     rows.push(["Total monthly payment", Math.round(p.total), 100]);
+    rows.push([]);
+    rows.push(["Closing costs", Math.round(p.closing)]);
+    rows.push(["Closing costs rolled into loan", p.roll ? "yes" : "no"]);
+    rows.push(["Cash to close", Math.round(p.cashToClose)]);
     return toCSV(rows);
   }
   document.getElementById("exportCsv").addEventListener("click", () => {
@@ -1753,30 +1813,60 @@
   function computePayment() {
     const price = gv("payPrice"), rate = gv("payRate"), term = gv("payTerm");
     let downAmt = gv("payDownAmt"); if (downAmt > price) downAmt = price;
-    const loan = Math.max(0, price - downAmt);
+    const closing = gv("payClosing");
+    const roll = document.getElementById("payRoll").checked;
+    const baseLoan = Math.max(0, price - downAmt);
+    const loan = baseLoan + (roll ? closing : 0);
     const downPct = price > 0 ? (downAmt / price) * 100 : 0;
     const ltv = price > 0 ? (loan / price) * 100 : 0;
     const r = rate / 1200, n = Math.max(1, Math.round(term * 12));
     const pi = loan <= 0 ? 0 : (r === 0 ? loan / n : loan * r / (1 - Math.pow(1 + r, -n)));
+
+    // Property tax: fixed $/yr, or % of (home value - homestead exemption).
+    const taxMode = document.querySelector("#taxModeSeg .seg-btn.active").dataset.m;
+    let annualTax;
+    if (taxMode === "pct") {
+      const pct = gv("payTaxPct"), homestead = gv("payHomestead");
+      const taxable = Math.max(0, price - homestead);
+      annualTax = taxable * pct / 100;
+      document.getElementById("payTaxNote").textContent = "= " + fmt(annualTax) + "/yr on " + fmt(taxable) + " taxable value";
+    } else {
+      annualTax = gv("payTax");
+    }
+    const tax = annualTax / 12;
+    const ins = gv("payIns") / 12;
+
+    // HOA entered as monthly or yearly.
+    const hoaFreq = document.querySelector("#hoaFreqSeg .seg-btn.active").dataset.f;
+    const hoa = hoaFreq === "yr" ? gv("payHoa") / 12 : gv("payHoa");
 
     // Auto-estimate PMI (~0.6%/yr of loan) when LTV > 80%, unless the user set it.
     if (!pmiUserSet) {
       const auto = ltv > 80 ? (loan * 0.006) / 12 : 0;
       document.getElementById("payPmi").value = Math.round(auto);
     }
-    const tax = gv("payTax") / 12, ins = gv("payIns") / 12, hoa = gv("payHoa"), pmi = gv("payPmi");
+    const pmi = gv("payPmi");
     const total = pi + tax + ins + hoa + pmi;
+    const cashToClose = downAmt + (roll ? 0 : closing);
 
     document.getElementById("payTotal").textContent = fmt(total);
     document.getElementById("payPI").textContent = fmt(pi);
     document.getElementById("payPINote").textContent = fmt(loan) + " over " + (term || 0) + " yrs";
     document.getElementById("payLoan").textContent = fmt(loan);
-    document.getElementById("payLtvNote").textContent = ltv.toFixed(0) + "% LTV";
+    document.getElementById("payLtvNote").textContent = ltv.toFixed(0) + "% LTV" + (roll && closing > 0 ? " (incl. costs)" : "");
     document.getElementById("payDownTile").textContent = fmt(downAmt);
     document.getElementById("payDownPctNote").textContent = downPct.toFixed(1) + "% down";
     document.getElementById("payPmiNote").textContent = ltv > 80
       ? "PMI auto-estimated at ~0.6%/yr while under 20% down \u2014 edit to match your quote."
-      : "No PMI \u2014 down payment is 20% or more.";
+      : "No PMI \u2014 20% or more equity.";
+
+    // Cash to close
+    document.getElementById("cashDown").textContent = fmt(downAmt);
+    const ccRow = document.getElementById("cashClosingRow");
+    document.getElementById("cashClosingLabel").textContent = (closing > 0 && roll) ? "Closing costs (financed)" : "Closing costs";
+    document.getElementById("cashClosing").textContent = (closing > 0 && roll) ? "in loan" : fmt(closing);
+    ccRow.classList.toggle("financed", closing > 0 && roll);
+    document.getElementById("cashTotal").textContent = fmt(cashToClose);
 
     const segs = [
       { key: "pi",  label: "Principal & interest", value: pi,  color: getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() },
@@ -1792,7 +1882,7 @@
        <span class="amt">${fmt(s.value)}<small>${total > 0 ? Math.round(s.value / total * 100) : 0}%</small></span></div>`).join("")
       + `<div class="row total"><span class="lbl" style="color:var(--ink);font-weight:600">Total / month</span><span class="amt">${fmt(total)}</span></div>`;
 
-    payResult = { price, downAmt, downPct, loan, ltv, rate, term, pi, tax, ins, hoa, pmi, total, segs };
+    payResult = { price, downAmt, downPct, loan, baseLoan, ltv, rate, term, pi, tax, ins, hoa, pmi, total, segs, closing, roll, cashToClose, annualTax, taxMode };
     drawDonut(segs, total);
   }
 
@@ -1836,8 +1926,89 @@
     document.getElementById("payDownAmt").value = Math.round(price * pct / 100);
     computePayment();
   });
-  ["payRate", "payTerm", "payTax", "payIns", "payHoa"].forEach(id =>
+  ["payRate", "payTerm", "payTax", "payTaxPct", "payHomestead", "payIns", "payHoa", "payClosing"].forEach(id =>
     document.getElementById(id).addEventListener("input", computePayment));
+  document.getElementById("payRoll").addEventListener("change", computePayment);
+
+  // Property tax $/% toggle (shows the % input + homestead exemption in % mode)
+  document.querySelectorAll("#taxModeSeg .seg-btn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#taxModeSeg .seg-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    const pct = b.dataset.m === "pct";
+    document.getElementById("taxAmtWrap").classList.toggle("hidden", pct);
+    document.getElementById("taxPctWrap").classList.toggle("hidden", !pct);
+    document.getElementById("homesteadField").classList.toggle("hidden", !pct);
+    document.getElementById("payTaxNote").classList.toggle("hidden", !pct);
+    computePayment();
+  }));
+
+  // HOA monthly/yearly toggle
+  document.querySelectorAll("#hoaFreqSeg .seg-btn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#hoaFreqSeg .seg-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    computePayment();
+  }));
+
+  // Payment summary printout
+  function paymentStatementHTML() {
+    const p = payResult;
+    const d = (n) => { const v = Math.round(n); return (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US"); };
+    const rows = p.segs.map(s => `<tr><td class="l">${s.label}</td><td>${d(s.value)}</td><td>${p.total > 0 ? Math.round(s.value / p.total * 100) : 0}%</td></tr>`).join("");
+    const taxLine = p.taxMode === "pct" ? `${d(p.annualTax)}/yr (rate on taxable value)` : `${d(p.annualTax)}/yr`;
+    const css = `
+      *{box-sizing:border-box} body{font:14px/1.5 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;color:#1a2420;background:#fff;padding:40px 44px;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0}
+      .doc{max-width:640px;margin:0 auto}
+      .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1f6e4f;padding-bottom:14px}
+      .brand{font:700 11px/1 sans-serif;letter-spacing:.16em;color:#1f6e4f;text-transform:uppercase}
+      h1{font:600 22px/1.25 Georgia,serif;margin:16px 0 20px}
+      h2{font:600 13px/1.3 Georgia,serif;text-transform:uppercase;letter-spacing:.04em;color:#1f6e4f;margin:24px 0 10px;padding-bottom:5px;border-bottom:1px solid #dde3df}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      table.kv th,table.kv td{padding:6px 0;text-align:left;font-size:13px}
+      table.kv th{color:#5c6b63;font-weight:600;width:55%}
+      table.kv td{text-align:right;font-family:ui-monospace,Menlo,monospace}
+      .money th,.money td{padding:7px 10px;border-bottom:1px solid #e7ebe8;text-align:right;font-family:ui-monospace,Menlo,monospace}
+      .money th{background:#f3f5f3;color:#5c6b63;font:700 10.5px/1 sans-serif;letter-spacing:.05em;text-transform:uppercase;border-bottom:2px solid #c6cfc9}
+      .money th.l,.money td.l{text-align:left;font-family:sans-serif}
+      .money tr:last-child td{border-top:2px solid #c6cfc9;font-weight:700}
+      .big{display:flex;justify-content:space-between;align-items:baseline;background:#f6f8f6;border:1px solid #dde3df;border-radius:8px;padding:14px 16px;margin:10px 0}
+      .big .v{font:600 24px/1 ui-monospace,Menlo,monospace;color:#1f6e4f}
+      .disc{margin-top:26px;padding-top:12px;border-top:1px solid #dde3df;font-size:10.5px;color:#8a988f;line-height:1.5}
+      @media print{body{padding:0}}`;
+    const body = `<div class="doc">
+      <div class="head"><div class="brand">Mortgage Tool Kit</div></div>
+      <h1>Mortgage Payment Summary</h1>
+      <div class="big"><span>Total monthly payment</span><span class="v">${d(p.total)}</span></div>
+      <h2>Home &amp; loan</h2>
+      <table class="kv">
+        <tr><th>Home price</th><td>${d(p.price)}</td></tr>
+        <tr><th>Down payment</th><td>${d(p.downAmt)} (${p.downPct.toFixed(1)}%)</td></tr>
+        <tr><th>Loan amount${p.roll && p.closing > 0 ? " (incl. financed costs)" : ""}</th><td>${d(p.loan)}</td></tr>
+        <tr><th>Loan-to-value</th><td>${p.ltv.toFixed(0)}%</td></tr>
+        <tr><th>Rate / term</th><td>${p.rate}% / ${p.term} yrs</td></tr>
+        <tr><th>Property tax</th><td>${taxLine}</td></tr>
+      </table>
+      <h2>Monthly payment breakdown</h2>
+      <table class="money"><thead><tr><th class="l">Component</th><th>Monthly</th><th>Share</th></tr></thead>
+        <tbody>${rows}<tr><td class="l">Total</td><td>${d(p.total)}</td><td>100%</td></tr></tbody></table>
+      <h2>Cash to close</h2>
+      <table class="money"><tbody>
+        <tr><td class="l">Down payment</td><td>${d(p.downAmt)}</td></tr>
+        <tr><td class="l">Closing costs${p.roll && p.closing > 0 ? " (financed into loan)" : ""}</td><td>${p.roll && p.closing > 0 ? "in loan" : d(p.closing)}</td></tr>
+        <tr><td class="l">Cash needed at closing</td><td>${d(p.cashToClose)}</td></tr>
+      </tbody></table>
+      <p class="disc">Estimate for planning only; excludes lender-specific fees, prepaids, and any credits. Not tax, legal, or financial advice.</p>
+    </div>`;
+    return "<!doctype html><html><head><meta charset=\"utf-8\"><title>Mortgage Payment Summary</title><style>" + css + "</style></head><body>" + body + "</body></html>";
+  }
+  document.getElementById("payPrintBtn").addEventListener("click", () => {
+    computePayment();
+    const html = paymentStatementHTML();
+    const f = document.createElement("iframe");
+    f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(f);
+    f.srcdoc = html;
+    f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 2000); };
+  });
 
   // ---------- tabs ----------
   document.querySelectorAll(".tab").forEach(btn => {
