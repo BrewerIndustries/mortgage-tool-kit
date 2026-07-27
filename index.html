@@ -1769,10 +1769,33 @@
   };
   let accentKey = localStorage.getItem("mtk-accent") || "green";
   if (!ACCENTS[accentKey]) accentKey = "green";
+
+  // Base neutral tokens per theme; the accent is mixed into these so the whole
+  // page (bg, cards, borders) carries the color scheme, not just the buttons.
+  const NEUTRAL_BASE = {
+    light: { paper: "#f3f5f3", card: "#ffffff", line: "#dde3df", "line-strong": "#c6cfc9" },
+    dark:  { paper: "#0e1512", card: "#16201b", line: "#253029", "line-strong": "#34423a" },
+  };
+  const TINT = {
+    light: { paper: 9, card: 5, line: 20, "line-strong": 24 },
+    dark:  { paper: 13, card: 13, line: 22, "line-strong": 28 },
+  };
+  const hx = (h) => { h = h.replace("#", ""); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
+  function mixHex(accent, base, pct) {
+    const a = hx(accent), b = hx(base), p = pct / 100;
+    return "#" + [0, 1, 2].map(i => Math.round(a[i] * p + b[i] * (1 - p)).toString(16).padStart(2, "0")).join("");
+  }
   function applyAccent() {
-    const pal = ACCENTS[accentKey][currentDark() ? "dark" : "light"];
-    document.documentElement.style.setProperty("--accent", pal.a);
-    document.documentElement.style.setProperty("--accent-soft", pal.s);
+    const key = currentDark() ? "dark" : "light";
+    const pal = ACCENTS[accentKey][key];
+    const S = document.documentElement.style;
+    S.setProperty("--accent", pal.a);
+    S.setProperty("--accent-soft", pal.s);
+    // Tint the neutrals toward the accent (computed to concrete hex so canvas charts can read them).
+    const base = NEUTRAL_BASE[key], t = TINT[key];
+    for (const tok of ["paper", "card", "line", "line-strong"]) {
+      S.setProperty("--" + tok, mixHex(pal.a, base[tok], t[tok]));
+    }
   }
   function buildSwatches() {
     const wrap = document.getElementById("accentSwatches"); wrap.innerHTML = "";
