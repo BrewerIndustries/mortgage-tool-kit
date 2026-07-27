@@ -9,6 +9,8 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [dev]
+  schedule:
+    - cron: "20 12 * * 1"   # weekly, Mondays 12:20 UTC — refresh bundled Treasury rates
   workflow_dispatch:
 
 permissions:
@@ -41,6 +43,15 @@ jobs:
         run: |
           rm -rf _site/.git _site/.github _site/dev/.git _site/dev/.github
           echo "mtk.dabrewer.dev" > _site/CNAME
+      # Fetch the latest Treasury rates and bake them into both the prod root and /dev/.
+      # Best-effort: if FRED is unreachable, the committed tnote-rates.js (checked out
+      # above) is served instead, so a bad fetch can never take the site down.
+      - name: Refresh Treasury rate data
+        continue-on-error: true
+        run: |
+          bash _site/dev/scripts/fetch-tnote-rates.sh
+          cp _site/dev/tnote-rates.js _site/tnote-rates.js
+          echo "prod root data head:"; head -c 140 _site/tnote-rates.js; echo
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
