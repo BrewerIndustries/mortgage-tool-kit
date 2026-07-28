@@ -70,6 +70,26 @@ const requireAdmin = async (c: any, next: any) => {
   await next();
 };
 
+// Generic keyed rate limiter (backed by the rate_limits table). Returns true when the
+// caller is already OVER the limit for this bucket; otherwise records the hit and
+// returns false. Buckets are namespaced like "purpose:identifier".
+async function rateLimited(db: D1Database, bucket: string, max: number, windowMs: number): Promise<boolean> {
+  const now = Date.now();
+  const row = await db.prepare('SELECT count, reset_at FROM rate_limits WHERE bucket = ?').bind(bucket).first();
+  let count = 0, resetAt = now + windowMs;
+  if (row && Number(row.reset_at) > now) { count = Number(row.count); resetAt = Number(row.reset_at); }
+  if (count >= max) return true;
+  await db.prepare('INSERT INTO rate_limits (bucket, count, reset_at) VALUES (?,?,?) ON CONFLICT(bucket) DO UPDATE SET count = ?, reset_at = ?')
+    .bind(bucket, count + 1, resetAt, count + 1, resetAt).run();
+  return false;
+}
+
+// Record a privileged admin action. Best-effort — never blocks the main operation.
+async function audit(db: D1Database, actor: SessionUser, action: string, target: string, detail?: string): Promise<void> {
+  await db.prepare('INSERT INTO audit_log (id, actor_id, actor_email, action, target, detail, created_at) VALUES (?,?,?,?,?,?,?)')
+    .bind(uuid(), actor.id, actor.email, action, target, detail ?? null, Date.now()).run().catch(() => {});
+}
+
 // Set the session cookie for a user; returns the raw token's session row insert.
 async function startSession(c: any, userId: string) {
   const token = newToken();
@@ -100,6 +120,8 @@ app.post('/auth/login', async (c) => {
   // IP-based throttling
   const ip = c.req.header('cf-connecting-ip') || 'unknown';
   const now = Date.now();
+  // Lazy-prune stale attempt rows so the table can't grow unbounded with distinct IPs.
+  await c.env.DB.prepare('DELETE FROM login_attempts WHERE reset_at < ?').bind(now).run().catch(() => {});
   const att = await c.env.DB.prepare('SELECT count, reset_at FROM login_attempts WHERE ip = ?').bind(ip).first();
   let count = 0, resetAt = now + ATTEMPT_WINDOW_MS;
   if (att && Number(att.reset_at) > now) { count = Number(att.count); resetAt = Number(att.reset_at); }
@@ -259,6 +281,7 @@ app.post('/admin/users', auth, requireAdmin, async (c) => {
   // Queue a verification email (Jarvis's relay actually sends it).
   const apiBase = new URL(c.req.url).origin;
   await issueVerification(c.env.DB, { id, email, display_name }, apiBase, c.env.ALLOWED_ORIGIN).catch(() => {});
+  await audit(c.env.DB, c.get('user'), 'user.create', email, JSON.stringify({ role }));
   return c.json({ user: { id, email, display_name, role, created_at: Date.now() } }, 201);
 });
 
@@ -268,25 +291,59 @@ app.post('/admin/users/:id/password', auth, requireAdmin, async (c) => {
   const b = await c.req.json().catch(() => ({} as any));
   const password = String(b.password ?? '');
   if (password.length < 8) return c.json({ error: 'password must be at least 8 characters' }, 400);
-  const target = await c.env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(id).first();
+  const target = await c.env.DB.prepare('SELECT id, email FROM users WHERE id = ?').bind(id).first();
   if (!target) return c.json({ error: 'not found' }, 404);
   await c.env.DB.prepare('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?')
     .bind(await hashPassword(password), id).run();
   await c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();  // sign them out everywhere
+  await audit(c.env.DB, c.get('user'), 'user.password_reset', String(target.email));
   return c.json({ ok: true });
 });
 
 app.delete('/admin/users/:id', auth, requireAdmin, async (c) => {
   const id = c.req.param('id');
   if (id === c.get('user').id) return c.json({ error: 'you cannot delete your own account' }, 400);
-  const target = await c.env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(id).first();
+  const target = await c.env.DB.prepare('SELECT id, email FROM users WHERE id = ?').bind(id).first();
   if (!target) return c.json({ error: 'not found' }, 404);
+  // SQLite FK cascade is off by default in D1, so purge every table keyed to this user
+  // (sessions, scenarios, verification + reset tokens, and any queued mail) explicitly.
   await c.env.DB.batch([
     c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id),
     c.env.DB.prepare('DELETE FROM scenarios WHERE user_id = ?').bind(id),
+    c.env.DB.prepare('DELETE FROM email_verifications WHERE user_id = ?').bind(id),
+    c.env.DB.prepare('DELETE FROM password_resets WHERE user_id = ?').bind(id),
+    c.env.DB.prepare('DELETE FROM email_outbox WHERE to_email = ?').bind(target.email),
     c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id),
   ]);
+  await audit(c.env.DB, c.get('user'), 'user.delete', String(target.email));
   return c.json({ ok: true });
+});
+
+// Recent admin actions (newest first).
+app.get('/admin/audit', auth, requireAdmin, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    'SELECT actor_email, action, target, detail, created_at FROM audit_log ORDER BY created_at DESC LIMIT 100',
+  ).all();
+  return c.json({ entries: results });
+});
+
+// Mail-queue health so a stalled relay (home box down / behind VPN) is visible in-app.
+app.get('/admin/health', auth, requireAdmin, async (c) => {
+  const now = Date.now();
+  const pending = await c.env.DB.prepare(
+    'SELECT COUNT(*) AS n, MIN(created_at) AS oldest FROM email_outbox WHERE sent_at IS NULL AND attempts < 5',
+  ).first();
+  const failed = await c.env.DB.prepare(
+    'SELECT COUNT(*) AS n FROM email_outbox WHERE sent_at IS NULL AND attempts >= 5',
+  ).first();
+  const oldest = (pending as any)?.oldest ? Number((pending as any).oldest) : null;
+  return c.json({
+    outbox: {
+      pending: Number((pending as any)?.n ?? 0),
+      failed: Number((failed as any)?.n ?? 0),
+      oldest_pending_age_ms: oldest != null ? now - oldest : null,
+    },
+  });
 });
 
 // ---------------- email verification ----------------
@@ -322,9 +379,19 @@ app.post('/auth/resend-verification', auth, async (c) => {
 app.post('/auth/forgot-password', async (c) => {
   const b = await c.req.json().catch(() => ({} as any));
   const email = String(b.email ?? '').trim().toLowerCase();
-  if (email && email.includes('@')) {
-    const user = await c.env.DB.prepare('SELECT id, email, display_name FROM users WHERE email = ?').bind(email).first();
-    if (user) await issuePasswordReset(c.env.DB, user as any, c.env.ALLOWED_ORIGIN).catch(() => {});
+  const ip = c.req.header('cf-connecting-ip') || 'unknown';
+  // Lazy-prune expired buckets so the limiter table stays small.
+  await c.env.DB.prepare('DELETE FROM rate_limits WHERE reset_at < ?').bind(Date.now()).run().catch(() => {});
+  // Throttle per IP (5 / 15 min) and per email (3 / hour) so this endpoint can't be used
+  // to flood a victim's inbox or the Jarvis mail relay. Always return ok regardless, so we
+  // never reveal whether an account exists (and the response shape is constant).
+  const ipBlocked = await rateLimited(c.env.DB, `forgot:ip:${ip}`, 5, 15 * 60 * 1000);
+  if (!ipBlocked && email && email.includes('@')) {
+    const emailBlocked = await rateLimited(c.env.DB, `forgot:email:${email}`, 3, 60 * 60 * 1000);
+    if (!emailBlocked) {
+      const user = await c.env.DB.prepare('SELECT id, email, display_name FROM users WHERE email = ?').bind(email).first();
+      if (user) await issuePasswordReset(c.env.DB, user as any, c.env.ALLOWED_ORIGIN).catch(() => {});
+    }
   }
   return c.json({ ok: true });
 });

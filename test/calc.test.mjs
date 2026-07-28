@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { monthlyPI, amortize, affordability, refinance, federalHolidays, previousBusinessDay } from '../calc.mjs';
+// calc.js is a CommonJS module (it doubles as the browser global window.MTK), so default-
+// import the exports object and destructure. This is the SAME module index.html ships.
+import MTK from '../calc.js';
+const { monthlyPI, amortize, payoffPayment, affordability, refinance, federalHolidays, previousBusinessDay } = MTK;
 
 const near = (a, b, tol = 1) => assert.ok(Math.abs(a - b) <= tol, `${a} not within ${tol} of ${b}`);
 
@@ -27,6 +30,22 @@ test('amortize: extra + lump + biweekly shortens the term and cuts interest', ()
 });
 test('amortize: recurring extra reduces months', () => {
   assert.ok(amortize(300000, 6, 30, { extra: 300 }).months < 360);
+});
+test('amortize: schedule rows foot exactly and clear the balance', () => {
+  const a = amortize(360000, 6.5, 30, { schedule: true });
+  assert.equal(a.schedule.length, a.months);
+  assert.equal(a.schedule[a.schedule.length - 1].bal, 0);          // loan is fully retired
+  const sumPrin = a.schedule.reduce((s, r) => s + r.principal, 0);
+  near(sumPrin, a.totalPrincipal, 0.01);                            // rows foot to the total
+  near(sumPrin, 360000, 0.5);                                       // principal repaid == borrowed
+});
+
+test('payoffPayment: paying the N-month level payment retires the loan in ~N months', () => {
+  const target = 180;                                              // pay a 30yr loan off in 15
+  const pmt = payoffPayment(360000, 6.5, target);
+  assert.ok(pmt > monthlyPI(360000, 6.5, 360), 'requires a higher payment than the 30yr schedule');
+  const extra = pmt - monthlyPI(360000, 6.5, 360);
+  near(amortize(360000, 6.5, 30, { extra }).months, target, 1);
 });
 
 test('affordability: front-end DTI binds for a high-debt-free earner', () => {

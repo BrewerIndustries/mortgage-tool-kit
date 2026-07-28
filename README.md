@@ -4,13 +4,15 @@ A ledger-styled mortgage toolkit — a static Pages frontend plus a small Cloudf
 Worker for auth. Tabs:
 
 - **Escrow Analysis** — projects an escrow account 12 months out, sizes the RESPA
-  cushion (0–2 months), and flags a **shortage** or **surplus** against the low
-  point. Editable disbursement list (taxes, insurance, HOA, PMI…) with per-item
-  frequency and due month. Live current → recommended payment comparison with
-  monthly/annual/% deltas.
+  cushion (0–2 months), and flags a **shortage**, **surplus**, or **deficiency**
+  (balance goes negative) against the low point. Shows the **initial escrow deposit**
+  a new loan would collect at closing and an optional **annual tax/insurance
+  escalation**. Editable disbursement list (taxes, insurance, HOA, PMI…) with per-item
+  frequency and due month. Live current → recommended payment comparison.
 - **Amortization Schedule** — P&I payment, extra-payment savings, payoff date,
-  and full **PITI** (P&I + the recommended escrow from the Analysis tab). Balance
-  vs. cumulative-interest chart and a **Yearly / Monthly** schedule toggle.
+  and full **PITI** (P&I + the recommended escrow from the Analysis tab). Recurring
+  extra, one-time **lump sum**, **bi-weekly**, and a **"pay off by date X → required
+  payment" solver**. Balance vs. cumulative-interest chart and a **Yearly / Monthly** toggle.
 - **Payment** — full monthly payment calculator: home price, down payment ($/%),
   rate, term, taxes ($ or %/homestead), insurance, HOA (mo/yr), closing costs
   (with roll-into-loan), and PMI → total **PITI + HOA + PMI** with a breakdown
@@ -19,6 +21,15 @@ Worker for auth. Tabs:
   price / loan / payment you qualify for (solved so full PITI stays within DTI).
 - **Refinance** — current vs. new loan → new payment, monthly savings, break-even
   months, and lifetime cost difference.
+- **Compare** — two loans side by side (rate, term, points, fees) → payments, total
+  cost, and the break-even on the upfront gap.
+- **ARM** — initial rate + fixed period, index + margin, and first/periodic/lifetime
+  caps → projected payment path under "index holds" and "worst case" scenarios, each
+  re-amortizing at every adjustment. A button fills the index from the latest bundled
+  1-year Treasury.
+- **Rent vs. Buy** — buying (appreciation, ownership costs, selling costs) vs.
+  renting-and-investing (rent growth, investment return) over a horizon → net-worth
+  comparison and the break-even year.
 - **T-Note Lookup** — historical Treasury Constant Maturity rates (1Y–10Y) for an
   ARM-style lookback: enter a reference date and a lookback (e.g. 45 days); the
   tool takes the rate that many days earlier, and if that lands on a weekend or
@@ -33,15 +44,22 @@ Worker for auth. Tabs:
   `Description`, and either `Amount` or `Deposit`/`Withdrawal`, optional
   `Balance`). Reconstructs the ledger, auto-derives the disbursement list and
   starting balance, and shows the history in its own card.
-- **Export** — context-aware **CSV** (escrow projection, amortization schedule,
-  payment breakdown, or T-Note lookup) and a printable **Annual Escrow Account
-  Disclosure Statement** (preview → Print / Save PDF or Download `.html`).
+- **Export** — context-aware **CSV** (every tab, incl. ARM & rent-vs-buy), a
+  printable **Annual Escrow Account Disclosure Statement**, and a **Full report**
+  that prints every calculator's headline figures in one document.
+- **Thousands separators** — currency inputs format as you type (`400,000`); all
+  reads strip the commas so the math is unaffected.
+- **Shared calc module** — the mortgage math lives in `calc.js`, loaded by the app
+  (`window.MTK`) *and* imported by the unit tests, so the tested code is the code
+  that ships (no inline copies to drift). Refresh formulas in one place.
 - **Accounts (optional sign-in)** — the calculators are usable without an account
   via **Continue without an account** (guest mode, autosaved to the browser only).
   Signing in adds **saved scenarios** (name + reload a full property snapshot),
   cross-device autosave, and server-stored theme/accent. Real login/logout +
   self-service password change, backed by a Cloudflare Worker + D1 (see `api/`).
-  **Admins** get a Users section in Settings to add/remove accounts (role-gated).
+  **Admins** get a Users section in Settings to add/remove accounts (role-gated),
+  plus an **audit log** of admin actions and a **mail-queue health** readout that
+  flags a stalled relay (so undelivered verification/reset email is visible).
   If the backend is unreachable the calculators still work (guest fallback).
 - **Settings** (gear by the theme toggle) — Auto/Light/Dark theme, five accent
   colors (each with light + dark variants), and the account controls.
@@ -55,8 +73,11 @@ frontend. PBKDF2-hashed passwords, HMAC-derived session ids, `SameSite=Lax`
 httpOnly session cookies. Prod = default env (`mtk-api.dabrewer.dev` + `mtk-prod`),
 dev = `[env.dev]` (`mtk-api-dev.dabrewer.dev` + `mtk-dev`). No open signup —
 users are seeded with `npm run create-user` (pass `--role admin` for an admin),
-or added in-app by an admin. Endpoints: `/auth/{login,logout,me,change-password}`
-and admin-only `/admin/users` (GET/POST/DELETE).
+or added in-app by an admin. `/auth/forgot-password` is rate-limited per-IP and
+per-email so it can't flood an inbox or the mail relay. Endpoints:
+`/auth/{login,logout,me,change-password,forgot-password,reset-password,verify,resend-verification}`,
+scenario + autosave routes, and admin-only `/admin/users` (GET/POST/DELETE),
+`/admin/users/:id/password`, `/admin/audit`, and `/admin/health`.
 
 ```bash
 cd api && npm install

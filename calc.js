@@ -1,22 +1,29 @@
-// Pure mortgage math — the reference implementation, unit-tested in test/calc.test.mjs.
-// The app (index.html) currently keeps an inline copy of these formulas; wiring it to
-// import this module is a follow-up (see BACKLOG). Keep the two in sync until then.
+// Pure mortgage math — the single source of truth, unit-tested in test/calc.test.mjs
+// AND loaded directly by the app (index.html via <script src="calc.js">, which exposes
+// window.MTK). This dual CJS/browser shape means the code the tests validate is the exact
+// code that ships — no more inline copies to drift out of sync.
+
+'use strict';
 
 // Monthly principal & interest for a fully-amortizing loan.
-export function monthlyPI(principal, annualRatePct, months) {
+function monthlyPI(principal, annualRatePct, months) {
   const r = annualRatePct / 1200, n = Math.max(1, Math.round(months));
   if (principal <= 0) return 0;
   return r === 0 ? principal / n : (principal * r) / (1 - Math.pow(1 + r, -n));
 }
 
 // Amortize a loan with optional recurring extra, a one-time lump sum, and bi-weekly
-// (modeled as one extra payment/yr). Returns { basePmt, months, totalInterest, totalPrincipal }.
-export function amortize(principal, annualRatePct, years, { extra = 0, lumpAmount = 0, lumpAtPayment = 1, biweekly = false } = {}) {
+// (modeled as one extra payment/yr). Returns { basePmt, months, totalInterest,
+// totalPrincipal } and, when opts.schedule is true, a per-payment `schedule` array of
+// { i, pay, principal, interest, bal } rows (rounded to cents so a displayed table foots).
+function amortize(principal, annualRatePct, years, opts = {}) {
+  const { extra = 0, lumpAmount = 0, lumpAtPayment = 1, biweekly = false, schedule = false } = opts;
   const r = annualRatePct / 1200, n = Math.max(1, Math.round(years * 12));
   const basePmt = r === 0 ? principal / n : (principal * r) / (1 - Math.pow(1 + r, -n));
   const biweeklyExtra = biweekly ? basePmt / 12 : 0;
   const lumpIdx = Math.max(1, Math.round(lumpAtPayment)) - 1;
   const round2 = (x) => Math.round(x * 100) / 100;
+  const rows = schedule ? [] : null;
   let bal = principal, totalInterest = 0, totalPrincipal = 0, months = 0;
   for (let i = 0; i < n * 2 && bal > 0.005; i++) {
     const interest = round2(bal * r);
@@ -27,15 +34,25 @@ export function amortize(principal, annualRatePct, years, { extra = 0, lumpAmoun
     // The final scheduled payment (or an early payoff) clears the balance, so the loan
     // retires in exactly the term - real lenders adjust the last payment for rounding.
     if (prin > bal || bal - prin < 0.01 || i === n - 1) prin = round2(bal);
+    const pay = round2(prin + interest);
     bal = round2(bal - prin);
     totalInterest += interest; totalPrincipal += prin; months++;
+    if (rows) rows.push({ i: i + 1, pay, principal: prin, interest, bal: Math.max(0, bal) });
     if (months > 1200) break;
   }
-  return { basePmt, months, totalInterest: round2(totalInterest), totalPrincipal: round2(totalPrincipal) };
+  const out = { basePmt, months, totalInterest: round2(totalInterest), totalPrincipal: round2(totalPrincipal) };
+  if (rows) out.schedule = rows;
+  return out;
+}
+
+// Level monthly payment that retires `principal` in exactly `targetMonths` (the reverse of
+// monthlyPI). Used by the "pay off by date X -> required payment" solver.
+function payoffPayment(principal, annualRatePct, targetMonths) {
+  return monthlyPI(principal, annualRatePct, targetMonths);
 }
 
 // Max affordable home price given DTI limits. Returns { maxHousing, price, loan, backBinds }.
-export function affordability({ annualIncome, monthlyDebts, frontDTI, backDTI, down, ratePct, termYears, taxRatePct, insAnnual, hoaMonthly, pmiRatePct = 0.6 }) {
+function affordability({ annualIncome, monthlyDebts, frontDTI, backDTI, down, ratePct, termYears, taxRatePct, insAnnual, hoaMonthly, pmiRatePct = 0.6 }) {
   const grossMo = annualIncome / 12;
   const maxHousing = Math.max(0, Math.min((frontDTI / 100) * grossMo, (backDTI / 100) * grossMo - monthlyDebts));
   const backBinds = ((backDTI / 100) * grossMo - monthlyDebts) < ((frontDTI / 100) * grossMo);
@@ -51,7 +68,7 @@ export function affordability({ annualIncome, monthlyDebts, frontDTI, backDTI, d
 }
 
 // Refinance comparison. Returns { curPI, newPI, monthlySavings, breakevenMonths, lifetimeChange }.
-export function refinance({ balance, curRatePct, curYearsLeft, newRatePct, newYears, closingCosts, rollIntoLoan = true }) {
+function refinance({ balance, curRatePct, curYearsLeft, newRatePct, newYears, closingCosts, rollIntoLoan = true }) {
   const curMonths = Math.max(1, Math.round(curYearsLeft * 12)), newMonths = Math.max(1, Math.round(newYears * 12));
   const curPI = monthlyPI(balance, curRatePct, curMonths);
   const newLoan = balance + (rollIntoLoan ? closingCosts : 0);
@@ -66,7 +83,7 @@ export function refinance({ balance, curRatePct, curYearsLeft, newRatePct, newYe
 }
 
 // US federal holidays (observed) for a year, as a Set of ISO yyyy-mm-dd strings.
-export function federalHolidays(year) {
+function federalHolidays(year) {
   const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   const nth = (m, wd, n) => { let c = 0; for (let d = 1; d <= 31; d++) { const dt = new Date(year, m - 1, d); if (dt.getMonth() !== m - 1) break; if (dt.getDay() === wd && ++c === n) return dt; } return null; };
   const last = (m, wd) => { let res = null; for (let d = 1; d <= 31; d++) { const dt = new Date(year, m - 1, d); if (dt.getMonth() !== m - 1) break; if (dt.getDay() === wd) res = dt; } return res; };
@@ -80,7 +97,7 @@ export function federalHolidays(year) {
 }
 
 // Roll an ISO date back to the previous business day (skip weekends + federal holidays).
-export function previousBusinessDay(isoDate) {
+function previousBusinessDay(isoDate) {
   const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   let [y, m, d] = isoDate.split('-').map(Number);
   let dt = new Date(y, m - 1, d);
@@ -92,3 +109,10 @@ export function previousBusinessDay(isoDate) {
   }
   return iso(dt);
 }
+
+const MTK = { monthlyPI, amortize, payoffPayment, affordability, refinance, federalHolidays, previousBusinessDay };
+
+// Browser: expose as window.MTK (loaded via <script src="calc.js">).
+if (typeof window !== 'undefined') window.MTK = MTK;
+// Node (tests): CommonJS export. test/calc.test.mjs default-imports this object.
+if (typeof module !== 'undefined' && module.exports) module.exports = MTK;
