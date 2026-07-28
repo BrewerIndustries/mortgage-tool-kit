@@ -12,8 +12,13 @@ Worker for auth. Tabs:
   and full **PITI** (P&I + the recommended escrow from the Analysis tab). Balance
   vs. cumulative-interest chart and a **Yearly / Monthly** schedule toggle.
 - **Payment** — full monthly payment calculator: home price, down payment ($/%),
-  rate, term, taxes, insurance, HOA, and PMI (auto-estimated under 20% down) →
-  total **PITI + HOA + PMI** with a breakdown donut, loan amount, and LTV.
+  rate, term, taxes ($ or %/homestead), insurance, HOA (mo/yr), closing costs
+  (with roll-into-loan), and PMI → total **PITI + HOA + PMI** with a breakdown
+  donut, cash-to-close, loan/LTV, and a printable summary.
+- **Affordability** — income + monthly debts + front/back DTI → the max home
+  price / loan / payment you qualify for (solved so full PITI stays within DTI).
+- **Refinance** — current vs. new loan → new payment, monthly savings, break-even
+  months, and lifetime cost difference.
 - **T-Note Lookup** — historical Treasury Constant Maturity rates (1Y–10Y) for an
   ARM-style lookback: enter a reference date and a lookback (e.g. 45 days); the
   tool takes the rate that many days earlier, and if that lands on a weekend or
@@ -31,10 +36,13 @@ Worker for auth. Tabs:
 - **Export** — context-aware **CSV** (escrow projection, amortization schedule,
   payment breakdown, or T-Note lookup) and a printable **Annual Escrow Account
   Disclosure Statement** (preview → Print / Save PDF or Download `.html`).
-- **Accounts** — real login/logout + self-service password change, backed by a
-  Cloudflare Worker + D1 (see `api/`). The whole app is gated behind sign-in.
-  **Admins** get a Users section in Settings to add or remove accounts (with a
-  User/Admin role each); non-admins never see it and the endpoints are role-gated.
+- **Accounts (optional sign-in)** — the calculators are usable without an account
+  via **Continue without an account** (guest mode, autosaved to the browser only).
+  Signing in adds **saved scenarios** (name + reload a full property snapshot),
+  cross-device autosave, and server-stored theme/accent. Real login/logout +
+  self-service password change, backed by a Cloudflare Worker + D1 (see `api/`).
+  **Admins** get a Users section in Settings to add/remove accounts (role-gated).
+  If the backend is unreachable the calculators still work (guest fallback).
 - **Settings** (gear by the theme toggle) — Auto/Light/Dark theme, five accent
   colors (each with light + dark variants), and the account controls.
 - Full light/dark theming; all figures use tabular monospace. Estimates only —

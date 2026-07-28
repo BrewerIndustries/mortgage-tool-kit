@@ -42,6 +42,9 @@
   }
 
   * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
   body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
   .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
   .hidden { display: none !important; }
@@ -60,6 +63,13 @@
   /* Tabs */
   nav.tabs { display: flex; gap: 4px; align-items: center; border-bottom: 2px solid var(--ink); margin-bottom: 28px; }
   .tab-actions { margin-left: auto; display: flex; gap: 8px; padding-bottom: 6px; }
+
+  /* Scenario bar */
+  .scenario-bar { display: flex; align-items: center; gap: 8px; margin: -14px 0 22px; flex-wrap: wrap; }
+  .sb-label { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); font-weight: 700; }
+  .scenario-bar select { width: auto; min-width: 180px; padding: 6px 10px; font-size: 13px; font-family: var(--sans); }
+  .sb-status { font-size: 11.5px; color: var(--faint); font-family: var(--mono); margin-left: 6px; }
+  .sb-status.ok { color: var(--surplus); }
   @media (max-width: 620px) { .tab-actions { width: 100%; padding-bottom: 10px; } }
   .ghost-btn.accent-btn { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong)); }
   .ghost-btn.accent-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
@@ -309,6 +319,8 @@
   .role-tag.user { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
   .user-del { background: none; border: none; color: var(--faint); cursor: pointer; font-size: 17px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
   .user-del:hover { color: var(--danger); background: var(--card); }
+  .user-pw { background: none; border: none; color: var(--faint); cursor: pointer; font-size: 13px; line-height: 1; padding: 2px 5px; border-radius: 6px; }
+  .user-pw:hover { color: var(--accent); background: var(--card); }
   .add-user label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
   .add-user .two { gap: 12px; }
 
@@ -350,6 +362,14 @@
   .seg.tiny { padding: 2px; }
   .seg.tiny .seg-btn { padding: 2px 8px; font-size: 11px; min-width: 26px; }
   .field-note { font-size: 11.5px; color: var(--faint); font-family: var(--mono); margin-top: 5px; }
+
+  /* Tooltips ("?" info badges) */
+  .tip { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--faint); font-size: 10px; font-weight: 700; line-height: 1; cursor: help; margin-left: 5px; vertical-align: middle; position: relative; font-family: var(--sans); text-transform: none; letter-spacing: normal; }
+  .tip:hover, .tip:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; }
+  .tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%); width: 230px; background: var(--ink); color: var(--paper); padding: 9px 11px; border-radius: 8px; font-size: 12px; font-weight: 400; line-height: 1.45; text-transform: none; letter-spacing: normal; text-align: left; box-shadow: 0 6px 22px rgba(0,0,0,.35); opacity: 0; visibility: hidden; transition: opacity .12s; z-index: 70; pointer-events: none; }
+  .tip::before { content: ""; position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--ink); opacity: 0; visibility: hidden; transition: opacity .12s; z-index: 70; }
+  .tip:hover::after, .tip:focus-visible::after, .tip:hover::before, .tip:focus-visible::before { opacity: 1; visibility: visible; }
+  @media (prefers-reduced-motion: reduce) { .tip::after, .tip::before { transition: none; } }
 </style>
 
 <div class="wrap">
@@ -365,12 +385,25 @@
     <button class="tab active" data-tab="escrow" type="button">Escrow Analysis</button>
     <button class="tab" data-tab="amort" type="button">Amortization Schedule</button>
     <button class="tab" data-tab="payment" type="button">Payment</button>
+    <button class="tab" data-tab="afford" type="button">Affordability</button>
+    <button class="tab" data-tab="refi" type="button">Refinance</button>
+    <button class="tab" data-tab="compare" type="button">Compare</button>
     <button class="tab" data-tab="tnote" type="button">T-Note Lookup</button>
     <div class="tab-actions">
+      <button class="ghost-btn sm" id="shareBtn" type="button" title="Copy a link that reopens these exact inputs">&#128279; Share</button>
       <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
       <button class="ghost-btn sm accent-btn" id="exportStmt" type="button">&#128196; Escrow statement</button>
     </div>
   </nav>
+
+  <div class="scenario-bar hidden" id="scenarioBar">
+    <span class="sb-label">Scenario</span>
+    <select id="scenarioSelect"><option value="">Working copy (unsaved)</option></select>
+    <button class="ghost-btn sm" id="scnSave" type="button">Save</button>
+    <button class="ghost-btn sm" id="scnSaveAs" type="button">Save as</button>
+    <button class="ghost-btn sm" id="scnDelete" type="button">Delete</button>
+    <span class="sb-status" id="scnStatus"></span>
+  </div>
 
   <!-- ================= ESCROW VIEW ================= -->
   <div id="view-escrow" class="view">
@@ -493,6 +526,16 @@
               <label class="field"><span class="lbl">Year</span>
                 <input type="number" id="loanStartYear" value="2026" step="1"></label>
             </div>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Extra payments</p>
+            <div class="two">
+              <label class="field"><span class="lbl">One-time lump sum</span>
+                <div class="money-input"><input type="number" id="loanLump" value="0" step="1000"></div></label>
+              <label class="field"><span class="lbl">At payment #</span>
+                <input type="number" id="loanLumpAt" value="12" step="1" min="1"></label>
+            </div>
+            <label class="toggle-row"><input type="checkbox" id="loanBiweekly"><span class="switch"></span><span>Bi-weekly payments (adds ~1 payment/yr)</span></label>
           </div>
         </div>
       </div>
@@ -620,6 +663,16 @@
           </div>
         </div>
 
+        <div class="card cash-card">
+          <div class="panel">
+            <p class="eyebrow" style="margin-bottom:12px;">Loan cost over the full term</p>
+            <div class="cash-row"><span class="lbl">Est. APR <span id="aprTip"></span></span><span id="payApr">&mdash;</span></div>
+            <div class="cash-row"><span class="lbl">Total principal &amp; interest paid</span><span id="payTotPaid">$0</span></div>
+            <div class="cash-row"><span class="lbl">Total interest</span><span id="payTotInt">$0</span></div>
+            <div class="cash-row total"><span class="lbl">Lifetime cost (P&amp;I + taxes + ins + PMI)</span><span id="payLifetime">$0</span></div>
+          </div>
+        </div>
+
         <div class="card chart-card">
           <div class="panel">
             <div class="chart-head" style="margin-bottom:16px;">
@@ -638,6 +691,185 @@
           are the monthly share of their annual costs; HOA and PMI are added as entered. PMI is auto-estimated at ~0.6%/yr of the
           loan when your down payment is under 20% &mdash; edit it to match your quote, and it typically drops off once you reach
           ~20% equity. Estimate only &mdash; not financial advice.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= AFFORDABILITY VIEW ================= -->
+  <div id="view-afford" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Income &amp; debts</p>
+            <label class="field"><span class="lbl">Gross annual income</span>
+              <div class="money-input"><input type="number" id="afIncome" value="120000" step="1000"></div></label>
+            <label class="field"><span class="lbl">Monthly debts (cars, cards, loans)</span>
+              <div class="money-input"><input type="number" id="afDebts" value="600" step="50"></div></label>
+            <div class="two">
+              <label class="field"><span class="lbl">Front-end DTI</span>
+                <div class="suffix-input"><input type="number" id="afFront" value="28" step="1"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Back-end DTI</span>
+                <div class="suffix-input"><input type="number" id="afBack" value="36" step="1"><span class="sfx">%</span></div></label>
+            </div>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Loan &amp; costs</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Down payment</span>
+                <div class="money-input"><input type="number" id="afDown" value="60000" step="1000"></div></label>
+              <label class="field"><span class="lbl">Interest rate</span>
+                <div class="suffix-input"><input type="number" id="afRate" value="6.5" step="0.125"><span class="sfx">%</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Term</span>
+                <div class="suffix-input"><input type="number" id="afTerm" value="30" step="1"><span class="sfx">yrs</span></div></label>
+              <label class="field"><span class="lbl">Property tax</span>
+                <div class="suffix-input"><input type="number" id="afTaxPct" value="1.1" step="0.05"><span class="sfx">%</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Insurance / yr</span>
+                <div class="money-input"><input type="number" id="afIns" value="1800" step="100"></div></label>
+              <label class="field"><span class="lbl">HOA / mo</span>
+                <div class="money-input"><input type="number" id="afHoa" value="0" step="10"></div></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles">
+          <div class="tile"><div class="k">Max home price</div><div class="v" id="afPrice">$0</div><div class="n" id="afPriceNote">at your limits</div></div>
+          <div class="tile"><div class="k">Max loan</div><div class="v" id="afLoan">$0</div><div class="n" id="afLoanNote">&mdash;</div></div>
+          <div class="tile"><div class="k">Max monthly housing</div><div class="v" id="afHousing">$0</div><div class="n" id="afHousingNote">PITI budget</div></div>
+          <div class="tile"><div class="k">Binding limit</div><div class="v" id="afBind" style="font-size:20px;">&mdash;</div><div class="n" id="afBindNote">front vs back DTI</div></div>
+        </div>
+        <div class="verdict good" id="afVerdict"></div>
+        <div class="card table-card">
+          <div class="panel" style="padding-bottom:8px;"><p class="eyebrow" style="margin:0;">Estimated payment at max price</p></div>
+          <table><thead><tr><th>Component</th><th>Monthly</th></tr></thead><tbody id="afBreakdown"></tbody></table>
+        </div>
+        <p class="foot-note">
+          Max price is the highest where your full <b>PITI</b> (principal, interest, taxes, insurance, HOA, and PMI if under 20% down)
+          stays within the smaller of your front-end (housing) and back-end (housing + debts) DTI limits. A rough guide &mdash;
+          lenders weigh credit, reserves, and program rules too. Not a pre-approval.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= REFINANCE VIEW ================= -->
+  <div id="view-refi" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Current loan</p>
+            <label class="field"><span class="lbl">Remaining balance</span>
+              <div class="money-input"><input type="number" id="rfBalance" value="320000" step="1000"></div></label>
+            <div class="two">
+              <label class="field"><span class="lbl">Current rate</span>
+                <div class="suffix-input"><input type="number" id="rfCurRate" value="7.25" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Years left</span>
+                <div class="suffix-input"><input type="number" id="rfCurTerm" value="27" step="1"><span class="sfx">yrs</span></div></label>
+            </div>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">New loan</p>
+            <div class="two">
+              <label class="field"><span class="lbl">New rate</span>
+                <div class="suffix-input"><input type="number" id="rfNewRate" value="6.0" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">New term</span>
+                <div class="suffix-input"><input type="number" id="rfNewTerm" value="30" step="1"><span class="sfx">yrs</span></div></label>
+            </div>
+            <label class="field"><span class="lbl">Closing costs</span>
+              <div class="money-input"><input type="number" id="rfClosing" value="6000" step="500"></div></label>
+            <label class="toggle-row"><input type="checkbox" id="rfRoll" checked><span class="switch"></span><span>Roll closing costs into the new loan</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles">
+          <div class="tile"><div class="k">New payment (P&amp;I)</div><div class="v" id="rfNewPay">$0</div><div class="n" id="rfNewPayNote">was &mdash;</div></div>
+          <div class="tile" id="rfSaveTile"><div class="k">Monthly change</div><div class="v" id="rfSave">$0</div><div class="n" id="rfSaveNote">vs current</div></div>
+          <div class="tile"><div class="k">Break-even</div><div class="v" id="rfBreakeven" style="font-size:20px;">&mdash;</div><div class="n">to recoup costs</div></div>
+          <div class="tile" id="rfLifeTile"><div class="k">Lifetime change</div><div class="v" id="rfLife">$0</div><div class="n">total cost vs staying</div></div>
+        </div>
+        <div class="verdict good" id="rfVerdict"></div>
+        <div class="card table-card">
+          <div class="panel" style="padding-bottom:8px;"><p class="eyebrow" style="margin:0;">Current vs. new</p></div>
+          <table><thead><tr><th>&nbsp;</th><th>Current</th><th>New</th></tr></thead><tbody id="rfCompare"></tbody></table>
+        </div>
+        <p class="foot-note">
+          Break-even is the number of months of payment savings needed to recoup the closing costs you pay out of pocket. Rolling
+          costs into the loan means $0 out of pocket but a larger balance. Lifetime change compares total remaining cost of the
+          current loan vs. the new loan (plus any upfront costs). Estimate only &mdash; excludes escrow, taxes, and PMI changes.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= COMPARE VIEW ================= -->
+  <div id="view-compare" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Both loans</p>
+            <label class="field"><span class="lbl">Loan amount</span>
+              <div class="money-input"><input type="number" id="cmpAmt" value="360000" step="1000"></div></label>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Loan A</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Rate</span>
+                <div class="suffix-input"><input type="number" id="cmpRateA" value="6.5" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Term</span>
+                <div class="suffix-input"><input type="number" id="cmpTermA" value="30" step="1"><span class="sfx">yrs</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Points</span>
+                <div class="suffix-input"><input type="number" id="cmpPtsA" value="0" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Other fees</span>
+                <div class="money-input"><input type="number" id="cmpFeeA" value="0" step="250"></div></label>
+            </div>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Loan B</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Rate</span>
+                <div class="suffix-input"><input type="number" id="cmpRateB" value="6.0" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Term</span>
+                <div class="suffix-input"><input type="number" id="cmpTermB" value="30" step="1"><span class="sfx">yrs</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Points</span>
+                <div class="suffix-input"><input type="number" id="cmpPtsB" value="1" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Other fees</span>
+                <div class="money-input"><input type="number" id="cmpFeeB" value="0" step="250"></div></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles">
+          <div class="tile"><div class="k">Loan A payment</div><div class="v" id="cmpPayA">$0</div><div class="n" id="cmpPayANote">P&amp;I / mo</div></div>
+          <div class="tile"><div class="k">Loan B payment</div><div class="v" id="cmpPayB">$0</div><div class="n" id="cmpPayBNote">P&amp;I / mo</div></div>
+          <div class="tile" id="cmpWinTile"><div class="k">Lower total cost</div><div class="v" id="cmpWin" style="font-size:20px;">&mdash;</div><div class="n" id="cmpWinNote">over the full term</div></div>
+          <div class="tile"><div class="k">Break-even</div><div class="v" id="cmpBreak" style="font-size:20px;">&mdash;</div><div class="n">on the upfront gap</div></div>
+        </div>
+        <div class="verdict good" id="cmpVerdict"></div>
+        <div class="card table-card">
+          <div class="panel" style="padding-bottom:8px;"><p class="eyebrow" style="margin:0;">Side by side</p></div>
+          <table><thead><tr><th>&nbsp;</th><th>Loan A</th><th>Loan B</th></tr></thead><tbody id="cmpTable"></tbody></table>
+        </div>
+        <p class="foot-note">
+          Compare two loans - e.g., a higher rate with no points vs. a lower rate you buy down with points. "Total cost" is all
+          payments plus upfront points &amp; fees over the full term (assuming you keep the loan). Break-even is how long the lower-payment
+          loan takes to recoup its extra upfront cost. Estimate only &mdash; not financial advice.
         </p>
       </div>
     </div>
@@ -700,7 +932,7 @@
           </div>
         </div>
 
-        <p class="foot-note">Source: <span id="tnSource"></span>. Bundled data range <span id="tnRange"></span>. Constant-maturity yields; the value shown is the last published rate on or before the resolved business day. Reference only &mdash; not financial advice.</p>
+        <p class="foot-note">Source: <span id="tnSource"></span>. Bundled data range <span id="tnRange"></span>.<span id="tnStale"></span> Constant-maturity yields; the value shown is the last published rate on or before the resolved business day. Reference only &mdash; not financial advice.</p>
       </div>
     </div>
   </div>
@@ -756,6 +988,48 @@
       <button class="btn-primary" id="loginBtn" type="submit">Sign in</button>
       <div class="auth-msg" id="loginMsg"></div>
     </form>
+    <button class="link-btn" id="forgotToggle" type="button" style="margin-top:10px;display:block;width:100%;text-align:center;font-size:12px;">Forgot password?</button>
+    <form id="forgotForm" class="hidden" autocomplete="on" style="margin-top:10px;">
+      <label for="forgotEmail">Email</label>
+      <input type="email" id="forgotEmail" autocomplete="username">
+      <button class="btn-primary" id="forgotBtn" type="submit">Send reset link</button>
+      <div class="auth-msg" id="forgotMsg"></div>
+    </form>
+    <button class="link-btn" id="guestBtn" type="button" style="margin-top:16px;display:block;width:100%;text-align:center;">Continue without an account &rarr;</button>
+    <p class="muted" style="margin:8px 0 0;font-size:11.5px;text-align:center;">You'll get the calculators. Sign in to save scenarios &amp; sync across devices.</p>
+  </div>
+</div>
+
+<div class="auth-gate hidden" id="resetGate">
+  <div class="auth-card">
+    <div class="brand-row"><h2>Set a new password</h2><span class="dev-badge hidden" id="devBadge3">Dev</span></div>
+    <p class="muted">Choose a new password for your account.</p>
+    <form id="resetForm" autocomplete="off">
+      <label for="resetNew">New password</label>
+      <input type="password" id="resetNew" autocomplete="new-password" required>
+      <label for="resetConfirm">Confirm new password</label>
+      <input type="password" id="resetConfirm" autocomplete="new-password" required>
+      <button class="btn-primary" id="resetBtn" type="submit">Update password</button>
+      <div class="auth-msg" id="resetMsg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Forced password change (temporary accounts) -->
+<div class="auth-gate hidden" id="pwChangeGate">
+  <div class="auth-card">
+    <div class="brand-row"><h2>Set a new password</h2></div>
+    <p class="muted">Your account uses a temporary password. Choose a new one to continue.</p>
+    <form id="forceChangeForm" autocomplete="off">
+      <label for="fcCurrent">Current (temporary) password</label>
+      <input type="password" id="fcCurrent" autocomplete="current-password" required>
+      <label for="fcNew">New password</label>
+      <input type="password" id="fcNew" autocomplete="new-password" required>
+      <label for="fcConfirm">Confirm new password</label>
+      <input type="password" id="fcConfirm" autocomplete="new-password" required>
+      <button class="btn-primary" id="fcBtn" type="submit">Set password &amp; continue</button>
+      <div class="auth-msg" id="fcMsg"></div>
+    </form>
   </div>
 </div>
 
@@ -778,13 +1052,41 @@
         <div class="set-label">Accent color<small>Applies in light &amp; dark</small></div>
         <div class="swatches" id="accentSwatches"></div>
       </div>
+      <div class="set-row">
+        <div class="set-label">Calculator inputs<small>Restore every tab's defaults</small></div>
+        <button class="link-btn" id="resetDefaultsBtn" type="button">Reset to defaults</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h4>Backup &amp; restore</h4>
+      <div class="set-row">
+        <div class="set-label">Download<small>Save every tab's inputs as a .json file</small></div>
+        <button class="link-btn" id="backupBtn" type="button">Download backup</button>
+      </div>
+      <div class="set-row">
+        <div class="set-label">Restore<small>Load inputs from a saved backup file</small></div>
+        <button class="link-btn" id="restoreBtn" type="button">Restore from file&#8230;</button>
+      </div>
+      <input type="file" id="restoreFile" accept="application/json,.json" class="hidden">
     </div>
 
     <div class="settings-section">
       <h4>Account</h4>
+      <div id="accountGuest" class="hidden">
+        <div class="set-row">
+          <div class="set-label">Not signed in<small>Saving &amp; sync are off in guest mode</small></div>
+          <button class="btn-primary" id="signInBtn" type="button" style="width:auto;margin:0;padding:8px 16px;">Sign in</button>
+        </div>
+      </div>
+      <div id="accountUser">
       <div class="set-row">
         <div class="set-label">Signed in as<small id="setEmail">&mdash;</small></div>
         <button class="danger-btn" id="logoutBtn" type="button">Log out</button>
+      </div>
+      <div class="set-row" id="verifyRow" hidden>
+        <div class="set-label">Email address<small id="verifyState">&mdash;</small></div>
+        <button class="link-btn" id="resendVerifyBtn" type="button">Resend verification</button>
       </div>
       <div class="set-row">
         <div class="set-label">Password</div>
@@ -800,6 +1102,7 @@
         <button class="btn-primary" id="pwSubmit" type="submit" style="margin-top:14px;">Update password</button>
         <div class="auth-msg" id="pwMsg"></div>
       </form>
+      </div>
     </div>
 
     <div class="settings-section hidden" id="adminSection">
@@ -867,13 +1170,13 @@
           compute();
         });
       });
-      row.querySelector(".del").addEventListener("click", () => { disbursements.splice(idx, 1); renderDisb(); compute(); });
+      row.querySelector(".del").addEventListener("click", () => { disbursements.splice(idx, 1); renderDisb(); compute(); scheduleSave(); });
       disbList.appendChild(row);
     });
   }
   document.getElementById("addDisb").addEventListener("click", () => {
     disbursements.push({ name: "New item", amount: 1200, freq: "annual", first: 0 });
-    renderDisb(); compute();
+    renderDisb(); compute(); scheduleSave();
   });
 
   function monthlySchedule() {
@@ -1003,22 +1306,36 @@
   }
 
   // ---------- amortization ----------
+  const round2 = (x) => Math.round(x * 100) / 100;
   function buildAmort() {
     const P = parseFloat(document.getElementById("loanAmt").value) || 0;
     const rate = parseFloat(document.getElementById("loanRate").value) || 0;
     const term = parseFloat(document.getElementById("loanTerm").value) || 0;
     const extra = parseFloat(document.getElementById("loanExtra").value) || 0;
+    const lumpAmt = parseFloat(document.getElementById("loanLump").value) || 0;
+    const lumpIdx = Math.max(1, Math.round(parseFloat(document.getElementById("loanLumpAt").value) || 1)) - 1;
+    const biweekly = document.getElementById("loanBiweekly").checked;
     const r = rate/1200, n = Math.max(1, Math.round(term*12));
     const basePmt = r === 0 ? P/n : P*r / (1 - Math.pow(1+r, -n));
+    // Bi-weekly (26 half-payments/yr = 13 monthly-equivalents) modeled as one extra payment spread monthly.
+    const biweeklyExtra = biweekly ? basePmt / 12 : 0;
     const sched = []; let bal = P, totInt = 0, totPrin = 0;
-    for (let i = 0; i < n*2 && bal > 0.005; i++) {
-      const interest = bal * r; let principal = basePmt - interest + extra;
+    // Values are rounded to cents each row so the displayed schedule foots exactly.
+    for (let i = 0; i < n * 2 && bal > 0.005; i++) {
+      const interest = round2(bal * r);
+      let principal = basePmt - interest + extra + biweeklyExtra;
+      if (i === lumpIdx && lumpAmt > 0) principal += lumpAmt;
       if (principal > bal) principal = bal;
-      const pay = principal + interest; bal -= principal; totInt += interest; totPrin += principal;
+      principal = round2(principal);
+      // Final scheduled payment (or early payoff) clears the balance, so the loan
+      // retires in exactly the term (real lenders adjust the last payment for rounding).
+      if (principal > bal || bal - principal < 0.01 || i === n - 1) principal = round2(bal);
+      const pay = round2(principal + interest);
+      bal = round2(bal - principal); totInt += interest; totPrin += principal;
       sched.push({ i: i+1, pay, principal, interest, bal: Math.max(0, bal) });
       if (sched.length > 1200) break;
     }
-    return { basePmt, sched, totInt, totPrin, extra, P, r, n };
+    return { basePmt, sched, totInt: round2(totInt), totPrin: round2(totPrin), extra, lumpAmt, biweekly, biweeklyExtra, P, r, n };
   }
 
   function computeAmort() {
@@ -1041,14 +1358,18 @@
     document.getElementById("amPayoffNote").textContent = months + " payments (" + yrs + "y " + rem + "m)";
     document.getElementById("amIntNote").textContent = "on " + fmt(a.P) + " borrowed";
 
-    // interest saved from extra payments
+    // interest saved from extra payments (recurring, lump sum, and/or bi-weekly)
     const savedEl = document.getElementById("amSaved");
-    if (a.extra > 0) {
+    if (a.extra > 0 || a.lumpAmt > 0 || a.biweekly) {
       const noExtra = (function(){ let bal=a.P, ti=0; const pmt=a.basePmt;
         for (let i=0;i<a.n && bal>0.005;i++){ const it=bal*a.r; let pr=pmt-it; if(pr>bal)pr=bal; bal-=pr; ti+=it; } return ti; })();
       const saved = noExtra - a.totInt, fewer = a.n - months;
+      const parts = [];
+      if (a.extra > 0) parts.push(fmt(a.extra) + "/mo extra");
+      if (a.lumpAmt > 0) parts.push("a " + fmt(a.lumpAmt) + " lump sum");
+      if (a.biweekly) parts.push("bi-weekly (" + fmt(a.basePmt / 2) + " every 2 wks)");
       savedEl.classList.remove("hidden");
-      savedEl.innerHTML = `<span class="dot">&#9660;</span><div><b>Extra ${fmt(a.extra)}/mo saves ${fmt(saved)}</b> in interest and retires the loan <b>${fewer} payments</b> (${Math.floor(fewer/12)}y ${fewer%12}m) early.</div>`;
+      savedEl.innerHTML = `<span class="dot">&#9660;</span><div><b>${parts.join(" + ")}</b> saves <b>${fmt(saved)}</b> in interest and retires the loan <b>${fewer} payments</b> (${Math.floor(fewer/12)}y ${fewer%12}m) early.</div>`;
     } else savedEl.classList.add("hidden");
 
     state.amort = { a, startMo, startYr, escrow, months, payoffLabel: payMo + " " + payYr,
@@ -1327,10 +1648,48 @@
     rows.push(["Cash to close", Math.round(p.cashToClose)]);
     return toCSV(rows);
   }
+  function affordCSV() {
+    const p = afResult, rows = [["Affordability / DTI"]];
+    if (!p) return toCSV(rows);
+    rows.push(["Gross annual income", Math.round(p.income)], ["Monthly debts", Math.round(p.debts)]);
+    rows.push(["Max monthly housing", Math.round(p.maxHousing)], ["Binding limit", p.backBinds ? "back-end" : "front-end"]);
+    rows.push(["Max home price", Math.round(p.price)], ["Max loan", Math.round(p.loan)]);
+    rows.push(["Rate (APR %)", p.rate], ["Term (years)", p.term]);
+    rows.push([], ["Component (at max price)", "Monthly"]);
+    [["Principal & interest", p.pi], ["Property tax", p.tax], ["Home insurance", p.ins], ["HOA", p.hoa], ["PMI", p.pmi]].filter(s => s[1] > 0.5).forEach(s => rows.push([s[0], Math.round(s[1])]));
+    rows.push(["Total housing", Math.round(p.total)]);
+    return toCSV(rows);
+  }
+  function refiCSV() {
+    const p = rfResult, rows = [["Refinance analysis"]];
+    if (!p) return toCSV(rows);
+    rows.push(["Current balance", Math.round(p.balance)], ["Current rate (%)", p.curRate], ["Years left", p.curTerm]);
+    rows.push(["New rate (%)", p.newRate], ["New term (years)", p.newTerm], ["Closing costs", Math.round(p.closing)], ["Rolled into loan", p.roll ? "yes" : "no"]);
+    rows.push([], ["Current monthly P&I", Math.round(p.curPI)], ["New monthly P&I", Math.round(p.newPI)]);
+    rows.push(["Monthly savings", Math.round(p.savings)], ["Break-even (months)", isFinite(p.breakevenMo) && p.savings > 0 ? Math.ceil(p.breakevenMo) : "n/a"]);
+    rows.push(["Lifetime cost change", Math.round(p.lifeChange)]);
+    return toCSV(rows);
+  }
+  function compareCSV() {
+    const p = cmpResult, rows = [["Loan comparison"]];
+    if (!p) return toCSV(rows);
+    rows.push(["Loan amount", Math.round(p.amt)]);
+    rows.push([], ["", "Loan A", "Loan B"]);
+    rows.push(["Monthly P&I", Math.round(p.A.pi), Math.round(p.B.pi)]);
+    rows.push(["Upfront (points+fees)", Math.round(p.A.upfront), Math.round(p.B.upfront)]);
+    rows.push(["Total interest", Math.round(p.A.totalInterest), Math.round(p.B.totalInterest)]);
+    rows.push(["Total cost", Math.round(p.A.totalCost), Math.round(p.B.totalCost)]);
+    rows.push(["Cheaper overall", p.cheaper, "by " + Math.round(p.diff)]);
+    return toCSV(rows);
+  }
   document.getElementById("exportCsv").addEventListener("click", () => {
-    if (!document.getElementById("view-payment").classList.contains("hidden")) { computePayment(); downloadBlob("mortgage-payment.csv", paymentCSV(), "text/csv;charset=utf-8"); }
-    else if (!document.getElementById("view-tnote").classList.contains("hidden")) { computeTnote(); downloadBlob("tnote-lookup.csv", tnoteCSV(), "text/csv;charset=utf-8"); }
-    else if (!document.getElementById("view-amort").classList.contains("hidden")) { computeAmort(); downloadBlob("amortization-schedule.csv", amortCSV(), "text/csv;charset=utf-8"); }
+    const vis = (t) => !document.getElementById("view-" + t).classList.contains("hidden");
+    if (vis("payment")) { computePayment(); downloadBlob("mortgage-payment.csv", paymentCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("tnote")) { computeTnote(); downloadBlob("tnote-lookup.csv", tnoteCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("amort")) { computeAmort(); downloadBlob("amortization-schedule.csv", amortCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("afford")) { computeAfford(); downloadBlob("affordability.csv", affordCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("refi")) { computeRefi(); downloadBlob("refinance.csv", refiCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("compare")) { computeCompare(); downloadBlob("loan-comparison.csv", compareCSV(), "text/csv;charset=utf-8"); }
     else { compute(); downloadBlob("escrow-projection.csv", escrowCSV(), "text/csv;charset=utf-8"); }
   });
 
@@ -1519,6 +1878,14 @@
     TN.tenors.forEach((t, i) => { const o = document.createElement("option"); o.value = t; o.textContent = t + " Treasury"; if (t === "10Y") o.selected = true; tnTenorSel.appendChild(o); });
     document.getElementById("tnSource").textContent = TN.source;
     document.getElementById("tnRange").textContent = TN.start + " to " + TN.end;
+    // Staleness: the weekly refresh should keep the end date within ~2 weeks of today.
+    const endMs = Date.parse(TN.end + "T00:00:00Z");
+    const ageDays = isFinite(endMs) ? Math.floor((Date.now() - endMs) / 86400000) : 0;
+    const stEl = document.getElementById("tnStale");
+    if (stEl) {
+      if (ageDays > 12) { stEl.textContent = " Data is " + ageDays + " days old (last updated " + (TN.fetched || TN.end) + ") - the weekly refresh may need attention."; stEl.className = "field-note"; stEl.style.color = "var(--shortage)"; }
+      else { stEl.textContent = " Updated " + (TN.fetched || TN.end) + "."; stEl.className = "field-note"; }
+    }
   }
 
   let tnResult = null; // for CSV export
@@ -1657,17 +2024,106 @@
 
   const authGate = document.getElementById("authGate");
   function showGate(show) { authGate.classList.toggle("hidden", !show); }
-  let isAdmin = false;
-  let myEmail = null;
-  function setUser(u) { myEmail = u.email; isAdmin = u.role === "admin"; document.getElementById("setEmail").textContent = u.email; document.getElementById("adminSection").classList.toggle("hidden", !isAdmin); }
+  let isAdmin = false, myEmail = null;
+  let authMode = null;   // "user" | "guest" | null
+
+  function updateAuthUI() {
+    const user = authMode === "user";
+    document.getElementById("accountUser").classList.toggle("hidden", !user);
+    document.getElementById("accountGuest").classList.toggle("hidden", user);
+    document.getElementById("adminSection").classList.toggle("hidden", !(user && isAdmin));
+    document.getElementById("scenarioBar").classList.toggle("hidden", !user);
+  }
+  function setUser(u) {
+    myEmail = u.email; isAdmin = u.role === "admin"; authMode = "user";
+    localStorage.removeItem("mtk-guest");
+    document.getElementById("setEmail").textContent = u.email;
+    updateAuthUI();
+    document.getElementById("pwChangeGate").classList.toggle("hidden", !u.must_change);
+    // Email-verification status row (only meaningful for signed-in users).
+    const vrow = document.getElementById("verifyRow");
+    if (u.email_verified) {
+      vrow.hidden = true;
+    } else {
+      vrow.hidden = false;
+      document.getElementById("verifyState").textContent = "Not verified yet";
+    }
+  }
+
+  // Minimal self-contained toast (no dependency on existing styles).
+  function toast(text, kind) {
+    const t = document.createElement("div");
+    t.textContent = text;
+    t.setAttribute("role", "status");
+    const bg = kind === "err" ? "#c25b6e" : (kind === "ok" ? "#3b8a5a" : "#333");
+    t.style.cssText = "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999;" +
+      "background:" + bg + ";color:#fff;padding:11px 18px;border-radius:10px;font-size:14px;" +
+      "box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:90vw;opacity:0;transition:opacity .2s;";
+    document.body.appendChild(t);
+    requestAnimationFrame(() => { t.style.opacity = "1"; });
+    setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 4200);
+  }
+
+  document.getElementById("resendVerifyBtn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget; btn.disabled = true;
+    try {
+      const r = await api("/auth/resend-verification", { method: "POST", body: JSON.stringify({}) });
+      toast(r && r.already ? "Your email is already verified." : "Verification email sent - check your inbox.", "ok");
+    } catch (err) { toast(err.message || "Couldn't send the email.", "err"); }
+    finally { btn.disabled = false; }
+  });
+
+  // Landing back from the emailed verify link (Worker redirects to #verify=ok|invalid).
+  function handleVerifyHash() {
+    const m = (location.hash || "").match(/verify=(ok|invalid)/);
+    if (!m) return;
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    if (m[1] === "ok") toast("Email verified - thanks!", "ok");
+    else toast("That verification link is invalid or expired. Try Resend from Settings.", "err");
+  }
+
+  document.getElementById("forceChangeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("fcMsg"), btn = document.getElementById("fcBtn");
+    const cur = document.getElementById("fcCurrent").value, nw = document.getElementById("fcNew").value, cf = document.getElementById("fcConfirm").value;
+    msg.className = "auth-msg";
+    if (nw.length < 8) { msg.className = "auth-msg err"; msg.textContent = "New password must be at least 8 characters."; return; }
+    if (nw !== cf) { msg.className = "auth-msg err"; msg.textContent = "New passwords don't match."; return; }
+    btn.disabled = true; msg.textContent = "Saving...";
+    try {
+      await api("/auth/change-password", { method: "POST", body: JSON.stringify({ current_password: cur, new_password: nw }) });
+      document.getElementById("pwChangeGate").classList.add("hidden");
+      ["fcCurrent", "fcNew", "fcConfirm"].forEach(id => document.getElementById(id).value = "");
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Couldn't set password."; }
+    finally { btn.disabled = false; }
+  });
+  function enterGuest() {
+    authMode = "guest"; isAdmin = false; myEmail = null;
+    localStorage.setItem("mtk-guest", "1");
+    updateAuthUI(); showGate(false); loadLocalState();
+  }
 
   async function checkAuth() {
     try {
       const me = await api("/auth/me");
-      setUser(me.user);
-      showGate(false);
-    } catch (e) { showGate(true); }
+      setUser(me.user); showGate(false);
+      await loadServerState(); await loadScenarios();
+    } catch (e) {
+      // Not signed in / backend unreachable. Returning guests skip the gate.
+      if (localStorage.getItem("mtk-guest") === "1") { authMode = "guest"; updateAuthUI(); showGate(false); loadLocalState(); return; }
+      if (/Failed to fetch|NetworkError|HTTP 5/.test(String(e && e.message))) {
+        const msg = document.getElementById("loginMsg");
+        msg.className = "auth-msg err";
+        msg.textContent = "Can't reach the server right now - continue without an account to use the calculators.";
+      }
+      showGate(true);
+    }
   }
+
+  document.getElementById("guestBtn").addEventListener("click", enterGuest);
+  document.getElementById("signInBtn").addEventListener("click", () => {
+    document.getElementById("settingsModal").classList.add("hidden"); showGate(true);
+  });
 
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1682,14 +2138,188 @@
       document.getElementById("loginPassword").value = "";
       msg.className = "auth-msg"; msg.textContent = "";
       showGate(false);
+      await loadServerState(); await loadScenarios();
     } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Sign in failed."; }
+    finally { btn.disabled = false; }
+  });
+
+  // --- Forgot password: request a reset link ---
+  document.getElementById("forgotToggle").addEventListener("click", () => {
+    const f = document.getElementById("forgotForm");
+    f.classList.toggle("hidden");
+    if (!f.classList.contains("hidden")) {
+      document.getElementById("forgotEmail").value = document.getElementById("loginEmail").value.trim();
+      document.getElementById("forgotEmail").focus();
+    }
+  });
+  document.getElementById("forgotForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("forgotBtn"), msg = document.getElementById("forgotMsg");
+    const email = document.getElementById("forgotEmail").value.trim();
+    if (!email || !email.includes("@")) { msg.className = "auth-msg err"; msg.textContent = "Enter your email."; return; }
+    btn.disabled = true; msg.className = "auth-msg"; msg.textContent = "Sending...";
+    try {
+      await api("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+      // Neutral wording on purpose - we never reveal whether an account exists.
+      msg.className = "auth-msg ok";
+      msg.textContent = "If that email has an account, a reset link is on its way. Check your inbox.";
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = "Couldn't send just now - try again in a moment."; }
+    finally { btn.disabled = false; }
+  });
+
+  // --- Reset password: arrive via the emailed #reset=<token> link ---
+  let resetToken = null;
+  function handleResetHash() {
+    const m = (location.hash || "").match(/reset=([^&]+)/);
+    if (!m) return false;
+    resetToken = decodeURIComponent(m[1]);
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    showGate(false);
+    document.getElementById("resetGate").classList.remove("hidden");
+    return true;
+  }
+  document.getElementById("resetForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("resetBtn"), msg = document.getElementById("resetMsg");
+    const nw = document.getElementById("resetNew").value, cf = document.getElementById("resetConfirm").value;
+    msg.className = "auth-msg";
+    if (nw.length < 8) { msg.className = "auth-msg err"; msg.textContent = "New password must be at least 8 characters."; return; }
+    if (nw !== cf) { msg.className = "auth-msg err"; msg.textContent = "Passwords don't match."; return; }
+    btn.disabled = true; msg.textContent = "Updating...";
+    try {
+      await api("/auth/reset-password", { method: "POST", body: JSON.stringify({ token: resetToken, new_password: nw }) });
+      document.getElementById("resetNew").value = ""; document.getElementById("resetConfirm").value = "";
+      document.getElementById("resetGate").classList.add("hidden");
+      showGate(true);
+      toast("Password updated - please sign in with your new password.", "ok");
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Couldn't reset - the link may have expired."; }
     finally { btn.disabled = false; }
   });
 
   document.getElementById("logoutBtn").addEventListener("click", async () => {
     try { await api("/auth/logout", { method: "POST" }); } catch (e) {}
+    authMode = null; updateAuthUI();
     document.getElementById("settingsModal").classList.add("hidden");
     showGate(true);
+  });
+
+  // ---------- persistence: state snapshot + autosave ----------
+  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","tnDate","tnLookback","tnTenor"];
+  let restoring = false, saveTimer = null, defaultState = null, sharedState = null;
+
+  // Encode/decode the full input state for shareable URLs (#s=<base64>).
+  function encodeShare() { try { return btoa(unescape(encodeURIComponent(JSON.stringify(collectState())))); } catch (e) { return ""; } }
+  function parseHashState() {
+    const m = (location.hash || "").match(/[#&]s=([^&]+)/);
+    if (!m) return null;
+    try { return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); } catch (e) { return null; }
+  }
+
+  function collectState() {
+    const inputs = {};
+    PERSIST_IDS.forEach(id => { const el = document.getElementById(id); if (!el) return; inputs[id] = el.type === "checkbox" ? el.checked : el.value; });
+    return { v: 1, inputs, disbursements: disbursements.map(d => ({ ...d })),
+      taxMode: (document.querySelector("#taxModeSeg .seg-btn.active") || {}).dataset?.m || "amt",
+      hoaFreq: (document.querySelector("#hoaFreqSeg .seg-btn.active") || {}).dataset?.f || "mo",
+      amortMode, pmiUserSet };
+  }
+  function applyState(s) {
+    if (!s || !s.inputs) return;
+    restoring = true;
+    PERSIST_IDS.forEach(id => {
+      if (!(id in s.inputs)) return;
+      const el = document.getElementById(id); if (!el) return;
+      if (el.type === "checkbox") el.checked = !!s.inputs[id]; else el.value = s.inputs[id];
+    });
+    if (Array.isArray(s.disbursements)) { disbursements = s.disbursements.map(d => ({ ...d })); renderDisb(); }
+    if (typeof s.pmiUserSet === "boolean") pmiUserSet = s.pmiUserSet;
+    const cv = parseFloat(document.getElementById("cushion").value);
+    document.getElementById("cushionVal").textContent = cv + (cv === 1 ? " month" : " months");
+    if (s.taxMode) { const b = document.querySelector('#taxModeSeg .seg-btn[data-m="' + s.taxMode + '"]'); if (b) b.click(); }
+    if (s.hoaFreq) { const b = document.querySelector('#hoaFreqSeg .seg-btn[data-f="' + s.hoaFreq + '"]'); if (b) b.click(); }
+    if (s.amortMode) setAmortMode(s.amortMode);
+    compute(); computeAmort(); computePayment(); computeAfford(); computeRefi(); computeCompare(); computeTnote();
+    restoring = false;
+  }
+
+  function scheduleSave() { if (restoring) return; clearTimeout(saveTimer); saveTimer = setTimeout(persistState, 700); }
+  function persistState() {
+    const state = collectState();
+    try { localStorage.setItem("mtk-work", JSON.stringify(state)); } catch (e) {}
+    if (authMode === "user") {
+      api("/state", { method: "PUT", body: JSON.stringify({ work_state: state, prefs: { theme: themeMode(), accent: accentKey } }) })
+        .then(() => { if (!currentScnId) setScnStatus("Autosaved", true); }).catch(() => {});
+    }
+  }
+  function loadLocalState() {
+    if (sharedState) { applyState(sharedState); return; }
+    try { const s = localStorage.getItem("mtk-work"); if (s) applyState(JSON.parse(s)); } catch (e) {}
+  }
+  async function loadServerState() {
+    try {
+      const { work_state, prefs } = await api("/state");
+      if (prefs) applyPrefs(prefs);
+      if (sharedState) { applyState(sharedState); return; }   // a shared link overrides saved state
+      if (work_state) applyState(work_state); else loadLocalState();
+    } catch (e) { loadLocalState(); }
+  }
+  document.getElementById("shareBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("shareBtn");
+    const url = location.origin + location.pathname + "#s=" + encodeURIComponent(encodeShare());
+    try { await navigator.clipboard.writeText(url); const old = btn.innerHTML; btn.innerHTML = "&#10003; Copied"; setTimeout(() => { btn.innerHTML = old; }, 1800); }
+    catch (e) { prompt("Copy this link to share these inputs:", url); }
+  });
+  function applyPrefs(p) {
+    if (p && p.accent && ACCENTS[p.accent]) { accentKey = p.accent; localStorage.setItem("mtk-accent", p.accent); }
+    if (p && p.theme) applyThemeMode(p.theme); else { applyAccent(); buildSwatches(); }
+  }
+  const isCalcEvent = (t) => t && !t.closest("#authGate") && !t.closest("#pwForm") && !t.closest("#addUserForm") && t.id !== "scenarioSelect";
+  document.addEventListener("input", (e) => { if (isCalcEvent(e.target)) scheduleSave(); });
+  document.addEventListener("change", (e) => { if (isCalcEvent(e.target)) scheduleSave(); });
+
+  // ---------- scenarios ----------
+  let scenarios = [], currentScnId = null;
+  function currentScnName() { const s = scenarios.find(x => x.id === currentScnId); return s ? s.name : ""; }
+  function setScnStatus(t, ok) { const el = document.getElementById("scnStatus"); el.textContent = t || ""; el.classList.toggle("ok", !!ok); }
+  function renderScenarioSelect() {
+    const sel = document.getElementById("scenarioSelect");
+    sel.innerHTML = '<option value="">Working copy (unsaved)</option>' + scenarios.map(s => '<option value="' + s.id + '">' + esc(s.name) + '</option>').join("");
+    sel.value = currentScnId || "";
+    document.getElementById("scnDelete").disabled = !currentScnId;
+  }
+  async function loadScenarios() { try { const r = await api("/scenarios"); scenarios = r.scenarios || []; renderScenarioSelect(); } catch (e) {} }
+  document.getElementById("scenarioSelect").addEventListener("change", async (e) => {
+    const id = e.target.value;
+    document.getElementById("scnDelete").disabled = !id;
+    if (!id) { currentScnId = null; setScnStatus("Working copy"); return; }
+    try {
+      const { scenario } = await api("/scenarios/" + id);
+      currentScnId = id;
+      applyState(typeof scenario.data === "string" ? JSON.parse(scenario.data) : scenario.data);
+      persistState();
+      setScnStatus("Loaded: " + scenario.name, true);
+    } catch (err) { setScnStatus("Couldn't load"); }
+  });
+  document.getElementById("scnSave").addEventListener("click", async () => {
+    if (!currentScnId) return scnSaveAs();
+    try { await api("/scenarios/" + currentScnId, { method: "PUT", body: JSON.stringify({ data: collectState() }) }); setScnStatus("Saved: " + currentScnName(), true); }
+    catch (e) { setScnStatus("Save failed"); }
+  });
+  async function scnSaveAs() {
+    const name = (prompt("Name this scenario:", currentScnName() || "") || "").trim();
+    if (!name) return;
+    try {
+      const { scenario } = await api("/scenarios", { method: "POST", body: JSON.stringify({ name, data: collectState() }) });
+      await loadScenarios(); currentScnId = scenario.id; renderScenarioSelect();
+      setScnStatus("Saved: " + name, true);
+    } catch (e) { setScnStatus(e.message || "Save failed"); }
+  }
+  document.getElementById("scnSaveAs").addEventListener("click", scnSaveAs);
+  document.getElementById("scnDelete").addEventListener("click", async () => {
+    if (!currentScnId) return;
+    if (!confirm("Delete scenario: " + currentScnName() + "?")) return;
+    try { await api("/scenarios/" + currentScnId, { method: "DELETE" }); currentScnId = null; await loadScenarios(); setScnStatus("Deleted"); }
+    catch (e) { setScnStatus("Delete failed"); }
   });
 
   document.getElementById("changePwToggle").addEventListener("click", () =>
@@ -1731,13 +2361,20 @@
           <span class="email">${esc(u.email)}</span>
           <span class="right">
             <span class="role-tag ${u.role === "admin" ? "admin" : "user"}">${u.role}</span>
-            ${u.email === myEmail ? "" : `<button class="user-del" data-id="${u.id}" data-email="${esc(u.email)}" title="Delete user" type="button">&times;</button>`}
+            ${u.email === myEmail ? "" : `<button class="user-pw" data-id="${u.id}" data-email="${esc(u.email)}" title="Set a new password" type="button">&#128273;</button><button class="user-del" data-id="${u.id}" data-email="${esc(u.email)}" title="Delete user" type="button">&times;</button>`}
           </span>
         </div>`).join("");
       list.querySelectorAll(".user-del").forEach(b => b.addEventListener("click", async () => {
         if (!confirm(`Delete ${b.dataset.email}? This cannot be undone.`)) return;
         try { await api("/admin/users/" + b.dataset.id, { method: "DELETE" }); refreshAdmin(); }
         catch (e) { alert(e.message || "Delete failed."); }
+      }));
+      list.querySelectorAll(".user-pw").forEach(b => b.addEventListener("click", async () => {
+        const pw = (prompt("New temporary password for " + b.dataset.email + " (min 8 chars). They'll be asked to change it on next login:", "") || "").trim();
+        if (!pw) return;
+        if (pw.length < 8) { alert("Password must be at least 8 characters."); return; }
+        try { await api("/admin/users/" + b.dataset.id + "/password", { method: "POST", body: JSON.stringify({ password: pw }) }); alert("Password set for " + b.dataset.email + "."); }
+        catch (e) { alert(e.message || "Failed to set password."); }
       }));
     } catch (e) { list.innerHTML = ""; }
   }
@@ -1813,7 +2450,7 @@
       sw.style.background = def[currentDark() ? "dark" : "light"].a;
       sw.addEventListener("click", () => {
         accentKey = key; localStorage.setItem("mtk-accent", key);
-        applyAccent(); buildSwatches(); recomputeVisible();
+        applyAccent(); buildSwatches(); recomputeVisible(); scheduleSave();
       });
       wrap.appendChild(sw);
     });
@@ -1825,7 +2462,7 @@
     localStorage.setItem("mtk-theme", mode);
     if (mode === "auto") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", mode);
-    syncThemeUI(); applyAccent(); buildSwatches(); recomputeVisible();
+    syncThemeUI(); applyAccent(); buildSwatches(); recomputeVisible(); scheduleSave();
   }
   function syncThemeUI() {
     const mode = themeMode();
@@ -1834,10 +2471,45 @@
   }
   document.querySelectorAll("#themeSeg .seg-btn").forEach(b => b.addEventListener("click", () => applyThemeMode(b.dataset.mode)));
 
+  document.getElementById("resetDefaultsBtn").addEventListener("click", () => {
+    if (!defaultState) return;
+    if (!confirm("Reset all calculator inputs on every tab to their defaults?")) return;
+    currentScnId = null; if (document.getElementById("scenarioSelect")) document.getElementById("scenarioSelect").value = "";
+    applyState(JSON.parse(JSON.stringify(defaultState)));
+    persistState();
+  });
+
+  document.getElementById("backupBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify({ app: "mortgage-tool-kit", v: 1, state: collectState() }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "mtk-backup.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  document.getElementById("restoreBtn").addEventListener("click", () => document.getElementById("restoreFile").click());
+  document.getElementById("restoreFile").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const state = parsed && parsed.state ? parsed.state : parsed;   // accept wrapped or raw
+        if (!state || typeof state !== "object") throw new Error("not a state object");
+        currentScnId = null; if (document.getElementById("scenarioSelect")) document.getElementById("scenarioSelect").value = "";
+        applyState(state);
+        persistState();
+      } catch (err) { alert("Could not read that file - it doesn't look like a Mortgage Tool Kit backup."); }
+      e.target.value = "";   // allow re-importing the same file
+    };
+    reader.readAsText(file);
+  });
+
   // ---------- Payment calculator ----------
   const PAY_COLORS = { tax: "#c99a3b", ins: "#4a90c2", hoa: "#8a6fb0", pmi: "#c25b6e" };
   let pmiUserSet = false;
-  let payResult = null;
+  let payResult = null, afResult = null, rfResult = null, cmpResult = null;
   const gv = (id) => parseFloat(document.getElementById(id).value) || 0;
 
   function computePayment() {
@@ -1886,9 +2558,30 @@
     document.getElementById("payLtvNote").textContent = ltv.toFixed(0) + "% LTV" + (roll && closing > 0 ? " (incl. costs)" : "");
     document.getElementById("payDownTile").textContent = fmt(downAmt);
     document.getElementById("payDownPctNote").textContent = downPct.toFixed(1) + "% down";
+    // PMI drop-off: months until the balance amortizes to 80% of the original price (20% equity).
+    let pmiOff = "", pmiMonths = pmi > 0 ? n : 0;
+    if (pmi > 0 && loan > 0 && price > 0) {
+      const target = price * 0.80; let b = loan, m = 0;
+      while (b > target && m < n) { b -= (pi - b * r); m++; }
+      pmiMonths = m; pmiOff = m < n ? ` It falls off around payment ${m} (~${(m / 12).toFixed(1)} yrs) at 20% equity, on schedule.` : "";
+    }
     document.getElementById("payPmiNote").textContent = ltv > 80
-      ? "PMI auto-estimated at ~0.6%/yr while under 20% down \u2014 edit to match your quote."
+      ? "PMI auto-estimated at ~0.6%/yr while under 20% down \u2014 edit to match your quote." + pmiOff
       : "No PMI \u2014 20% or more equity.";
+
+    // Loan cost + APR (estimate): the rate whose payment amortizes the amount financed
+    // net of upfront closing costs; equals the note rate when no fees are paid.
+    const financed = loan - (roll ? 0 : closing);
+    let apr = rate;
+    if (pi > 0 && financed > 0) {
+      let lo = 0, hi = 1;
+      for (let k = 0; k < 60; k++) { const mm = (lo + hi) / 2; const pay = mm === 0 ? financed / n : financed * mm / (1 - Math.pow(1 + mm, -n)); if (pay > pi) hi = mm; else lo = mm; }
+      apr = lo * 1200;
+    }
+    document.getElementById("payApr").textContent = pi > 0 ? apr.toFixed(3) + "%" : "\u2014";
+    document.getElementById("payTotPaid").textContent = fmt(pi * n);
+    document.getElementById("payTotInt").textContent = fmt(pi * n - loan);
+    document.getElementById("payLifetime").textContent = fmt(pi * n + (tax + ins + hoa) * n + pmi * pmiMonths);
 
     // Cash to close
     document.getElementById("cashDown").textContent = fmt(downAmt);
@@ -1969,14 +2662,14 @@
     document.getElementById("taxPctWrap").classList.toggle("hidden", !pct);
     document.getElementById("homesteadField").classList.toggle("hidden", !pct);
     document.getElementById("payTaxNote").classList.toggle("hidden", !pct);
-    computePayment();
+    computePayment(); scheduleSave();
   }));
 
   // HOA monthly/yearly toggle
   document.querySelectorAll("#hoaFreqSeg .seg-btn").forEach(b => b.addEventListener("click", () => {
     document.querySelectorAll("#hoaFreqSeg .seg-btn").forEach(x => x.classList.remove("active"));
     b.classList.add("active");
-    computePayment();
+    computePayment(); scheduleSave();
   }));
 
   // Payment summary printout
@@ -2040,17 +2733,159 @@
     f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 2000); };
   });
 
+  // ---------- Affordability + Refinance ----------
+  function pmtOf(principal, ratePct, months) {
+    const r = ratePct / 1200, n = Math.max(1, Math.round(months));
+    if (principal <= 0) return 0;
+    return r === 0 ? principal / n : principal * r / (1 - Math.pow(1 + r, -n));
+  }
+
+  function computeAfford() {
+    const income = gv("afIncome"), debts = gv("afDebts");
+    const front = gv("afFront") / 100, back = gv("afBack") / 100;
+    const down = gv("afDown"), rate = gv("afRate"), term = gv("afTerm");
+    const taxPct = gv("afTaxPct"), ins = gv("afIns"), hoa = gv("afHoa");
+    const grossMo = income / 12;
+    const maxHousing = Math.max(0, Math.min(front * grossMo, back * grossMo - debts));
+    const backBinds = (back * grossMo - debts) < (front * grossMo);
+    const n = Math.max(1, Math.round(term * 12));
+    // Binary-search the max price whose full PITI stays within the housing budget.
+    let lo = down, hi = down + 5_000_000;
+    for (let i = 0; i < 44; i++) {
+      const P = (lo + hi) / 2, loan = Math.max(0, P - down);
+      const piti = pmtOf(loan, rate, n) + P * taxPct / 100 / 12 + ins / 12 + hoa + ((P > 0 && loan / P > 0.8) ? loan * 0.006 / 12 : 0);
+      if (piti > maxHousing) hi = P; else lo = P;
+    }
+    const price = Math.max(down, lo), loan = Math.max(0, price - down);
+    const tax = price * taxPct / 100 / 12, pmi = (price > 0 && loan / price > 0.8) ? loan * 0.006 / 12 : 0;
+    const pi = pmtOf(loan, rate, n), total = pi + tax + ins / 12 + hoa + pmi;
+
+    document.getElementById("afPrice").textContent = fmt(price);
+    document.getElementById("afPriceNote").textContent = (price > 0 ? (down / price * 100).toFixed(0) : 0) + "% down";
+    document.getElementById("afLoan").textContent = fmt(loan);
+    document.getElementById("afLoanNote").textContent = (price > 0 ? (loan / price * 100).toFixed(0) : 0) + "% LTV";
+    document.getElementById("afHousing").textContent = fmt(maxHousing);
+    document.getElementById("afBind").textContent = backBinds ? "Back-end" : "Front-end";
+    document.getElementById("afBindNote").textContent = backBinds ? "housing + debts cap" : "housing cap";
+
+    const V = document.getElementById("afVerdict");
+    if (maxHousing <= 0) { V.className = "verdict warn"; V.innerHTML = `<span class="dot">&#9650;</span><div>Your monthly debts exceed the back-end DTI limit &mdash; there's no room for a housing payment. Reduce debts or raise the DTI ratio.</div>`; }
+    else { V.className = "verdict good"; V.innerHTML = `<span class="dot">&#9679;</span><div>On ${fmt(income)} income with ${fmt(debts)}/mo of debts, your housing budget is <b>${fmt(maxHousing)}/mo</b> (${backBinds ? "back-end" : "front-end"} DTI binding) &mdash; roughly a <b>${fmt(price)}</b> home at ${rate}% over ${term} years.</div>`; }
+
+    const segs = [["Principal & interest", pi], ["Property tax", tax], ["Home insurance", ins / 12], ["HOA", hoa], ["PMI", pmi]].filter(s => s[1] > 0.5);
+    document.getElementById("afBreakdown").innerHTML = segs.map(s => `<tr><td>${s[0]}</td><td>${fmt(s[1])}</td></tr>`).join("")
+      + `<tr class="yr"><td>Total housing</td><td class="end">${fmt(total)}</td></tr>`;
+    afResult = { income, debts, price, loan, maxHousing, pi, tax, ins: ins / 12, hoa, pmi, total, backBinds, rate, term };
+  }
+
+  function computeRefi() {
+    const balance = gv("rfBalance"), curRate = gv("rfCurRate"), curTerm = gv("rfCurTerm");
+    const newRate = gv("rfNewRate"), newTerm = gv("rfNewTerm"), closing = gv("rfClosing");
+    const roll = document.getElementById("rfRoll").checked;
+    const curMonths = Math.max(1, Math.round(curTerm * 12)), newMonths = Math.max(1, Math.round(newTerm * 12));
+    const curPI = pmtOf(balance, curRate, curMonths);
+    const newLoan = balance + (roll ? closing : 0);
+    const newPI = pmtOf(newLoan, newRate, newMonths);
+    const savings = curPI - newPI;                 // positive = lower payment
+    const upfront = roll ? 0 : closing;
+    const breakevenMo = savings > 0 ? upfront / savings : Infinity;
+    const lifeChange = (newPI * newMonths + upfront) - (curPI * curMonths);   // negative = cheaper overall
+    const curInterest = curPI * curMonths - balance, newInterest = newPI * newMonths - newLoan;
+
+    document.getElementById("rfNewPay").textContent = fmt(newPI);
+    document.getElementById("rfNewPayNote").textContent = "was " + fmt(curPI);
+    const saveTile = document.getElementById("rfSaveTile"), saveEl = document.getElementById("rfSave"), saveNote = document.getElementById("rfSaveNote");
+    saveTile.classList.remove("good", "warn");
+    if (savings > 0.5) { saveTile.classList.add("good"); saveEl.textContent = "-" + fmt(savings); saveNote.textContent = "lower each month"; }
+    else if (savings < -0.5) { saveTile.classList.add("warn"); saveEl.textContent = "+" + fmt(-savings); saveNote.textContent = "higher each month"; }
+    else { saveEl.textContent = fmt(0); saveNote.textContent = "about the same"; }
+
+    document.getElementById("rfBreakeven").textContent =
+      savings <= 0 ? "\u2014" : upfront <= 0 ? "immediate" : Math.ceil(breakevenMo) + " mo";
+    const lifeTile = document.getElementById("rfLifeTile"), lifeEl = document.getElementById("rfLife");
+    lifeTile.classList.remove("good", "warn");
+    if (lifeChange < -0.5) { lifeTile.classList.add("good"); lifeEl.textContent = "-" + fmt(-lifeChange); }
+    else if (lifeChange > 0.5) { lifeTile.classList.add("warn"); lifeEl.textContent = "+" + fmt(lifeChange); }
+    else lifeEl.textContent = fmt(0);
+
+    const V = document.getElementById("rfVerdict");
+    if (savings > 0.5) {
+      const be = isFinite(breakevenMo) ? `you recoup ${fmt(upfront)} in about <b>${Math.ceil(breakevenMo)} months</b> (${(breakevenMo / 12).toFixed(1)} yrs)` : "there are no out-of-pocket costs to recoup";
+      const life = lifeChange < 0 ? `Over the full term you'd save <b>${fmt(-lifeChange)}</b>.` : `But over the full term you'd pay <b>${fmt(lifeChange)}</b> more (a longer payoff).`;
+      V.className = "verdict good";
+      V.innerHTML = `<span class="dot">&#9679;</span><div>Refinancing lowers your payment by <b>${fmt(savings)}/mo</b>; ${be}. ${life}</div>`;
+    } else {
+      V.className = "verdict warn";
+      V.innerHTML = `<span class="dot">&#9650;</span><div>At these terms the new payment is <b>${fmt(-savings)}/mo higher</b> &mdash; this refi doesn't lower your payment. Try a lower rate or a longer term.</div>`;
+    }
+
+    document.getElementById("rfCompare").innerHTML =
+      `<tr><td>Monthly P&amp;I</td><td>${fmt(curPI)}</td><td class="end">${fmt(newPI)}</td></tr>`
+      + `<tr><td>Rate</td><td>${curRate}%</td><td class="end">${newRate}%</td></tr>`
+      + `<tr><td>Term left</td><td>${curTerm} yrs</td><td class="end">${newTerm} yrs</td></tr>`
+      + `<tr><td>Balance</td><td>${fmt(balance)}</td><td class="end">${fmt(newLoan)}</td></tr>`
+      + `<tr><td>Interest remaining</td><td>${fmt(curInterest)}</td><td class="end">${fmt(newInterest)}</td></tr>`;
+    rfResult = { balance, curRate, curTerm, newRate, newTerm, closing, roll, curPI, newPI, savings, breakevenMo, lifeChange };
+  }
+
+  function computeCompare() {
+    const amt = gv("cmpAmt");
+    const model = (rate, term, pts, fee) => {
+      const n = Math.max(1, Math.round(term * 12));
+      const pi = pmtOf(amt, rate, n);
+      const upfront = amt * pts / 100 + fee;
+      return { pi, n, pts, fee, upfront, totalInterest: pi * n - amt, totalCost: pi * n + upfront };
+    };
+    const A = model(gv("cmpRateA"), gv("cmpTermA"), gv("cmpPtsA"), gv("cmpFeeA"));
+    const B = model(gv("cmpRateB"), gv("cmpTermB"), gv("cmpPtsB"), gv("cmpFeeB"));
+    document.getElementById("cmpPayA").textContent = fmt(A.pi);
+    document.getElementById("cmpPayB").textContent = fmt(B.pi);
+    const cheaper = A.totalCost <= B.totalCost ? "A" : "B";
+    const diff = Math.abs(A.totalCost - B.totalCost);
+    document.getElementById("cmpWin").textContent = "Loan " + cheaper;
+    document.getElementById("cmpWinNote").textContent = "saves " + fmt(diff) + " total";
+    const lower = A.pi <= B.pi ? A : B, higher = A.pi <= B.pi ? B : A;
+    const monthlySave = higher.pi - lower.pi, upfrontExtra = lower.upfront - higher.upfront;
+    let beText = "\u2014";
+    if (monthlySave > 0.5 && upfrontExtra > 0) beText = Math.ceil(upfrontExtra / monthlySave) + " mo";
+    else if (monthlySave > 0.5 && upfrontExtra <= 0) beText = "immediate";
+    document.getElementById("cmpBreak").textContent = beText;
+    const V = document.getElementById("cmpVerdict"); V.className = "verdict good";
+    const lowPayWhich = A.pi <= B.pi ? "A" : "B";
+    V.innerHTML = `<span class="dot">&#9679;</span><div>Loan ${lowPayWhich} has the lower payment (${fmt(Math.min(A.pi, B.pi))}/mo). Loan <b>${cheaper}</b> costs <b>${fmt(diff)}</b> less over the full term${(beText !== "\u2014" && beText !== "immediate") ? `, breaking even on the upfront gap in <b>${beText}</b>` : ""}.</div>`;
+    const row = (l, a, b) => `<tr><td>${l}</td><td>${a}</td><td class="end">${b}</td></tr>`;
+    document.getElementById("cmpTable").innerHTML =
+      row("Monthly P&amp;I", fmt(A.pi), fmt(B.pi)) +
+      row("Rate", gv("cmpRateA") + "%", gv("cmpRateB") + "%") +
+      row("Term", gv("cmpTermA") + " yrs", gv("cmpTermB") + " yrs") +
+      row("Points cost", fmt(amt * gv("cmpPtsA") / 100), fmt(amt * gv("cmpPtsB") / 100)) +
+      row("Upfront (points + fees)", fmt(A.upfront), fmt(B.upfront)) +
+      row("Total interest", fmt(A.totalInterest), fmt(B.totalInterest)) +
+      row("Total cost", fmt(A.totalCost), fmt(B.totalCost));
+    cmpResult = { amt, A, B, cheaper, diff };
+  }
+
+  ["afIncome", "afDebts", "afFront", "afBack", "afDown", "afRate", "afTerm", "afTaxPct", "afIns", "afHoa"].forEach(id => document.getElementById(id).addEventListener("input", computeAfford));
+  ["rfBalance", "rfCurRate", "rfCurTerm", "rfNewRate", "rfNewTerm", "rfClosing"].forEach(id => document.getElementById(id).addEventListener("input", computeRefi));
+  document.getElementById("rfRoll").addEventListener("change", computeRefi);
+  ["cmpAmt", "cmpRateA", "cmpTermA", "cmpPtsA", "cmpFeeA", "cmpRateB", "cmpTermB", "cmpPtsB", "cmpFeeB"].forEach(id => document.getElementById(id).addEventListener("input", computeCompare));
+
   // ---------- tabs ----------
   document.querySelectorAll(".tab").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       const tab = btn.dataset.tab;
-      ["escrow", "amort", "payment", "tnote"].forEach(t =>
+      ["escrow", "amort", "payment", "afford", "refi", "compare", "tnote"].forEach(t =>
         document.getElementById("view-" + t).classList.toggle("hidden", tab !== t));
+      // The escrow statement only makes sense on the Escrow tab.
+      document.getElementById("exportStmt").classList.toggle("hidden", tab !== "escrow");
       if (tab === "amort") computeAmort();
       else if (tab === "tnote") computeTnote();
       else if (tab === "payment") computePayment();
+      else if (tab === "afford") computeAfford();
+      else if (tab === "refi") computeRefi();
+      else if (tab === "compare") computeCompare();
       else compute();
     });
   });
@@ -2059,7 +2894,7 @@
     const yBtn = document.getElementById("viewYearly"), mBtn = document.getElementById("viewMonthly");
     yBtn.classList.toggle("active", m==="yearly"); yBtn.setAttribute("aria-selected", m==="yearly");
     mBtn.classList.toggle("active", m==="monthly"); mBtn.setAttribute("aria-selected", m==="monthly");
-    computeAmort();
+    computeAmort(); scheduleSave();
   }
   document.getElementById("viewYearly").addEventListener("click", () => setAmortMode("yearly"));
   document.getElementById("viewMonthly").addEventListener("click", () => setAmortMode("monthly"));
@@ -2069,9 +2904,13 @@
   function currentDark() { const t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; }
   function syncBtn(){ themeBtn.textContent = currentDark() ? "Light" : "Dark"; }
   function recomputeVisible(){
-    if (!document.getElementById("view-payment").classList.contains("hidden")) computePayment();
-    else if (!document.getElementById("view-tnote").classList.contains("hidden")) computeTnote();
-    else if (!document.getElementById("view-amort").classList.contains("hidden")) computeAmort();
+    const vis = (t) => !document.getElementById("view-" + t).classList.contains("hidden");
+    if (vis("payment")) computePayment();
+    else if (vis("tnote")) computeTnote();
+    else if (vis("amort")) computeAmort();
+    else if (vis("afford")) computeAfford();
+    else if (vis("refi")) computeRefi();
+    else if (vis("compare")) computeCompare();
     else compute();
   }
   themeBtn.addEventListener("click", () => applyThemeMode(currentDark() ? "light" : "dark"));
@@ -2083,7 +2922,8 @@
     const v = parseFloat(document.getElementById("cushion").value);
     document.getElementById("cushionVal").textContent = v + (v===1?" month":" months"); compute();
   });
-  ["loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear"].forEach(id => document.getElementById(id).addEventListener("input", computeAmort));
+  ["loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt"].forEach(id => document.getElementById(id).addEventListener("input", computeAmort));
+  document.getElementById("loanBiweekly").addEventListener("change", computeAmort);
   window.addEventListener("resize", recomputeVisible);
 
   // default the T-Note reference date to today (clamped to available data), preselect the 45-day preset
@@ -2097,6 +2937,90 @@
     computeTnote();
   })();
 
+  // ---------- tooltips ----------
+  function makeTip(text) {
+    const s = document.createElement("span");
+    s.className = "tip"; s.tabIndex = 0; s.setAttribute("role", "note"); s.setAttribute("aria-label", text);
+    s.dataset.tip = text; s.textContent = "?";
+    return s;
+  }
+  const FIELD_TIPS = {
+    startBal: "The balance in your escrow account at the start of this 12-month projection - your servicer lists it on your statement.",
+    curPay: "What you currently pay into escrow each month (the taxes & insurance part of your mortgage payment, not principal & interest).",
+    startMonth: "The first month of the 12-month projection window - usually your escrow computation-year start.",
+    cushion: "A reserve the servicer keeps so the account never runs dry. RESPA caps it at 2 months of escrow payments (one-sixth of annual disbursements).",
+    loanAmt: "The loan principal you're borrowing (or today's balance if you're modeling from now).",
+    loanRate: "Annual mortgage interest rate used to compute the monthly principal & interest.",
+    loanTerm: "Loan length in years. 30 and 15 are the most common.",
+    loanExtra: "An extra amount added to principal every month. It shortens the term and cuts total interest.",
+    loanStartMonth: "When the first payment is made - used to date the payoff and each schedule row.",
+    loanStartYear: "The year of the first payment - used to date the payoff.",
+    loanLump: "A single one-time extra payment applied to principal (e.g., a bonus or tax refund). Cuts interest and shortens the term.",
+    loanLumpAt: "Which payment number the lump sum lands on (payment 12 = end of year one).",
+    payPrice: "The purchase price or appraised value of the home.",
+    payDownAmt: "Your upfront cash toward the price. 20% or more avoids PMI.",
+    payDownPct: "Down payment as a percent of price. Loan-to-value (LTV) is the mirror image - under 80% LTV (20%+ down) avoids PMI.",
+    payRate: "Annual mortgage interest rate.",
+    payTerm: "Loan length in years.",
+    payTax: "Annual property tax as a fixed dollar amount. Switch to % to enter a tax rate on the home's value.",
+    payTaxPct: "Annual property tax as a percent of the home's (post-exemption) value.",
+    payHomestead: "A homestead exemption lowers the home's taxable value before the tax rate is applied. Many states offer one for a primary residence.",
+    payIns: "Annual homeowner's (hazard) insurance premium.",
+    payHoa: "Homeowners-association dues. Toggle /mo or /yr for how you're entering it.",
+    payPmi: "Private mortgage insurance - required when your down payment is under 20%. Auto-estimated at ~0.6%/yr of the loan; edit it to match your quote. It typically drops off near 20% equity.",
+    payClosing: "One-time fees paid at closing (lender, title, appraisal, escrow prepaids...). Toggle 'roll into loan' to finance them instead of paying cash.",
+    afIncome: "Your gross (pre-tax) household income per year.",
+    afDebts: "Total minimum monthly payments on your other debts - car loans, student loans, credit-card minimums, etc.",
+    afFront: "Front-end DTI: the largest share of gross monthly income a lender allows for housing (full PITI). ~28% is a common guideline.",
+    afBack: "Back-end DTI: the largest share of income for housing PLUS all other debt payments. ~36-43% is common.",
+    afDown: "Cash you'll put down. More down means a higher price for the same payment, and 20%+ avoids PMI.",
+    afRate: "Annual mortgage interest rate you expect to qualify for.",
+    afTerm: "Loan length in years.",
+    afTaxPct: "Estimated annual property tax as a percent of home value (varies widely by area).",
+    afIns: "Estimated annual homeowner's insurance premium.",
+    afHoa: "Estimated monthly HOA dues, if any.",
+    rfBalance: "How much you still owe on your current mortgage today.",
+    rfCurRate: "The interest rate on your current loan.",
+    rfCurTerm: "Years remaining on your current loan.",
+    rfNewRate: "The interest rate you'd get on the new (refinanced) loan.",
+    rfNewTerm: "Length of the new loan. A longer term lowers the payment but can raise lifetime interest.",
+    rfClosing: "Fees to complete the refinance. Toggle 'roll into loan' to avoid paying them out of pocket.",
+    cmpAmt: "The loan amount, applied to both loans being compared.",
+    cmpRateA: "Loan A's interest rate.",
+    cmpRateB: "Loan B's interest rate (e.g., a lower rate you buy down with points).",
+    cmpPtsA: "Discount points on Loan A, as a percent of the loan paid upfront to lower the rate (1 point = 1% of the loan).",
+    cmpPtsB: "Discount points on Loan B (1 point = 1% of the loan, paid upfront).",
+    cmpFeeA: "Any other upfront fees for Loan A (origination, etc.).",
+    cmpFeeB: "Any other upfront fees for Loan B.",
+    tnDate: "The reference date (for an ARM, the rate-change date). The index is read a set number of days before it.",
+    tnLookback: "How many days before the reference date to read the rate - the ARM 'lookback' period, commonly 45 days.",
+    tnTenor: "Which Treasury constant-maturity to read (1-10 years). An ARM uses a specific tenor as its index.",
+  };
+  const EYEBROW_TIPS = {
+    "Annual disbursements": "The bills your servicer pays out of escrow (property taxes, insurance, etc.) and when. These drive the required monthly deposit.",
+    "Taxes, insurance & fees": "The parts of your monthly payment beyond principal & interest.",
+    "Closing costs": "One-time costs to finalize the purchase or refinance.",
+    "Monthly payment breakdown": "Your total monthly payment split into principal & interest (P&I), property tax, insurance, HOA, and PMI - together called PITI.",
+    "Income & debts": "Used to compute your debt-to-income (DTI) ratios, which cap how much a lender will lend.",
+    "Cash to close": "The cash you need at the closing table: down payment plus any closing costs you don't roll into the loan.",
+    "Current loan": "Your existing mortgage as it stands today.",
+    "New loan": "The loan you'd replace it with.",
+  };
+  function injectTips() {
+    Object.entries(FIELD_TIPS).forEach(([id, t]) => {
+      const el = document.getElementById(id); if (!el) return;
+      const lbl = el.closest(".field") && el.closest(".field").querySelector(".lbl"); if (!lbl) return;
+      const target = lbl.querySelector("span") || lbl;
+      if (!target.querySelector(".tip")) target.appendChild(makeTip(t));
+    });
+    document.querySelectorAll(".eyebrow").forEach(e => {
+      const t = EYEBROW_TIPS[e.textContent.trim()];
+      if (t && !e.querySelector(".tip")) e.appendChild(makeTip(t));
+    });
+    const aprT = document.getElementById("aprTip");
+    if (aprT && !aprT.querySelector(".tip")) aprT.appendChild(makeTip("APR folds your closing costs into the interest rate, so it reads higher than the note rate when you pay fees - a standard way to compare loans' true cost. Estimate; excludes some fee types."));
+  }
+
   // ---------- init ----------
   // Apply stored theme mode + accent before first paint of computed colors.
   (function initAppearance() {
@@ -2109,12 +3033,22 @@
   if (IS_DEV) {
     document.getElementById("devBadge").classList.remove("hidden");
     document.getElementById("devBadge2").classList.remove("hidden");
+    document.getElementById("devBadge3").classList.remove("hidden");
   }
 
   renderDisb(); syncBtn();
   compute();
   computeAmort();   // populate state.amort so the statement's PITI section is ready
   computePayment(); // ready the Payment tab
+  computeAfford();
+  computeRefi();
+  computeCompare();
+  injectTips();
+  defaultState = collectState();   // snapshot factory defaults for "Reset to defaults"
+  sharedState = parseHashState();  // a "#s=" link reopens someone's exact inputs
+  if (sharedState) { applyState(sharedState); try { history.replaceState(null, "", location.pathname); } catch (e) {} }
 
   checkAuth();      // gate the app until signed in
+  handleVerifyHash();   // toast if we just came back from an email verify link
+  handleResetHash();    // show the set-new-password panel if arriving from a reset link
 </script>
