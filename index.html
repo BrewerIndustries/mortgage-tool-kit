@@ -1280,7 +1280,9 @@
       if (i === lumpIdx && lumpAmt > 0) principal += lumpAmt;
       if (principal > bal) principal = bal;
       principal = round2(principal);
-      if (principal > bal) principal = round2(bal);
+      // Final scheduled payment (or early payoff) clears the balance, so the loan
+      // retires in exactly the term (real lenders adjust the last payment for rounding).
+      if (principal > bal || bal - principal < 0.01 || i === n - 1) principal = round2(bal);
       const pay = round2(principal + interest);
       bal = round2(bal - principal); totInt += interest; totPrin += principal;
       sched.push({ i: i+1, pay, principal, interest, bal: Math.max(0, bal) });

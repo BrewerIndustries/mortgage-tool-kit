@@ -52,8 +52,8 @@ polish / accessibility / extras. Check items off as they ship.
 
 ### Engineering & testing
 - [ ] Extract the pure calc functions (amortization, escrow projection, PITI, business-day rollback) into an importable module
-- [ ] Add a **unit test suite** for the calc module with known-value fixtures
-- [ ] Wire the tests into CI so they run on every PR
+- [x] Add a **unit test suite** for the calc module with known-value fixtures
+- [x] Wire the tests into CI so they run on every PR
 - [ ] Split the 2,120-line `index.html` into modules (CSS/JS separation or ES modules) without adding a heavy build
 
 ### Ops & reliability
