@@ -384,6 +384,7 @@
     <button class="tab" data-tab="payment" type="button">Payment</button>
     <button class="tab" data-tab="afford" type="button">Affordability</button>
     <button class="tab" data-tab="refi" type="button">Refinance</button>
+    <button class="tab" data-tab="compare" type="button">Compare</button>
     <button class="tab" data-tab="tnote" type="button">T-Note Lookup</button>
     <div class="tab-actions">
       <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
@@ -791,6 +792,70 @@
           Break-even is the number of months of payment savings needed to recoup the closing costs you pay out of pocket. Rolling
           costs into the loan means $0 out of pocket but a larger balance. Lifetime change compares total remaining cost of the
           current loan vs. the new loan (plus any upfront costs). Estimate only &mdash; excludes escrow, taxes, and PMI changes.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= COMPARE VIEW ================= -->
+  <div id="view-compare" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Both loans</p>
+            <label class="field"><span class="lbl">Loan amount</span>
+              <div class="money-input"><input type="number" id="cmpAmt" value="360000" step="1000"></div></label>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Loan A</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Rate</span>
+                <div class="suffix-input"><input type="number" id="cmpRateA" value="6.5" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Term</span>
+                <div class="suffix-input"><input type="number" id="cmpTermA" value="30" step="1"><span class="sfx">yrs</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Points</span>
+                <div class="suffix-input"><input type="number" id="cmpPtsA" value="0" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Other fees</span>
+                <div class="money-input"><input type="number" id="cmpFeeA" value="0" step="250"></div></label>
+            </div>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Loan B</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Rate</span>
+                <div class="suffix-input"><input type="number" id="cmpRateB" value="6.0" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Term</span>
+                <div class="suffix-input"><input type="number" id="cmpTermB" value="30" step="1"><span class="sfx">yrs</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Points</span>
+                <div class="suffix-input"><input type="number" id="cmpPtsB" value="1" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Other fees</span>
+                <div class="money-input"><input type="number" id="cmpFeeB" value="0" step="250"></div></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles">
+          <div class="tile"><div class="k">Loan A payment</div><div class="v" id="cmpPayA">$0</div><div class="n" id="cmpPayANote">P&amp;I / mo</div></div>
+          <div class="tile"><div class="k">Loan B payment</div><div class="v" id="cmpPayB">$0</div><div class="n" id="cmpPayBNote">P&amp;I / mo</div></div>
+          <div class="tile" id="cmpWinTile"><div class="k">Lower total cost</div><div class="v" id="cmpWin" style="font-size:20px;">&mdash;</div><div class="n" id="cmpWinNote">over the full term</div></div>
+          <div class="tile"><div class="k">Break-even</div><div class="v" id="cmpBreak" style="font-size:20px;">&mdash;</div><div class="n">on the upfront gap</div></div>
+        </div>
+        <div class="verdict good" id="cmpVerdict"></div>
+        <div class="card table-card">
+          <div class="panel" style="padding-bottom:8px;"><p class="eyebrow" style="margin:0;">Side by side</p></div>
+          <table><thead><tr><th>&nbsp;</th><th>Loan A</th><th>Loan B</th></tr></thead><tbody id="cmpTable"></tbody></table>
+        </div>
+        <p class="foot-note">
+          Compare two loans - e.g., a higher rate with no points vs. a lower rate you buy down with points. "Total cost" is all
+          payments plus upfront points &amp; fees over the full term (assuming you keep the loan). Break-even is how long the lower-payment
+          loan takes to recoup its extra upfront cost. Estimate only &mdash; not financial advice.
         </p>
       </div>
     </div>
@@ -1546,6 +1611,18 @@
     rows.push(["Lifetime cost change", Math.round(p.lifeChange)]);
     return toCSV(rows);
   }
+  function compareCSV() {
+    const p = cmpResult, rows = [["Loan comparison"]];
+    if (!p) return toCSV(rows);
+    rows.push(["Loan amount", Math.round(p.amt)]);
+    rows.push([], ["", "Loan A", "Loan B"]);
+    rows.push(["Monthly P&I", Math.round(p.A.pi), Math.round(p.B.pi)]);
+    rows.push(["Upfront (points+fees)", Math.round(p.A.upfront), Math.round(p.B.upfront)]);
+    rows.push(["Total interest", Math.round(p.A.totalInterest), Math.round(p.B.totalInterest)]);
+    rows.push(["Total cost", Math.round(p.A.totalCost), Math.round(p.B.totalCost)]);
+    rows.push(["Cheaper overall", p.cheaper, "by " + Math.round(p.diff)]);
+    return toCSV(rows);
+  }
   document.getElementById("exportCsv").addEventListener("click", () => {
     const vis = (t) => !document.getElementById("view-" + t).classList.contains("hidden");
     if (vis("payment")) { computePayment(); downloadBlob("mortgage-payment.csv", paymentCSV(), "text/csv;charset=utf-8"); }
@@ -1553,6 +1630,7 @@
     else if (vis("amort")) { computeAmort(); downloadBlob("amortization-schedule.csv", amortCSV(), "text/csv;charset=utf-8"); }
     else if (vis("afford")) { computeAfford(); downloadBlob("affordability.csv", affordCSV(), "text/csv;charset=utf-8"); }
     else if (vis("refi")) { computeRefi(); downloadBlob("refinance.csv", refiCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("compare")) { computeCompare(); downloadBlob("loan-comparison.csv", compareCSV(), "text/csv;charset=utf-8"); }
     else { compute(); downloadBlob("escrow-projection.csv", escrowCSV(), "text/csv;charset=utf-8"); }
   });
 
@@ -1974,7 +2052,7 @@
   });
 
   // ---------- persistence: state snapshot + autosave ----------
-  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","tnDate","tnLookback","tnTenor"];
+  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","tnDate","tnLookback","tnTenor"];
   let restoring = false, saveTimer = null;
 
   function collectState() {
@@ -2000,7 +2078,7 @@
     if (s.taxMode) { const b = document.querySelector('#taxModeSeg .seg-btn[data-m="' + s.taxMode + '"]'); if (b) b.click(); }
     if (s.hoaFreq) { const b = document.querySelector('#hoaFreqSeg .seg-btn[data-f="' + s.hoaFreq + '"]'); if (b) b.click(); }
     if (s.amortMode) setAmortMode(s.amortMode);
-    compute(); computeAmort(); computePayment(); computeAfford(); computeRefi(); computeTnote();
+    compute(); computeAmort(); computePayment(); computeAfford(); computeRefi(); computeCompare(); computeTnote();
     restoring = false;
   }
 
@@ -2226,7 +2304,7 @@
   // ---------- Payment calculator ----------
   const PAY_COLORS = { tax: "#c99a3b", ins: "#4a90c2", hoa: "#8a6fb0", pmi: "#c25b6e" };
   let pmiUserSet = false;
-  let payResult = null, afResult = null, rfResult = null;
+  let payResult = null, afResult = null, rfResult = null, cmpResult = null;
   const gv = (id) => parseFloat(document.getElementById(id).value) || 0;
 
   function computePayment() {
@@ -2531,9 +2609,47 @@
     rfResult = { balance, curRate, curTerm, newRate, newTerm, closing, roll, curPI, newPI, savings, breakevenMo, lifeChange };
   }
 
+  function computeCompare() {
+    const amt = gv("cmpAmt");
+    const model = (rate, term, pts, fee) => {
+      const n = Math.max(1, Math.round(term * 12));
+      const pi = pmtOf(amt, rate, n);
+      const upfront = amt * pts / 100 + fee;
+      return { pi, n, pts, fee, upfront, totalInterest: pi * n - amt, totalCost: pi * n + upfront };
+    };
+    const A = model(gv("cmpRateA"), gv("cmpTermA"), gv("cmpPtsA"), gv("cmpFeeA"));
+    const B = model(gv("cmpRateB"), gv("cmpTermB"), gv("cmpPtsB"), gv("cmpFeeB"));
+    document.getElementById("cmpPayA").textContent = fmt(A.pi);
+    document.getElementById("cmpPayB").textContent = fmt(B.pi);
+    const cheaper = A.totalCost <= B.totalCost ? "A" : "B";
+    const diff = Math.abs(A.totalCost - B.totalCost);
+    document.getElementById("cmpWin").textContent = "Loan " + cheaper;
+    document.getElementById("cmpWinNote").textContent = "saves " + fmt(diff) + " total";
+    const lower = A.pi <= B.pi ? A : B, higher = A.pi <= B.pi ? B : A;
+    const monthlySave = higher.pi - lower.pi, upfrontExtra = lower.upfront - higher.upfront;
+    let beText = "\u2014";
+    if (monthlySave > 0.5 && upfrontExtra > 0) beText = Math.ceil(upfrontExtra / monthlySave) + " mo";
+    else if (monthlySave > 0.5 && upfrontExtra <= 0) beText = "immediate";
+    document.getElementById("cmpBreak").textContent = beText;
+    const V = document.getElementById("cmpVerdict"); V.className = "verdict good";
+    const lowPayWhich = A.pi <= B.pi ? "A" : "B";
+    V.innerHTML = `<span class="dot">&#9679;</span><div>Loan ${lowPayWhich} has the lower payment (${fmt(Math.min(A.pi, B.pi))}/mo). Loan <b>${cheaper}</b> costs <b>${fmt(diff)}</b> less over the full term${(beText !== "\u2014" && beText !== "immediate") ? `, breaking even on the upfront gap in <b>${beText}</b>` : ""}.</div>`;
+    const row = (l, a, b) => `<tr><td>${l}</td><td>${a}</td><td class="end">${b}</td></tr>`;
+    document.getElementById("cmpTable").innerHTML =
+      row("Monthly P&amp;I", fmt(A.pi), fmt(B.pi)) +
+      row("Rate", gv("cmpRateA") + "%", gv("cmpRateB") + "%") +
+      row("Term", gv("cmpTermA") + " yrs", gv("cmpTermB") + " yrs") +
+      row("Points cost", fmt(amt * gv("cmpPtsA") / 100), fmt(amt * gv("cmpPtsB") / 100)) +
+      row("Upfront (points + fees)", fmt(A.upfront), fmt(B.upfront)) +
+      row("Total interest", fmt(A.totalInterest), fmt(B.totalInterest)) +
+      row("Total cost", fmt(A.totalCost), fmt(B.totalCost));
+    cmpResult = { amt, A, B, cheaper, diff };
+  }
+
   ["afIncome", "afDebts", "afFront", "afBack", "afDown", "afRate", "afTerm", "afTaxPct", "afIns", "afHoa"].forEach(id => document.getElementById(id).addEventListener("input", computeAfford));
   ["rfBalance", "rfCurRate", "rfCurTerm", "rfNewRate", "rfNewTerm", "rfClosing"].forEach(id => document.getElementById(id).addEventListener("input", computeRefi));
   document.getElementById("rfRoll").addEventListener("change", computeRefi);
+  ["cmpAmt", "cmpRateA", "cmpTermA", "cmpPtsA", "cmpFeeA", "cmpRateB", "cmpTermB", "cmpPtsB", "cmpFeeB"].forEach(id => document.getElementById(id).addEventListener("input", computeCompare));
 
   // ---------- tabs ----------
   document.querySelectorAll(".tab").forEach(btn => {
@@ -2541,7 +2657,7 @@
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       const tab = btn.dataset.tab;
-      ["escrow", "amort", "payment", "afford", "refi", "tnote"].forEach(t =>
+      ["escrow", "amort", "payment", "afford", "refi", "compare", "tnote"].forEach(t =>
         document.getElementById("view-" + t).classList.toggle("hidden", tab !== t));
       // The escrow statement only makes sense on the Escrow tab.
       document.getElementById("exportStmt").classList.toggle("hidden", tab !== "escrow");
@@ -2550,6 +2666,7 @@
       else if (tab === "payment") computePayment();
       else if (tab === "afford") computeAfford();
       else if (tab === "refi") computeRefi();
+      else if (tab === "compare") computeCompare();
       else compute();
     });
   });
@@ -2574,6 +2691,7 @@
     else if (vis("amort")) computeAmort();
     else if (vis("afford")) computeAfford();
     else if (vis("refi")) computeRefi();
+    else if (vis("compare")) computeCompare();
     else compute();
   }
   themeBtn.addEventListener("click", () => applyThemeMode(currentDark() ? "light" : "dark"));
@@ -2648,6 +2766,13 @@
     rfNewRate: "The interest rate you'd get on the new (refinanced) loan.",
     rfNewTerm: "Length of the new loan. A longer term lowers the payment but can raise lifetime interest.",
     rfClosing: "Fees to complete the refinance. Toggle 'roll into loan' to avoid paying them out of pocket.",
+    cmpAmt: "The loan amount, applied to both loans being compared.",
+    cmpRateA: "Loan A's interest rate.",
+    cmpRateB: "Loan B's interest rate (e.g., a lower rate you buy down with points).",
+    cmpPtsA: "Discount points on Loan A, as a percent of the loan paid upfront to lower the rate (1 point = 1% of the loan).",
+    cmpPtsB: "Discount points on Loan B (1 point = 1% of the loan, paid upfront).",
+    cmpFeeA: "Any other upfront fees for Loan A (origination, etc.).",
+    cmpFeeB: "Any other upfront fees for Loan B.",
     tnDate: "The reference date (for an ARM, the rate-change date). The index is read a set number of days before it.",
     tnLookback: "How many days before the reference date to read the rate - the ARM 'lookback' period, commonly 45 days.",
     tnTenor: "Which Treasury constant-maturity to read (1-10 years). An ARM uses a specific tenor as its index.",
@@ -2695,6 +2820,7 @@
   computePayment(); // ready the Payment tab
   computeAfford();
   computeRefi();
+  computeCompare();
   injectTips();
 
   checkAuth();      // gate the app until signed in

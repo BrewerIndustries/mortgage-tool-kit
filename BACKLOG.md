@@ -29,8 +29,8 @@ polish / accessibility / extras. Check items off as they ship.
 ## P1 — Important
 
 ### More calculators
-- [ ] **Loan comparison** — two scenarios side by side (15 vs 30 yr, or two lender quotes)
-- [ ] **Points / rate buydown** break-even analysis
+- [x] **Loan comparison** — two scenarios side by side (15 vs 30 yr, or two lender quotes)
+- [x] **Points / rate buydown** break-even analysis
 - [x] **Bi-weekly payment** savings (interest saved, payoff acceleration)
 - [ ] **ARM payment projection** — initial rate, index + margin, periodic/lifetime caps; consumes the existing T-Note lookup
 - [ ] Amortization: one-time / lump-sum extra payments and a "pay off by date X → required payment" solver
