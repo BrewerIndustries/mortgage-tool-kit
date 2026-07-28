@@ -9,20 +9,20 @@ polish / accessibility / extras. Check items off as they ship.
 ## P0 — Highest value
 
 ### Persistence & shared data model (make the accounts pay off)
-- [ ] Add a D1 `scenarios` table (`user_id`, `name`, JSON payload, created/updated) + admin-safe cascade on user delete
-- [ ] Introduce a single shared **property/loan scenario model** (price, loan, rate, term, taxes, insurance, disbursements) that every tab reads and writes
-- [ ] Migrate each tab's inputs to read/write the shared model instead of duplicating home price / loan / rate / taxes
-- [ ] Save / load / rename / delete named scenarios in the UI (scenario picker in the header)
-- [ ] Auto-save the working scenario (server-side when signed in, localStorage fallback otherwise) so a refresh never wipes inputs
-- [ ] Store per-user preferences (theme, accent) server-side so they follow the account across devices
+- [x] Add a D1 `scenarios` table (`user_id`, `name`, JSON payload, created/updated) + admin-safe cascade on user delete
+- [x] Introduce a single shared **property/loan scenario model** (price, loan, rate, term, taxes, insurance, disbursements) that every tab reads and writes
+- [x] Migrate each tab's inputs to read/write the shared model instead of duplicating home price / loan / rate / taxes
+- [x] Save / load / rename / delete named scenarios in the UI (scenario picker in the header)
+- [x] Auto-save the working scenario (server-side when signed in, localStorage fallback otherwise) so a refresh never wipes inputs
+- [x] Store per-user preferences (theme, accent) server-side so they follow the account across devices
 
 ### Core calculators people actually reach for
-- [ ] **Affordability / DTI** tab — income + monthly debts + rate → max home price & payment (front/back-end ratios)
-- [ ] **Refinance break-even** tab — current vs. new loan, closing costs, monthly savings, months-to-break-even
+- [x] **Affordability / DTI** tab — income + monthly debts + rate → max home price & payment (front/back-end ratios)
+- [x] **Refinance break-even** tab — current vs. new loan, closing costs, monthly savings, months-to-break-even
 
 ### Resilience
-- [ ] Graceful degradation when the auth backend is unreachable — let the client-side calculators still work, show a banner instead of a dead login gate
-- [ ] Decide + document the auth stance: gated app vs. public tool with optional sign-in for saved scenarios
+- [x] Graceful degradation when the auth backend is unreachable — let the client-side calculators still work, show a banner instead of a dead login gate
+- [x] Decide + document the auth stance: gated app vs. public tool with optional sign-in for saved scenarios
 
 ---
 

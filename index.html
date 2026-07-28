@@ -60,6 +60,13 @@
   /* Tabs */
   nav.tabs { display: flex; gap: 4px; align-items: center; border-bottom: 2px solid var(--ink); margin-bottom: 28px; }
   .tab-actions { margin-left: auto; display: flex; gap: 8px; padding-bottom: 6px; }
+
+  /* Scenario bar */
+  .scenario-bar { display: flex; align-items: center; gap: 8px; margin: -14px 0 22px; flex-wrap: wrap; }
+  .sb-label { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); font-weight: 700; }
+  .scenario-bar select { width: auto; min-width: 180px; padding: 6px 10px; font-size: 13px; font-family: var(--sans); }
+  .sb-status { font-size: 11.5px; color: var(--faint); font-family: var(--mono); margin-left: 6px; }
+  .sb-status.ok { color: var(--surplus); }
   @media (max-width: 620px) { .tab-actions { width: 100%; padding-bottom: 10px; } }
   .ghost-btn.accent-btn { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong)); }
   .ghost-btn.accent-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
@@ -365,12 +372,23 @@
     <button class="tab active" data-tab="escrow" type="button">Escrow Analysis</button>
     <button class="tab" data-tab="amort" type="button">Amortization Schedule</button>
     <button class="tab" data-tab="payment" type="button">Payment</button>
+    <button class="tab" data-tab="afford" type="button">Affordability</button>
+    <button class="tab" data-tab="refi" type="button">Refinance</button>
     <button class="tab" data-tab="tnote" type="button">T-Note Lookup</button>
     <div class="tab-actions">
       <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
       <button class="ghost-btn sm accent-btn" id="exportStmt" type="button">&#128196; Escrow statement</button>
     </div>
   </nav>
+
+  <div class="scenario-bar hidden" id="scenarioBar">
+    <span class="sb-label">Scenario</span>
+    <select id="scenarioSelect"><option value="">Working copy (unsaved)</option></select>
+    <button class="ghost-btn sm" id="scnSave" type="button">Save</button>
+    <button class="ghost-btn sm" id="scnSaveAs" type="button">Save as</button>
+    <button class="ghost-btn sm" id="scnDelete" type="button">Delete</button>
+    <span class="sb-status" id="scnStatus"></span>
+  </div>
 
   <!-- ================= ESCROW VIEW ================= -->
   <div id="view-escrow" class="view">
@@ -643,6 +661,121 @@
     </div>
   </div>
 
+  <!-- ================= AFFORDABILITY VIEW ================= -->
+  <div id="view-afford" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Income &amp; debts</p>
+            <label class="field"><span class="lbl">Gross annual income</span>
+              <div class="money-input"><input type="number" id="afIncome" value="120000" step="1000"></div></label>
+            <label class="field"><span class="lbl">Monthly debts (cars, cards, loans)</span>
+              <div class="money-input"><input type="number" id="afDebts" value="600" step="50"></div></label>
+            <div class="two">
+              <label class="field"><span class="lbl">Front-end DTI</span>
+                <div class="suffix-input"><input type="number" id="afFront" value="28" step="1"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Back-end DTI</span>
+                <div class="suffix-input"><input type="number" id="afBack" value="36" step="1"><span class="sfx">%</span></div></label>
+            </div>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Loan &amp; costs</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Down payment</span>
+                <div class="money-input"><input type="number" id="afDown" value="60000" step="1000"></div></label>
+              <label class="field"><span class="lbl">Interest rate</span>
+                <div class="suffix-input"><input type="number" id="afRate" value="6.5" step="0.125"><span class="sfx">%</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Term</span>
+                <div class="suffix-input"><input type="number" id="afTerm" value="30" step="1"><span class="sfx">yrs</span></div></label>
+              <label class="field"><span class="lbl">Property tax</span>
+                <div class="suffix-input"><input type="number" id="afTaxPct" value="1.1" step="0.05"><span class="sfx">%</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Insurance / yr</span>
+                <div class="money-input"><input type="number" id="afIns" value="1800" step="100"></div></label>
+              <label class="field"><span class="lbl">HOA / mo</span>
+                <div class="money-input"><input type="number" id="afHoa" value="0" step="10"></div></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles">
+          <div class="tile"><div class="k">Max home price</div><div class="v" id="afPrice">$0</div><div class="n" id="afPriceNote">at your limits</div></div>
+          <div class="tile"><div class="k">Max loan</div><div class="v" id="afLoan">$0</div><div class="n" id="afLoanNote">&mdash;</div></div>
+          <div class="tile"><div class="k">Max monthly housing</div><div class="v" id="afHousing">$0</div><div class="n" id="afHousingNote">PITI budget</div></div>
+          <div class="tile"><div class="k">Binding limit</div><div class="v" id="afBind" style="font-size:20px;">&mdash;</div><div class="n" id="afBindNote">front vs back DTI</div></div>
+        </div>
+        <div class="verdict good" id="afVerdict"></div>
+        <div class="card table-card">
+          <div class="panel" style="padding-bottom:8px;"><p class="eyebrow" style="margin:0;">Estimated payment at max price</p></div>
+          <table><thead><tr><th>Component</th><th>Monthly</th></tr></thead><tbody id="afBreakdown"></tbody></table>
+        </div>
+        <p class="foot-note">
+          Max price is the highest where your full <b>PITI</b> (principal, interest, taxes, insurance, HOA, and PMI if under 20% down)
+          stays within the smaller of your front-end (housing) and back-end (housing + debts) DTI limits. A rough guide &mdash;
+          lenders weigh credit, reserves, and program rules too. Not a pre-approval.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= REFINANCE VIEW ================= -->
+  <div id="view-refi" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Current loan</p>
+            <label class="field"><span class="lbl">Remaining balance</span>
+              <div class="money-input"><input type="number" id="rfBalance" value="320000" step="1000"></div></label>
+            <div class="two">
+              <label class="field"><span class="lbl">Current rate</span>
+                <div class="suffix-input"><input type="number" id="rfCurRate" value="7.25" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Years left</span>
+                <div class="suffix-input"><input type="number" id="rfCurTerm" value="27" step="1"><span class="sfx">yrs</span></div></label>
+            </div>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">New loan</p>
+            <div class="two">
+              <label class="field"><span class="lbl">New rate</span>
+                <div class="suffix-input"><input type="number" id="rfNewRate" value="6.0" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">New term</span>
+                <div class="suffix-input"><input type="number" id="rfNewTerm" value="30" step="1"><span class="sfx">yrs</span></div></label>
+            </div>
+            <label class="field"><span class="lbl">Closing costs</span>
+              <div class="money-input"><input type="number" id="rfClosing" value="6000" step="500"></div></label>
+            <label class="toggle-row"><input type="checkbox" id="rfRoll" checked><span class="switch"></span><span>Roll closing costs into the new loan</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles">
+          <div class="tile"><div class="k">New payment (P&amp;I)</div><div class="v" id="rfNewPay">$0</div><div class="n" id="rfNewPayNote">was &mdash;</div></div>
+          <div class="tile" id="rfSaveTile"><div class="k">Monthly change</div><div class="v" id="rfSave">$0</div><div class="n" id="rfSaveNote">vs current</div></div>
+          <div class="tile"><div class="k">Break-even</div><div class="v" id="rfBreakeven" style="font-size:20px;">&mdash;</div><div class="n">to recoup costs</div></div>
+          <div class="tile" id="rfLifeTile"><div class="k">Lifetime change</div><div class="v" id="rfLife">$0</div><div class="n">total cost vs staying</div></div>
+        </div>
+        <div class="verdict good" id="rfVerdict"></div>
+        <div class="card table-card">
+          <div class="panel" style="padding-bottom:8px;"><p class="eyebrow" style="margin:0;">Current vs. new</p></div>
+          <table><thead><tr><th>&nbsp;</th><th>Current</th><th>New</th></tr></thead><tbody id="rfCompare"></tbody></table>
+        </div>
+        <p class="foot-note">
+          Break-even is the number of months of payment savings needed to recoup the closing costs you pay out of pocket. Rolling
+          costs into the loan means $0 out of pocket but a larger balance. Lifetime change compares total remaining cost of the
+          current loan vs. the new loan (plus any upfront costs). Estimate only &mdash; excludes escrow, taxes, and PMI changes.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= T-NOTE LOOKUP VIEW ================= -->
   <div id="view-tnote" class="view hidden">
     <div class="grid">
@@ -756,6 +889,8 @@
       <button class="btn-primary" id="loginBtn" type="submit">Sign in</button>
       <div class="auth-msg" id="loginMsg"></div>
     </form>
+    <button class="link-btn" id="guestBtn" type="button" style="margin-top:16px;display:block;width:100%;text-align:center;">Continue without an account &rarr;</button>
+    <p class="muted" style="margin:8px 0 0;font-size:11.5px;text-align:center;">You'll get the calculators. Sign in to save scenarios &amp; sync across devices.</p>
   </div>
 </div>
 
@@ -782,6 +917,13 @@
 
     <div class="settings-section">
       <h4>Account</h4>
+      <div id="accountGuest" class="hidden">
+        <div class="set-row">
+          <div class="set-label">Not signed in<small>Saving &amp; sync are off in guest mode</small></div>
+          <button class="btn-primary" id="signInBtn" type="button" style="width:auto;margin:0;padding:8px 16px;">Sign in</button>
+        </div>
+      </div>
+      <div id="accountUser">
       <div class="set-row">
         <div class="set-label">Signed in as<small id="setEmail">&mdash;</small></div>
         <button class="danger-btn" id="logoutBtn" type="button">Log out</button>
@@ -800,6 +942,7 @@
         <button class="btn-primary" id="pwSubmit" type="submit" style="margin-top:14px;">Update password</button>
         <div class="auth-msg" id="pwMsg"></div>
       </form>
+      </div>
     </div>
 
     <div class="settings-section hidden" id="adminSection">
@@ -867,13 +1010,13 @@
           compute();
         });
       });
-      row.querySelector(".del").addEventListener("click", () => { disbursements.splice(idx, 1); renderDisb(); compute(); });
+      row.querySelector(".del").addEventListener("click", () => { disbursements.splice(idx, 1); renderDisb(); compute(); scheduleSave(); });
       disbList.appendChild(row);
     });
   }
   document.getElementById("addDisb").addEventListener("click", () => {
     disbursements.push({ name: "New item", amount: 1200, freq: "annual", first: 0 });
-    renderDisb(); compute();
+    renderDisb(); compute(); scheduleSave();
   });
 
   function monthlySchedule() {
@@ -1657,17 +1800,49 @@
 
   const authGate = document.getElementById("authGate");
   function showGate(show) { authGate.classList.toggle("hidden", !show); }
-  let isAdmin = false;
-  let myEmail = null;
-  function setUser(u) { myEmail = u.email; isAdmin = u.role === "admin"; document.getElementById("setEmail").textContent = u.email; document.getElementById("adminSection").classList.toggle("hidden", !isAdmin); }
+  let isAdmin = false, myEmail = null;
+  let authMode = null;   // "user" | "guest" | null
+
+  function updateAuthUI() {
+    const user = authMode === "user";
+    document.getElementById("accountUser").classList.toggle("hidden", !user);
+    document.getElementById("accountGuest").classList.toggle("hidden", user);
+    document.getElementById("adminSection").classList.toggle("hidden", !(user && isAdmin));
+    document.getElementById("scenarioBar").classList.toggle("hidden", !user);
+  }
+  function setUser(u) {
+    myEmail = u.email; isAdmin = u.role === "admin"; authMode = "user";
+    localStorage.removeItem("mtk-guest");
+    document.getElementById("setEmail").textContent = u.email;
+    updateAuthUI();
+  }
+  function enterGuest() {
+    authMode = "guest"; isAdmin = false; myEmail = null;
+    localStorage.setItem("mtk-guest", "1");
+    updateAuthUI(); showGate(false); loadLocalState();
+  }
 
   async function checkAuth() {
     try {
       const me = await api("/auth/me");
-      setUser(me.user);
-      showGate(false);
-    } catch (e) { showGate(true); }
+      setUser(me.user); showGate(false);
+      await loadServerState(); await loadScenarios();
+    } catch (e) {
+      // Not signed in / backend unreachable. Returning guests skip the gate.
+      if (localStorage.getItem("mtk-guest") === "1") { authMode = "guest"; updateAuthUI(); showGate(false); loadLocalState(); return; }
+      if (/Failed to fetch|NetworkError|HTTP 5/.test(String(e && e.message))) {
+        const msg = document.getElementById("loginMsg");
+        msg.className = "auth-msg err";
+        msg.textContent = "Can't reach the server right now - continue without an account to use the calculators.";
+      }
+      showGate(true);
+    }
   }
+
+  document.getElementById("guestBtn").addEventListener("click", enterGuest);
+  document.getElementById("signInBtn").addEventListener("click", () => {
+    document.getElementById("settingsModal").classList.add("hidden"); showGate(true);
+  });
 
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1682,14 +1857,116 @@
       document.getElementById("loginPassword").value = "";
       msg.className = "auth-msg"; msg.textContent = "";
       showGate(false);
+      await loadServerState(); await loadScenarios();
     } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Sign in failed."; }
     finally { btn.disabled = false; }
   });
 
   document.getElementById("logoutBtn").addEventListener("click", async () => {
     try { await api("/auth/logout", { method: "POST" }); } catch (e) {}
+    authMode = null; updateAuthUI();
     document.getElementById("settingsModal").classList.add("hidden");
     showGate(true);
+  });
+
+  // ---------- persistence: state snapshot + autosave ----------
+  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","tnDate","tnLookback","tnTenor"];
+  let restoring = false, saveTimer = null;
+
+  function collectState() {
+    const inputs = {};
+    PERSIST_IDS.forEach(id => { const el = document.getElementById(id); if (!el) return; inputs[id] = el.type === "checkbox" ? el.checked : el.value; });
+    return { v: 1, inputs, disbursements: disbursements.map(d => ({ ...d })),
+      taxMode: (document.querySelector("#taxModeSeg .seg-btn.active") || {}).dataset?.m || "amt",
+      hoaFreq: (document.querySelector("#hoaFreqSeg .seg-btn.active") || {}).dataset?.f || "mo",
+      amortMode, pmiUserSet };
+  }
+  function applyState(s) {
+    if (!s || !s.inputs) return;
+    restoring = true;
+    PERSIST_IDS.forEach(id => {
+      if (!(id in s.inputs)) return;
+      const el = document.getElementById(id); if (!el) return;
+      if (el.type === "checkbox") el.checked = !!s.inputs[id]; else el.value = s.inputs[id];
+    });
+    if (Array.isArray(s.disbursements)) { disbursements = s.disbursements.map(d => ({ ...d })); renderDisb(); }
+    if (typeof s.pmiUserSet === "boolean") pmiUserSet = s.pmiUserSet;
+    const cv = parseFloat(document.getElementById("cushion").value);
+    document.getElementById("cushionVal").textContent = cv + (cv === 1 ? " month" : " months");
+    if (s.taxMode) { const b = document.querySelector('#taxModeSeg .seg-btn[data-m="' + s.taxMode + '"]'); if (b) b.click(); }
+    if (s.hoaFreq) { const b = document.querySelector('#hoaFreqSeg .seg-btn[data-f="' + s.hoaFreq + '"]'); if (b) b.click(); }
+    if (s.amortMode) setAmortMode(s.amortMode);
+    compute(); computeAmort(); computePayment(); computeAfford(); computeRefi(); computeTnote();
+    restoring = false;
+  }
+
+  function scheduleSave() { if (restoring) return; clearTimeout(saveTimer); saveTimer = setTimeout(persistState, 700); }
+  function persistState() {
+    const state = collectState();
+    try { localStorage.setItem("mtk-work", JSON.stringify(state)); } catch (e) {}
+    if (authMode === "user") {
+      api("/state", { method: "PUT", body: JSON.stringify({ work_state: state, prefs: { theme: themeMode(), accent: accentKey } }) })
+        .then(() => { if (!currentScnId) setScnStatus("Autosaved", true); }).catch(() => {});
+    }
+  }
+  function loadLocalState() { try { const s = localStorage.getItem("mtk-work"); if (s) applyState(JSON.parse(s)); } catch (e) {} }
+  async function loadServerState() {
+    try {
+      const { work_state, prefs } = await api("/state");
+      if (prefs) applyPrefs(prefs);
+      if (work_state) applyState(work_state); else loadLocalState();
+    } catch (e) { loadLocalState(); }
+  }
+  function applyPrefs(p) {
+    if (p && p.accent && ACCENTS[p.accent]) { accentKey = p.accent; localStorage.setItem("mtk-accent", p.accent); }
+    if (p && p.theme) applyThemeMode(p.theme); else { applyAccent(); buildSwatches(); }
+  }
+  const isCalcEvent = (t) => t && !t.closest("#authGate") && !t.closest("#pwForm") && !t.closest("#addUserForm") && t.id !== "scenarioSelect";
+  document.addEventListener("input", (e) => { if (isCalcEvent(e.target)) scheduleSave(); });
+  document.addEventListener("change", (e) => { if (isCalcEvent(e.target)) scheduleSave(); });
+
+  // ---------- scenarios ----------
+  let scenarios = [], currentScnId = null;
+  function currentScnName() { const s = scenarios.find(x => x.id === currentScnId); return s ? s.name : ""; }
+  function setScnStatus(t, ok) { const el = document.getElementById("scnStatus"); el.textContent = t || ""; el.classList.toggle("ok", !!ok); }
+  function renderScenarioSelect() {
+    const sel = document.getElementById("scenarioSelect");
+    sel.innerHTML = '<option value="">Working copy (unsaved)</option>' + scenarios.map(s => '<option value="' + s.id + '">' + esc(s.name) + '</option>').join("");
+    sel.value = currentScnId || "";
+    document.getElementById("scnDelete").disabled = !currentScnId;
+  }
+  async function loadScenarios() { try { const r = await api("/scenarios"); scenarios = r.scenarios || []; renderScenarioSelect(); } catch (e) {} }
+  document.getElementById("scenarioSelect").addEventListener("change", async (e) => {
+    const id = e.target.value;
+    if (!id) { currentScnId = null; setScnStatus("Working copy"); return; }
+    try {
+      const { scenario } = await api("/scenarios/" + id);
+      currentScnId = id;
+      applyState(typeof scenario.data === "string" ? JSON.parse(scenario.data) : scenario.data);
+      persistState();
+      setScnStatus("Loaded: " + scenario.name, true);
+    } catch (err) { setScnStatus("Couldn't load"); }
+  });
+  document.getElementById("scnSave").addEventListener("click", async () => {
+    if (!currentScnId) return scnSaveAs();
+    try { await api("/scenarios/" + currentScnId, { method: "PUT", body: JSON.stringify({ data: collectState() }) }); setScnStatus("Saved: " + currentScnName(), true); }
+    catch (e) { setScnStatus("Save failed"); }
+  });
+  async function scnSaveAs() {
+    const name = (prompt("Name this scenario:", currentScnName() || "") || "").trim();
+    if (!name) return;
+    try {
+      const { scenario } = await api("/scenarios", { method: "POST", body: JSON.stringify({ name, data: collectState() }) });
+      await loadScenarios(); currentScnId = scenario.id; renderScenarioSelect();
+      setScnStatus("Saved: " + name, true);
+    } catch (e) { setScnStatus(e.message || "Save failed"); }
+  }
+  document.getElementById("scnSaveAs").addEventListener("click", scnSaveAs);
+  document.getElementById("scnDelete").addEventListener("click", async () => {
+    if (!currentScnId) return;
+    if (!confirm("Delete scenario: " + currentScnName() + "?")) return;
+    try { await api("/scenarios/" + currentScnId, { method: "DELETE" }); currentScnId = null; await loadScenarios(); setScnStatus("Deleted"); }
+    catch (e) { setScnStatus("Delete failed"); }
   });
 
   document.getElementById("changePwToggle").addEventListener("click", () =>
@@ -1813,7 +2090,7 @@
       sw.style.background = def[currentDark() ? "dark" : "light"].a;
       sw.addEventListener("click", () => {
         accentKey = key; localStorage.setItem("mtk-accent", key);
-        applyAccent(); buildSwatches(); recomputeVisible();
+        applyAccent(); buildSwatches(); recomputeVisible(); scheduleSave();
       });
       wrap.appendChild(sw);
     });
@@ -1825,7 +2102,7 @@
     localStorage.setItem("mtk-theme", mode);
     if (mode === "auto") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", mode);
-    syncThemeUI(); applyAccent(); buildSwatches(); recomputeVisible();
+    syncThemeUI(); applyAccent(); buildSwatches(); recomputeVisible(); scheduleSave();
   }
   function syncThemeUI() {
     const mode = themeMode();
@@ -1837,7 +2114,7 @@
   // ---------- Payment calculator ----------
   const PAY_COLORS = { tax: "#c99a3b", ins: "#4a90c2", hoa: "#8a6fb0", pmi: "#c25b6e" };
   let pmiUserSet = false;
-  let payResult = null;
+  let payResult = null, afResult = null, rfResult = null;
   const gv = (id) => parseFloat(document.getElementById(id).value) || 0;
 
   function computePayment() {
@@ -1969,14 +2246,14 @@
     document.getElementById("taxPctWrap").classList.toggle("hidden", !pct);
     document.getElementById("homesteadField").classList.toggle("hidden", !pct);
     document.getElementById("payTaxNote").classList.toggle("hidden", !pct);
-    computePayment();
+    computePayment(); scheduleSave();
   }));
 
   // HOA monthly/yearly toggle
   document.querySelectorAll("#hoaFreqSeg .seg-btn").forEach(b => b.addEventListener("click", () => {
     document.querySelectorAll("#hoaFreqSeg .seg-btn").forEach(x => x.classList.remove("active"));
     b.classList.add("active");
-    computePayment();
+    computePayment(); scheduleSave();
   }));
 
   // Payment summary printout
@@ -2040,17 +2317,118 @@
     f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 2000); };
   });
 
+  // ---------- Affordability + Refinance ----------
+  function pmtOf(principal, ratePct, months) {
+    const r = ratePct / 1200, n = Math.max(1, Math.round(months));
+    if (principal <= 0) return 0;
+    return r === 0 ? principal / n : principal * r / (1 - Math.pow(1 + r, -n));
+  }
+
+  function computeAfford() {
+    const income = gv("afIncome"), debts = gv("afDebts");
+    const front = gv("afFront") / 100, back = gv("afBack") / 100;
+    const down = gv("afDown"), rate = gv("afRate"), term = gv("afTerm");
+    const taxPct = gv("afTaxPct"), ins = gv("afIns"), hoa = gv("afHoa");
+    const grossMo = income / 12;
+    const maxHousing = Math.max(0, Math.min(front * grossMo, back * grossMo - debts));
+    const backBinds = (back * grossMo - debts) < (front * grossMo);
+    const n = Math.max(1, Math.round(term * 12));
+    // Binary-search the max price whose full PITI stays within the housing budget.
+    let lo = down, hi = down + 5_000_000;
+    for (let i = 0; i < 44; i++) {
+      const P = (lo + hi) / 2, loan = Math.max(0, P - down);
+      const piti = pmtOf(loan, rate, n) + P * taxPct / 100 / 12 + ins / 12 + hoa + ((P > 0 && loan / P > 0.8) ? loan * 0.006 / 12 : 0);
+      if (piti > maxHousing) hi = P; else lo = P;
+    }
+    const price = Math.max(down, lo), loan = Math.max(0, price - down);
+    const tax = price * taxPct / 100 / 12, pmi = (price > 0 && loan / price > 0.8) ? loan * 0.006 / 12 : 0;
+    const pi = pmtOf(loan, rate, n), total = pi + tax + ins / 12 + hoa + pmi;
+
+    document.getElementById("afPrice").textContent = fmt(price);
+    document.getElementById("afPriceNote").textContent = (price > 0 ? (down / price * 100).toFixed(0) : 0) + "% down";
+    document.getElementById("afLoan").textContent = fmt(loan);
+    document.getElementById("afLoanNote").textContent = (price > 0 ? (loan / price * 100).toFixed(0) : 0) + "% LTV";
+    document.getElementById("afHousing").textContent = fmt(maxHousing);
+    document.getElementById("afBind").textContent = backBinds ? "Back-end" : "Front-end";
+    document.getElementById("afBindNote").textContent = backBinds ? "housing + debts cap" : "housing cap";
+
+    const V = document.getElementById("afVerdict");
+    if (maxHousing <= 0) { V.className = "verdict warn"; V.innerHTML = `<span class="dot">&#9650;</span><div>Your monthly debts exceed the back-end DTI limit &mdash; there's no room for a housing payment. Reduce debts or raise the DTI ratio.</div>`; }
+    else { V.className = "verdict good"; V.innerHTML = `<span class="dot">&#9679;</span><div>On ${fmt(income)} income with ${fmt(debts)}/mo of debts, your housing budget is <b>${fmt(maxHousing)}/mo</b> (${backBinds ? "back-end" : "front-end"} DTI binding) &mdash; roughly a <b>${fmt(price)}</b> home at ${rate}% over ${term} years.</div>`; }
+
+    const segs = [["Principal & interest", pi], ["Property tax", tax], ["Home insurance", ins / 12], ["HOA", hoa], ["PMI", pmi]].filter(s => s[1] > 0.5);
+    document.getElementById("afBreakdown").innerHTML = segs.map(s => `<tr><td>${s[0]}</td><td>${fmt(s[1])}</td></tr>`).join("")
+      + `<tr class="yr"><td>Total housing</td><td class="end">${fmt(total)}</td></tr>`;
+    afResult = { income, debts, price, loan, maxHousing, pi, tax, ins: ins / 12, hoa, pmi, total, backBinds, rate, term };
+  }
+
+  function computeRefi() {
+    const balance = gv("rfBalance"), curRate = gv("rfCurRate"), curTerm = gv("rfCurTerm");
+    const newRate = gv("rfNewRate"), newTerm = gv("rfNewTerm"), closing = gv("rfClosing");
+    const roll = document.getElementById("rfRoll").checked;
+    const curMonths = Math.max(1, Math.round(curTerm * 12)), newMonths = Math.max(1, Math.round(newTerm * 12));
+    const curPI = pmtOf(balance, curRate, curMonths);
+    const newLoan = balance + (roll ? closing : 0);
+    const newPI = pmtOf(newLoan, newRate, newMonths);
+    const savings = curPI - newPI;                 // positive = lower payment
+    const upfront = roll ? 0 : closing;
+    const breakevenMo = savings > 0 ? upfront / savings : Infinity;
+    const lifeChange = (newPI * newMonths + upfront) - (curPI * curMonths);   // negative = cheaper overall
+    const curInterest = curPI * curMonths - balance, newInterest = newPI * newMonths - newLoan;
+
+    document.getElementById("rfNewPay").textContent = fmt(newPI);
+    document.getElementById("rfNewPayNote").textContent = "was " + fmt(curPI);
+    const saveTile = document.getElementById("rfSaveTile"), saveEl = document.getElementById("rfSave"), saveNote = document.getElementById("rfSaveNote");
+    saveTile.classList.remove("good", "warn");
+    if (savings > 0.5) { saveTile.classList.add("good"); saveEl.textContent = "-" + fmt(savings); saveNote.textContent = "lower each month"; }
+    else if (savings < -0.5) { saveTile.classList.add("warn"); saveEl.textContent = "+" + fmt(-savings); saveNote.textContent = "higher each month"; }
+    else { saveEl.textContent = fmt(0); saveNote.textContent = "about the same"; }
+
+    document.getElementById("rfBreakeven").textContent =
+      savings <= 0 ? "\u2014" : upfront <= 0 ? "immediate" : Math.ceil(breakevenMo) + " mo";
+    const lifeTile = document.getElementById("rfLifeTile"), lifeEl = document.getElementById("rfLife");
+    lifeTile.classList.remove("good", "warn");
+    if (lifeChange < -0.5) { lifeTile.classList.add("good"); lifeEl.textContent = "-" + fmt(-lifeChange); }
+    else if (lifeChange > 0.5) { lifeTile.classList.add("warn"); lifeEl.textContent = "+" + fmt(lifeChange); }
+    else lifeEl.textContent = fmt(0);
+
+    const V = document.getElementById("rfVerdict");
+    if (savings > 0.5) {
+      const be = isFinite(breakevenMo) ? `you recoup ${fmt(upfront)} in about <b>${Math.ceil(breakevenMo)} months</b> (${(breakevenMo / 12).toFixed(1)} yrs)` : "there are no out-of-pocket costs to recoup";
+      const life = lifeChange < 0 ? `Over the full term you'd save <b>${fmt(-lifeChange)}</b>.` : `But over the full term you'd pay <b>${fmt(lifeChange)}</b> more (a longer payoff).`;
+      V.className = "verdict good";
+      V.innerHTML = `<span class="dot">&#9679;</span><div>Refinancing lowers your payment by <b>${fmt(savings)}/mo</b>; ${be}. ${life}</div>`;
+    } else {
+      V.className = "verdict warn";
+      V.innerHTML = `<span class="dot">&#9650;</span><div>At these terms the new payment is <b>${fmt(-savings)}/mo higher</b> &mdash; this refi doesn't lower your payment. Try a lower rate or a longer term.</div>`;
+    }
+
+    document.getElementById("rfCompare").innerHTML =
+      `<tr><td>Monthly P&amp;I</td><td>${fmt(curPI)}</td><td class="end">${fmt(newPI)}</td></tr>`
+      + `<tr><td>Rate</td><td>${curRate}%</td><td class="end">${newRate}%</td></tr>`
+      + `<tr><td>Term left</td><td>${curTerm} yrs</td><td class="end">${newTerm} yrs</td></tr>`
+      + `<tr><td>Balance</td><td>${fmt(balance)}</td><td class="end">${fmt(newLoan)}</td></tr>`
+      + `<tr><td>Interest remaining</td><td>${fmt(curInterest)}</td><td class="end">${fmt(newInterest)}</td></tr>`;
+    rfResult = { balance, curRate, curTerm, newRate, newTerm, closing, roll, curPI, newPI, savings, breakevenMo, lifeChange };
+  }
+
+  ["afIncome", "afDebts", "afFront", "afBack", "afDown", "afRate", "afTerm", "afTaxPct", "afIns", "afHoa"].forEach(id => document.getElementById(id).addEventListener("input", computeAfford));
+  ["rfBalance", "rfCurRate", "rfCurTerm", "rfNewRate", "rfNewTerm", "rfClosing"].forEach(id => document.getElementById(id).addEventListener("input", computeRefi));
+  document.getElementById("rfRoll").addEventListener("change", computeRefi);
+
   // ---------- tabs ----------
   document.querySelectorAll(".tab").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       const tab = btn.dataset.tab;
-      ["escrow", "amort", "payment", "tnote"].forEach(t =>
+      ["escrow", "amort", "payment", "afford", "refi", "tnote"].forEach(t =>
         document.getElementById("view-" + t).classList.toggle("hidden", tab !== t));
       if (tab === "amort") computeAmort();
       else if (tab === "tnote") computeTnote();
       else if (tab === "payment") computePayment();
+      else if (tab === "afford") computeAfford();
+      else if (tab === "refi") computeRefi();
       else compute();
     });
   });
@@ -2059,7 +2437,7 @@
     const yBtn = document.getElementById("viewYearly"), mBtn = document.getElementById("viewMonthly");
     yBtn.classList.toggle("active", m==="yearly"); yBtn.setAttribute("aria-selected", m==="yearly");
     mBtn.classList.toggle("active", m==="monthly"); mBtn.setAttribute("aria-selected", m==="monthly");
-    computeAmort();
+    computeAmort(); scheduleSave();
   }
   document.getElementById("viewYearly").addEventListener("click", () => setAmortMode("yearly"));
   document.getElementById("viewMonthly").addEventListener("click", () => setAmortMode("monthly"));
@@ -2069,9 +2447,12 @@
   function currentDark() { const t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; }
   function syncBtn(){ themeBtn.textContent = currentDark() ? "Light" : "Dark"; }
   function recomputeVisible(){
-    if (!document.getElementById("view-payment").classList.contains("hidden")) computePayment();
-    else if (!document.getElementById("view-tnote").classList.contains("hidden")) computeTnote();
-    else if (!document.getElementById("view-amort").classList.contains("hidden")) computeAmort();
+    const vis = (t) => !document.getElementById("view-" + t).classList.contains("hidden");
+    if (vis("payment")) computePayment();
+    else if (vis("tnote")) computeTnote();
+    else if (vis("amort")) computeAmort();
+    else if (vis("afford")) computeAfford();
+    else if (vis("refi")) computeRefi();
     else compute();
   }
   themeBtn.addEventListener("click", () => applyThemeMode(currentDark() ? "light" : "dark"));
@@ -2115,6 +2496,8 @@
   compute();
   computeAmort();   // populate state.amort so the statement's PITI section is ready
   computePayment(); // ready the Payment tab
+  computeAfford();
+  computeRefi();
 
   checkAuth();      // gate the app until signed in
 </script>

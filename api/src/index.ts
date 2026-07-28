@@ -26,7 +26,7 @@ app.use('*', cors({
     return c.env.ALLOWED_ORIGIN;
   },
   credentials: true,
-  allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type'],
 }));
 
@@ -125,6 +125,87 @@ app.post('/auth/change-password', auth, async (c) => {
   return c.json({ ok: true });
 });
 
+// ---------------- scenarios (saved input snapshots) ----------------
+const MAX_SCENARIOS = 100;
+const MAX_DATA_BYTES = 200_000;
+
+function cleanName(v: any): string { return String(v ?? "").trim().slice(0, 120); }
+function validData(v: any): string | null {
+  const s = typeof v === "string" ? v : JSON.stringify(v ?? {});
+  if (s.length > MAX_DATA_BYTES) return null;
+  return s;
+}
+
+app.get('/scenarios', auth, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    'SELECT id, name, created_at, updated_at FROM scenarios WHERE user_id = ? ORDER BY updated_at DESC',
+  ).bind(c.get('user').id).all();
+  return c.json({ scenarios: results });
+});
+
+app.post('/scenarios', auth, async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  const name = cleanName(b.name);
+  const data = validData(b.data);
+  if (!name) return c.json({ error: 'a name is required' }, 400);
+  if (data === null) return c.json({ error: 'scenario data too large' }, 413);
+  const count = await c.env.DB.prepare('SELECT COUNT(*) AS n FROM scenarios WHERE user_id = ?').bind(c.get('user').id).first();
+  if (Number((count as any).n) >= MAX_SCENARIOS) return c.json({ error: 'scenario limit reached' }, 409);
+  const id = uuid(), ts = Date.now();
+  await c.env.DB.prepare('INSERT INTO scenarios (id, user_id, name, data, created_at, updated_at) VALUES (?,?,?,?,?,?)')
+    .bind(id, c.get('user').id, name, data, ts, ts).run();
+  return c.json({ scenario: { id, name, created_at: ts, updated_at: ts } }, 201);
+});
+
+app.get('/scenarios/:id', auth, async (c) => {
+  const row = await c.env.DB.prepare('SELECT id, name, data, created_at, updated_at FROM scenarios WHERE id = ? AND user_id = ?')
+    .bind(c.req.param('id'), c.get('user').id).first();
+  if (!row) return c.json({ error: 'not found' }, 404);
+  return c.json({ scenario: row });
+});
+
+app.put('/scenarios/:id', auth, async (c) => {
+  const id = c.req.param('id');
+  const existing = await c.env.DB.prepare('SELECT id FROM scenarios WHERE id = ? AND user_id = ?').bind(id, c.get('user').id).first();
+  if (!existing) return c.json({ error: 'not found' }, 404);
+  const b = await c.req.json().catch(() => ({} as any));
+  const sets: string[] = [], binds: any[] = [];
+  if (b.name !== undefined) { const n = cleanName(b.name); if (!n) return c.json({ error: 'name required' }, 400); sets.push('name = ?'); binds.push(n); }
+  if (b.data !== undefined) { const d = validData(b.data); if (d === null) return c.json({ error: 'data too large' }, 413); sets.push('data = ?'); binds.push(d); }
+  if (!sets.length) return c.json({ error: 'nothing to update' }, 400);
+  sets.push('updated_at = ?'); binds.push(Date.now());
+  binds.push(id);
+  await c.env.DB.prepare(`UPDATE scenarios SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
+  return c.json({ ok: true });
+});
+
+app.delete('/scenarios/:id', auth, async (c) => {
+  const res = await c.env.DB.prepare('DELETE FROM scenarios WHERE id = ? AND user_id = ?').bind(c.req.param('id'), c.get('user').id).run();
+  if (!res.meta.changes) return c.json({ error: 'not found' }, 404);
+  return c.json({ ok: true });
+});
+
+// ---------------- working state + preferences (autosave) ----------------
+app.get('/state', auth, async (c) => {
+  const row = await c.env.DB.prepare('SELECT work_state, prefs FROM users WHERE id = ?').bind(c.get('user').id).first();
+  const parse = (v: any) => { if (!v) return null; try { return JSON.parse(v as string); } catch { return null; } };
+  return c.json({ work_state: parse((row as any)?.work_state), prefs: parse((row as any)?.prefs) });
+});
+
+app.put('/state', auth, async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  if (b.work_state !== undefined) {
+    const d = validData(b.work_state);
+    if (d === null) return c.json({ error: 'state too large' }, 413);
+    await c.env.DB.prepare('UPDATE users SET work_state = ? WHERE id = ?').bind(d, c.get('user').id).run();
+  }
+  if (b.prefs !== undefined) {
+    const p = JSON.stringify(b.prefs).slice(0, 2000);
+    await c.env.DB.prepare('UPDATE users SET prefs = ? WHERE id = ?').bind(p, c.get('user').id).run();
+  }
+  return c.json({ ok: true });
+});
+
 // ---------------- admin: users ----------------
 app.get('/admin/users', auth, requireAdmin, async (c) => {
   const { results } = await c.env.DB.prepare(
@@ -157,6 +238,7 @@ app.delete('/admin/users/:id', auth, requireAdmin, async (c) => {
   if (!target) return c.json({ error: 'not found' }, 404);
   await c.env.DB.batch([
     c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id),
+    c.env.DB.prepare('DELETE FROM scenarios WHERE user_id = ?').bind(id),
     c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id),
   ]);
   return c.json({ ok: true });
