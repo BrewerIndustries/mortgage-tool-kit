@@ -10,7 +10,7 @@ type Bindings = {
   SESSION_SECRET: string;
 };
 
-type SessionUser = { id: string; email: string; display_name: string | null; role: string };
+type SessionUser = { id: string; email: string; display_name: string | null; role: string; must_change: boolean };
 
 const app = new Hono<{ Bindings: Bindings; Variables: { user: SessionUser } }>();
 
@@ -32,7 +32,7 @@ app.use('*', cors({
 
 // ---------------- helpers ----------------
 function publicUser(row: any): SessionUser {
-  return { id: row.id, email: row.email, display_name: row.display_name ?? null, role: row.role ?? 'user' };
+  return { id: row.id, email: row.email, display_name: row.display_name ?? null, role: row.role ?? 'user', must_change: !!row.must_change_password };
 }
 
 async function currentUser(c: any): Promise<SessionUser | null> {
@@ -40,7 +40,7 @@ async function currentUser(c: any): Promise<SessionUser | null> {
   if (!token) return null;
   const id = await sessionId(token, c.env.SESSION_SECRET);
   const row = await c.env.DB.prepare(
-    `SELECT u.id, u.email, u.display_name, u.role, s.expires_at
+    `SELECT u.id, u.email, u.display_name, u.role, u.must_change_password, s.expires_at
      FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ?`,
   ).bind(id).first();
   if (!row) return null;
@@ -78,16 +78,33 @@ async function startSession(c: any, userId: string) {
 app.get('/', (c) => c.json({ ok: true, service: 'mtk-api' }));
 
 // ---------------- auth ----------------
+const MAX_ATTEMPTS = 8;
+const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+
 app.post('/auth/login', async (c) => {
   const body = await c.req.json().catch(() => ({} as any));
   const email = String(body.email ?? '').trim().toLowerCase();
   const password = String(body.password ?? '');
   if (!email || !password) return c.json({ error: 'email and password required' }, 400);
 
+  // IP-based throttling
+  const ip = c.req.header('cf-connecting-ip') || 'unknown';
+  const now = Date.now();
+  const att = await c.env.DB.prepare('SELECT count, reset_at FROM login_attempts WHERE ip = ?').bind(ip).first();
+  let count = 0, resetAt = now + ATTEMPT_WINDOW_MS;
+  if (att && Number(att.reset_at) > now) { count = Number(att.count); resetAt = Number(att.reset_at); }
+  if (count >= MAX_ATTEMPTS) return c.json({ error: 'too many attempts - please try again in a few minutes' }, 429);
+
   const user = await c.env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
   if (!user || !(await verifyPassword(password, user.password_hash as string))) {
+    await c.env.DB.prepare(
+      'INSERT INTO login_attempts (ip, count, reset_at) VALUES (?,?,?) ON CONFLICT(ip) DO UPDATE SET count = ?, reset_at = ?',
+    ).bind(ip, count + 1, resetAt, count + 1, resetAt).run();
     return c.json({ error: 'invalid email or password' }, 401);
   }
+  // success: clear this IP's attempts and prune expired sessions
+  await c.env.DB.prepare('DELETE FROM login_attempts WHERE ip = ?').bind(ip).run();
+  await c.env.DB.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(now).run();
   await startSession(c, user.id as string);
   return c.json({ user: publicUser(user) });
 });
@@ -118,7 +135,7 @@ app.post('/auth/change-password', auth, async (c) => {
   if (!row || !(await verifyPassword(current, row.password_hash as string))) {
     return c.json({ error: 'current password is incorrect' }, 401);
   }
-  await c.env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+  await c.env.DB.prepare('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?')
     .bind(await hashPassword(next), user.id).run();
   await c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(user.id).run();
   await startSession(c, user.id);
@@ -225,10 +242,25 @@ app.post('/admin/users', auth, requireAdmin, async (c) => {
   const dupe = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
   if (dupe) return c.json({ error: 'a user with that email already exists' }, 409);
   const id = uuid();
+  // New users get a temp password and must change it on first login.
   await c.env.DB.prepare(
-    'INSERT INTO users (id, email, password_hash, display_name, role, created_at) VALUES (?,?,?,?,?,?)',
+    'INSERT INTO users (id, email, password_hash, display_name, role, must_change_password, created_at) VALUES (?,?,?,?,?,1,?)',
   ).bind(id, email, await hashPassword(password), display_name, role, Date.now()).run();
   return c.json({ user: { id, email, display_name, role, created_at: Date.now() } }, 201);
+});
+
+// Admin resets a user's password (they'll be forced to change it on next login).
+app.post('/admin/users/:id/password', auth, requireAdmin, async (c) => {
+  const id = c.req.param('id');
+  const b = await c.req.json().catch(() => ({} as any));
+  const password = String(b.password ?? '');
+  if (password.length < 8) return c.json({ error: 'password must be at least 8 characters' }, 400);
+  const target = await c.env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(id).first();
+  if (!target) return c.json({ error: 'not found' }, 404);
+  await c.env.DB.prepare('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?')
+    .bind(await hashPassword(password), id).run();
+  await c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();  // sign them out everywhere
+  return c.json({ ok: true });
 });
 
 app.delete('/admin/users/:id', auth, requireAdmin, async (c) => {

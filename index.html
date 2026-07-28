@@ -316,6 +316,8 @@
   .role-tag.user { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
   .user-del { background: none; border: none; color: var(--faint); cursor: pointer; font-size: 17px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
   .user-del:hover { color: var(--danger); background: var(--card); }
+  .user-pw { background: none; border: none; color: var(--faint); cursor: pointer; font-size: 13px; line-height: 1; padding: 2px 5px; border-radius: 6px; }
+  .user-pw:hover { color: var(--accent); background: var(--card); }
   .add-user label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
   .add-user .two { gap: 12px; }
 
@@ -909,6 +911,24 @@
     </form>
     <button class="link-btn" id="guestBtn" type="button" style="margin-top:16px;display:block;width:100%;text-align:center;">Continue without an account &rarr;</button>
     <p class="muted" style="margin:8px 0 0;font-size:11.5px;text-align:center;">You'll get the calculators. Sign in to save scenarios &amp; sync across devices.</p>
+  </div>
+</div>
+
+<!-- Forced password change (temporary accounts) -->
+<div class="auth-gate hidden" id="pwChangeGate">
+  <div class="auth-card">
+    <div class="brand-row"><h2>Set a new password</h2></div>
+    <p class="muted">Your account uses a temporary password. Choose a new one to continue.</p>
+    <form id="forceChangeForm" autocomplete="off">
+      <label for="fcCurrent">Current (temporary) password</label>
+      <input type="password" id="fcCurrent" autocomplete="current-password" required>
+      <label for="fcNew">New password</label>
+      <input type="password" id="fcNew" autocomplete="new-password" required>
+      <label for="fcConfirm">Confirm new password</label>
+      <input type="password" id="fcConfirm" autocomplete="new-password" required>
+      <button class="btn-primary" id="fcBtn" type="submit">Set password &amp; continue</button>
+      <div class="auth-msg" id="fcMsg"></div>
+    </form>
   </div>
 </div>
 
@@ -1849,7 +1869,24 @@
     localStorage.removeItem("mtk-guest");
     document.getElementById("setEmail").textContent = u.email;
     updateAuthUI();
+    document.getElementById("pwChangeGate").classList.toggle("hidden", !u.must_change);
   }
+
+  document.getElementById("forceChangeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("fcMsg"), btn = document.getElementById("fcBtn");
+    const cur = document.getElementById("fcCurrent").value, nw = document.getElementById("fcNew").value, cf = document.getElementById("fcConfirm").value;
+    msg.className = "auth-msg";
+    if (nw.length < 8) { msg.className = "auth-msg err"; msg.textContent = "New password must be at least 8 characters."; return; }
+    if (nw !== cf) { msg.className = "auth-msg err"; msg.textContent = "New passwords don't match."; return; }
+    btn.disabled = true; msg.textContent = "Saving...";
+    try {
+      await api("/auth/change-password", { method: "POST", body: JSON.stringify({ current_password: cur, new_password: nw }) });
+      document.getElementById("pwChangeGate").classList.add("hidden");
+      ["fcCurrent", "fcNew", "fcConfirm"].forEach(id => document.getElementById(id).value = "");
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Couldn't set password."; }
+    finally { btn.disabled = false; }
+  });
   function enterGuest() {
     authMode = "guest"; isAdmin = false; myEmail = null;
     localStorage.setItem("mtk-guest", "1");
@@ -2043,13 +2080,20 @@
           <span class="email">${esc(u.email)}</span>
           <span class="right">
             <span class="role-tag ${u.role === "admin" ? "admin" : "user"}">${u.role}</span>
-            ${u.email === myEmail ? "" : `<button class="user-del" data-id="${u.id}" data-email="${esc(u.email)}" title="Delete user" type="button">&times;</button>`}
+            ${u.email === myEmail ? "" : `<button class="user-pw" data-id="${u.id}" data-email="${esc(u.email)}" title="Set a new password" type="button">&#128273;</button><button class="user-del" data-id="${u.id}" data-email="${esc(u.email)}" title="Delete user" type="button">&times;</button>`}
           </span>
         </div>`).join("");
       list.querySelectorAll(".user-del").forEach(b => b.addEventListener("click", async () => {
         if (!confirm(`Delete ${b.dataset.email}? This cannot be undone.`)) return;
         try { await api("/admin/users/" + b.dataset.id, { method: "DELETE" }); refreshAdmin(); }
         catch (e) { alert(e.message || "Delete failed."); }
+      }));
+      list.querySelectorAll(".user-pw").forEach(b => b.addEventListener("click", async () => {
+        const pw = (prompt("New temporary password for " + b.dataset.email + " (min 8 chars). They'll be asked to change it on next login:", "") || "").trim();
+        if (!pw) return;
+        if (pw.length < 8) { alert("Password must be at least 8 characters."); return; }
+        try { await api("/admin/users/" + b.dataset.id + "/password", { method: "POST", body: JSON.stringify({ password: pw }) }); alert("Password set for " + b.dataset.email + "."); }
+        catch (e) { alert(e.message || "Failed to set password."); }
       }));
     } catch (e) { list.innerHTML = ""; }
   }

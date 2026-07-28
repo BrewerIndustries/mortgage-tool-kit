@@ -45,9 +45,10 @@ const stored = `pbkdf2$${ITER}$${salt.toString('base64')}$${hash.toString('base6
 const id = randomUUID();
 const q = (s) => (s === null ? 'NULL' : `'${String(s).replace(/'/g, "''")}'`);
 
+// Seeded accounts must change their (temporary) password on first login.
 const sql =
-  `INSERT INTO users (id,email,password_hash,display_name,role,created_at) VALUES ` +
-  `(${q(id)},${q(email)},${q(stored)},${q(name)},${q(role)},${Date.now()});`;
+  `INSERT INTO users (id,email,password_hash,display_name,role,must_change_password,created_at) VALUES ` +
+  `(${q(id)},${q(email)},${q(stored)},${q(name)},${q(role)},1,${Date.now()});`;
 
 // The dev D1 binding lives under [env.dev], so remote dev commands need --env dev.
 const wranglerArgs = ['wrangler', 'd1', 'execute', dbName];

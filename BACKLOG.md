@@ -31,24 +31,24 @@ polish / accessibility / extras. Check items off as they ship.
 ### More calculators
 - [ ] **Loan comparison** — two scenarios side by side (15 vs 30 yr, or two lender quotes)
 - [ ] **Points / rate buydown** break-even analysis
-- [ ] **Bi-weekly payment** savings (interest saved, payoff acceleration)
+- [x] **Bi-weekly payment** savings (interest saved, payoff acceleration)
 - [ ] **ARM payment projection** — initial rate, index + margin, periodic/lifetime caps; consumes the existing T-Note lookup
 - [ ] Amortization: one-time / lump-sum extra payments and a "pay off by date X → required payment" solver
 
 ### Financial correctness
-- [ ] Make PMI a real input (rate + amount) with a sensible default instead of the flat 0.6%/yr heuristic
-- [ ] Model **PMI drop-off** at ~78–80% LTV over the amortization timeline (show the month it ends)
+- [x] Make PMI a real input (rate + amount) with a sensible default instead of the flat 0.6%/yr heuristic
+- [x] Model **PMI drop-off** at ~78–80% LTV over the amortization timeline (show the month it ends)
 - [ ] Add **APR / true cost** (note rate + fees) alongside the interest rate
 - [ ] Escrow: handle RESPA deficiency vs. shortage distinction and the initial escrow deposit at closing
-- [ ] Fix schedule rounding so displayed amortization rows foot exactly (carry the rounding remainder)
+- [x] Fix schedule rounding so displayed amortization rows foot exactly (carry the rounding remainder)
 - [ ] Add total-cost-of-ownership view (lifetime interest + taxes + insurance + PMI)
 
 ### Security hardening
-- [ ] Bump the password KDF (PBKDF2 → ~600k+ iterations, or move to scrypt/argon2)
-- [ ] Add login rate-limiting (Cloudflare rule and/or D1 attempt counter with backoff/lockout)
-- [ ] Self-serve **password reset** flow (email), or at minimum an admin "set password" action
-- [ ] Force a password change on first login for seeded / temporary accounts
-- [ ] Prune expired sessions (scheduled Worker, or lazy purge on login)
+- [x] Bump the password KDF (PBKDF2 → ~600k+ iterations, or move to scrypt/argon2)
+- [x] Add login rate-limiting (Cloudflare rule and/or D1 attempt counter with backoff/lockout)
+- [x] Self-serve **password reset** flow (email), or at minimum an admin "set password" action
+- [x] Force a password change on first login for seeded / temporary accounts
+- [x] Prune expired sessions (scheduled Worker, or lazy purge on login)
 
 ### Engineering & testing
 - [ ] Extract the pure calc functions (amortization, escrow projection, PITI, business-day rollback) into an importable module
@@ -66,7 +66,7 @@ polish / accessibility / extras. Check items off as they ship.
 ## P2 — Polish, accessibility & extras
 
 ### UX
-- [ ] Info tooltips / popovers defining RESPA cushion, PITI, LTV, PMI, ARM lookback, escrow shortage, etc.
+- [x] Info tooltips / popovers defining RESPA cushion, PITI, LTV, PMI, ARM lookback, escrow shortage, etc.
 - [ ] Thousands separators in number inputs while typing (400,000 vs 400000)
 - [ ] "Reset to defaults" control per tab
 - [ ] Combined **full mortgage report** print (all tabs in one PDF)
@@ -76,7 +76,7 @@ polish / accessibility / extras. Check items off as they ship.
 ### Accessibility
 - [ ] Text alternative / data-table fallback for the canvas charts (ARIA)
 - [ ] Contrast audit of muted/faint text on tinted theme backgrounds (WCAG AA in every accent, both modes)
-- [ ] `prefers-reduced-motion` handling for toggle / switch transitions
+- [x] `prefers-reduced-motion` handling for toggle / switch transitions
 - [ ] Full keyboard + ARIA pass on segmented controls, the switch, accent swatches, and modals (focus trap in modals)
 
 ### Nice-to-have
