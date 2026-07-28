@@ -57,7 +57,7 @@ polish / accessibility / extras. Check items off as they ship.
 - [ ] Split the 2,120-line `index.html` into modules (CSS/JS separation or ES modules) without adding a heavy build
 
 ### Ops & reliability
-- [ ] CI/CD for the Worker (deploy on merge to `main` + run D1 migrations automatically)
+- [x] CI/CD for the Worker (deploy on merge to `main` + run D1 migrations automatically) - needs CLOUDFLARE_API_TOKEN secret, see api/DEPLOY.md
 - [ ] Monitoring / alert on the weekly T-Note data refresh (notify on failure)
 - [x] Surface the T-Note data "fetched" date + a staleness warning in the UI when it's old
 

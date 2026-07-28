@@ -1,0 +1,52 @@
+name: Deploy Worker API
+
+# Auto-deploys the Cloudflare Worker (api/) and applies D1 migrations.
+#   push to dev  -> mtk-api-dev + mtk-dev  DB
+#   push to main -> mtk-api     + mtk-prod DB   (main only moves via an approved PR, so this
+#                                                fires only after you merge — respects the rule)
+# Only runs when something under api/ (or this file) changes. Needs one repo secret:
+# CLOUDFLARE_API_TOKEN (see api/DEPLOY.md). Worker secrets like SESSION_SECRET are NOT
+# touched by `wrangler deploy` — they persist across deploys, so CI never clobbers them.
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'api/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: c7961085693c68b85b3f19dc03e15266
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+
+      # Until CLOUDFLARE_API_TOKEN is added as a repo secret, these steps skip (run stays
+      # green) instead of failing on an auth error. Once the secret exists, they deploy.
+      - name: Deploy to dev
+        if: github.ref == 'refs/heads/dev' && env.CLOUDFLARE_API_TOKEN != ''
+        run: |
+          npx wrangler d1 migrations apply mtk-dev --remote --env dev
+          npx wrangler deploy --env dev
+
+      - name: Deploy to prod
+        if: github.ref == 'refs/heads/main' && env.CLOUDFLARE_API_TOKEN != ''
+        run: |
+          npx wrangler d1 migrations apply mtk-prod --remote
+          npx wrangler deploy
+
+      - name: No token yet
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "CLOUDFLARE_API_TOKEN secret not set - skipping deploy. See api/DEPLOY.md."
