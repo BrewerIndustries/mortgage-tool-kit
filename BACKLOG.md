@@ -32,14 +32,14 @@ polish / accessibility / extras. Check items off as they ship.
 - [x] **Loan comparison** — two scenarios side by side (15 vs 30 yr, or two lender quotes)
 - [x] **Points / rate buydown** break-even analysis
 - [x] **Bi-weekly payment** savings (interest saved, payoff acceleration)
-- [ ] **ARM payment projection** — initial rate, index + margin, periodic/lifetime caps; consumes the existing T-Note lookup
-- [ ] Amortization: one-time / lump-sum extra payments and a "pay off by date X → required payment" solver
+- [x] **ARM payment projection** — initial rate, index + margin, periodic/lifetime caps; consumes the existing T-Note lookup (new ARM tab, "Use latest 1-yr T-Note" button)
+- [x] Amortization: one-time / lump-sum extra payments and a "pay off by date X → required payment" solver
 
 ### Financial correctness
 - [x] Make PMI a real input (rate + amount) with a sensible default instead of the flat 0.6%/yr heuristic
 - [x] Model **PMI drop-off** at ~78–80% LTV over the amortization timeline (show the month it ends)
 - [x] Add **APR / true cost** (note rate + fees) alongside the interest rate
-- [ ] Escrow: handle RESPA deficiency vs. shortage distinction and the initial escrow deposit at closing
+- [x] Escrow: handle RESPA deficiency vs. shortage distinction and the initial escrow deposit at closing (+ optional annual tax/insurance escalation)
 - [x] Fix schedule rounding so displayed amortization rows foot exactly (carry the rounding remainder)
 - [x] Add total-cost-of-ownership view (lifetime interest + taxes + insurance + PMI)
 
@@ -49,9 +49,12 @@ polish / accessibility / extras. Check items off as they ship.
 - [x] Self-serve **password reset** flow (email), or at minimum an admin "set password" action
 - [x] Force a password change on first login for seeded / temporary accounts
 - [x] Prune expired sessions (scheduled Worker, or lazy purge on login)
+- [x] Escape imported CSV fields before innerHTML (self-XSS via servicer CSV `Description`/`Date`)
+- [x] Throttle `/auth/forgot-password` per-IP + per-email so it can't flood a victim inbox / the mail relay
+- [x] Lazy-prune `login_attempts` + generic `rate_limits`; purge verification/reset tokens + queued mail on user delete (D1 FK cascade is off)
 
 ### Engineering & testing
-- [ ] Extract the pure calc functions (amortization, escrow projection, PITI, business-day rollback) into an importable module
+- [x] Extract the pure calc functions into an importable module — `calc.js` is now the single source of truth, loaded by the app (`window.MTK`) AND the tests, so tested code == shipped code (payment/amortization/affordability/refinance/payoff no longer have inline copies)
 - [x] Add a **unit test suite** for the calc module with known-value fixtures
 - [x] Wire the tests into CI so they run on every PR
 - [ ] Split the 2,120-line `index.html` into modules (CSS/JS separation or ES modules) without adding a heavy build
@@ -60,6 +63,7 @@ polish / accessibility / extras. Check items off as they ship.
 - [x] CI/CD for the Worker (deploy on merge to `main` + run D1 migrations automatically) - needs CLOUDFLARE_API_TOKEN secret, see api/DEPLOY.md
 - [ ] Monitoring / alert on the weekly T-Note data refresh (notify on failure)
 - [x] Surface the T-Note data "fetched" date + a staleness warning in the UI when it's old
+- [x] Mail-queue health visible in-app (admin) via `/admin/health` — flags a stalled relay so undelivered verification/reset email is detectable
 
 ---
 
@@ -67,22 +71,22 @@ polish / accessibility / extras. Check items off as they ship.
 
 ### UX
 - [x] Info tooltips / popovers defining RESPA cushion, PITI, LTV, PMI, ARM lookback, escrow shortage, etc.
-- [ ] Thousands separators in number inputs while typing (400,000 vs 400000)
+- [x] Thousands separators in number inputs while typing (400,000 vs 400000) — currency fields only; all reads go through comma-stripping parse
 - [x] "Reset to defaults" control per tab
-- [ ] Combined **full mortgage report** print (all tabs in one PDF)
+- [x] Combined **full mortgage report** print (all tabs in one PDF) — "Full report" button in the tab actions
 - [x] Make export / statement buttons context-aware per tab (hide "Escrow statement" on non-escrow tabs)
 - [ ] Short onboarding / "what each tab does" intro for first-time users
 
 ### Accessibility
-- [ ] Text alternative / data-table fallback for the canvas charts (ARIA)
-- [ ] Contrast audit of muted/faint text on tinted theme backgrounds (WCAG AA in every accent, both modes)
+- [x] Text alternative for the canvas charts — `role="img"` + live `aria-label` describing the current data (escrow low-point/cushion, amortization payoff/interest)
+- [x] Contrast audit of muted/faint text — bumped `--faint` in both modes (darker in light, lighter in dark) for more legible fine print
 - [x] `prefers-reduced-motion` handling for toggle / switch transitions
-- [ ] Full keyboard + ARIA pass on segmented controls, the switch, accent swatches, and modals (focus trap in modals)
+- [x] Full keyboard + ARIA pass on segmented controls (role=tab/aria-selected), accent swatches (aria-label/aria-pressed), and modals (role=dialog, aria-modal, Escape-to-close, focus trap, focus-on-open); added the missing `<meta charset>` + viewport
 
 ### Nice-to-have
 - [x] Shareable read-only scenario links (encode inputs in the URL)
 - [x] Full-scenario CSV/JSON export & import (not just per-tab)
 - [ ] Currency / locale formatting option
-- [ ] Admin audit log for user add/delete
+- [x] Admin audit log for user add/delete (+ password resets); shown in Settings, backed by a D1 `audit_log` table
 - [x] Email verification for new accounts (Worker outbox -> Jarvis Gmail relay; sends on user-create + Settings resend)
 - [ ] Rent vs. buy calculator (stretch)

@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mortgage Tool Kit</title>
 <style>
   :root {
@@ -5,7 +7,7 @@
     --card: #ffffff;
     --ink: #141c18;
     --muted: #5c6b63;
-    --faint: #8a988f;
+    --faint: #6d7a71;
     --line: #dde3df;
     --line-strong: #c6cfc9;
     --accent: #1f6e4f;
@@ -22,20 +24,20 @@
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --paper: #0e1512; --card: #16201b; --ink: #e8ede9; --muted: #9aa89f; --faint: #6f7d74;
+      --paper: #0e1512; --card: #16201b; --ink: #e8ede9; --muted: #9aa89f; --faint: #869489;
       --line: #253029; --line-strong: #34423a; --accent: #4bbf8e; --accent-soft: #17281f;
       --shortage: #d9a441; --shortage-soft: #2b2312; --surplus: #5cc793; --surplus-soft: #14271d;
       --danger: #e06767; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
     }
   }
   :root[data-theme="light"] {
-    --paper: #f3f5f3; --card: #ffffff; --ink: #141c18; --muted: #5c6b63; --faint: #8a988f;
+    --paper: #f3f5f3; --card: #ffffff; --ink: #141c18; --muted: #5c6b63; --faint: #6d7a71;
     --line: #dde3df; --line-strong: #c6cfc9; --accent: #1f6e4f; --accent-soft: #e4efe9;
     --shortage: #b7791f; --shortage-soft: #f7ecd6; --surplus: #2f7d5b; --surplus-soft: #e2f0e8;
     --danger: #b23b3b; --shadow: 0 1px 2px rgba(20,28,24,.06), 0 8px 24px rgba(20,28,24,.05);
   }
   :root[data-theme="dark"] {
-    --paper: #0e1512; --card: #16201b; --ink: #e8ede9; --muted: #9aa89f; --faint: #6f7d74;
+    --paper: #0e1512; --card: #16201b; --ink: #e8ede9; --muted: #9aa89f; --faint: #869489;
     --line: #253029; --line-strong: #34423a; --accent: #4bbf8e; --accent-soft: #17281f;
     --shortage: #d9a441; --shortage-soft: #2b2312; --surplus: #5cc793; --surplus-soft: #14271d;
     --danger: #e06767; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
@@ -114,6 +116,7 @@
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
   select { font-family: var(--sans); }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .panel > .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
   .suffix-input { position: relative; }
   .suffix-input .sfx { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); font-family: var(--mono); font-size: 13px; pointer-events: none; }
 
@@ -322,6 +325,15 @@
   .user-pw { background: none; border: none; color: var(--faint); cursor: pointer; font-size: 13px; line-height: 1; padding: 2px 5px; border-radius: 6px; }
   .user-pw:hover { color: var(--accent); background: var(--card); }
   .add-user label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  .mail-health { font-size: 13px; display: flex; gap: 9px; align-items: flex-start; padding: 10px 12px; border-radius: 9px; background: var(--paper); border: 1px solid var(--line); color: var(--muted); }
+  .mail-health:empty { display: none; }
+  .mail-health .dot { line-height: 1.3; }
+  .mail-health.warn { background: var(--shortage-soft); color: var(--shortage); border-color: color-mix(in srgb, var(--shortage) 30%, transparent); }
+  .mail-health.good { background: var(--surplus-soft); color: var(--surplus); border-color: color-mix(in srgb, var(--surplus) 30%, transparent); }
+  .audit-list { display: flex; flex-direction: column; gap: 5px; max-height: 220px; overflow-y: auto; }
+  .audit-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; padding: 6px 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 7px; }
+  .audit-when { color: var(--faint); white-space: nowrap; flex: none; font-variant-numeric: tabular-nums; }
+  .audit-what { color: var(--muted); text-align: right; word-break: break-word; }
   .add-user .two { gap: 12px; }
 
   /* Payment tab breakdown */
@@ -388,10 +400,13 @@
     <button class="tab" data-tab="afford" type="button">Affordability</button>
     <button class="tab" data-tab="refi" type="button">Refinance</button>
     <button class="tab" data-tab="compare" type="button">Compare</button>
+    <button class="tab" data-tab="arm" type="button">ARM</button>
+    <button class="tab" data-tab="rentbuy" type="button">Rent vs. Buy</button>
     <button class="tab" data-tab="tnote" type="button">T-Note Lookup</button>
     <div class="tab-actions">
       <button class="ghost-btn sm" id="shareBtn" type="button" title="Copy a link that reopens these exact inputs">&#128279; Share</button>
       <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
+      <button class="ghost-btn sm" id="fullReport" type="button" title="Print a combined report of every calculator">&#128203; Full report</button>
       <button class="ghost-btn sm accent-btn" id="exportStmt" type="button">&#128196; Escrow statement</button>
     </div>
   </nav>
@@ -427,6 +442,9 @@
               <span class="cushion-val" id="cushionVal">2 months</span>
             </div>
             <p class="foot-note" style="margin-top:10px;">Federal law caps the cushion at 2 months of escrow payments.</p>
+            <label class="field" style="margin-top:12px;"><span class="lbl">Expected annual increase in taxes/insurance</span>
+              <div class="suffix-input"><input type="number" id="escalate" value="0" step="0.5" min="0"><span class="sfx">%</span></div></label>
+            <p class="foot-note" style="margin-top:6px;">Inflates the disbursements above to model rising taxes/premiums for the coming year.</p>
           </div>
           <div class="panel">
             <p class="eyebrow">Annual disbursements</p>
@@ -460,6 +478,7 @@
         </div>
 
         <div class="verdict" id="verdict"></div>
+        <p class="foot-note" id="initDepositNote" style="margin-top:-4px;"></p>
 
         <div class="card chart-card">
           <div class="panel">
@@ -467,7 +486,7 @@
               <p class="eyebrow" style="margin:0;">Projected running balance</p>
               <div class="legend"><span><i class="bar"></i>Balance</span><span><i class="cush"></i>Cushion floor</span></div>
             </div>
-            <canvas id="chart" width="760" height="240"></canvas>
+            <canvas id="chart" width="760" height="240" role="img" aria-label="Projected escrow running balance chart"></canvas>
           </div>
         </div>
 
@@ -537,6 +556,17 @@
             </div>
             <label class="toggle-row"><input type="checkbox" id="loanBiweekly"><span class="switch"></span><span>Bi-weekly payments (adds ~1 payment/yr)</span></label>
           </div>
+          <div class="panel">
+            <p class="eyebrow">Pay off by a target date</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Target month</span>
+                <select id="loanPayoffMonth"></select></label>
+              <label class="field"><span class="lbl">Target year</span>
+                <input type="number" id="loanPayoffYear" value="2041" step="1"></label>
+            </div>
+            <button class="ghost-btn sm accent-btn" id="loanPayoffSolve" type="button">Solve &amp; apply required payment</button>
+            <div class="verdict good hidden" id="loanPayoffResult" style="margin-top:12px"></div>
+          </div>
         </div>
       </div>
 
@@ -561,7 +591,7 @@
               <p class="eyebrow" style="margin:0;">Balance &amp; cumulative interest</p>
               <div class="legend"><span><i class="bar"></i>Balance</span><span><i class="int"></i>Cumulative interest</span></div>
             </div>
-            <canvas id="amChart" width="760" height="240"></canvas>
+            <canvas id="amChart" width="760" height="240" role="img" aria-label="Loan balance and cumulative interest chart"></canvas>
           </div>
         </div>
 
@@ -680,7 +710,7 @@
               <button class="ghost-btn sm" id="payPrintBtn" type="button">&#128424; Print</button>
             </div>
             <div class="pay-breakdown">
-              <canvas id="payDonut" width="200" height="200"></canvas>
+              <canvas id="payDonut" width="200" height="200" role="img" aria-label="Monthly payment breakdown chart"></canvas>
               <div class="pay-legend" id="payLegend"></div>
             </div>
           </div>
@@ -875,6 +905,155 @@
     </div>
   </div>
 
+  <!-- ================= ARM VIEW ================= -->
+  <div id="view-arm" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Loan</p>
+            <label class="field"><span class="lbl">Loan amount</span>
+              <div class="money-input"><input type="number" id="armAmt" value="360000" step="1000"></div></label>
+            <div class="two">
+              <label class="field"><span class="lbl">Initial rate</span>
+                <div class="suffix-input"><input type="number" id="armInitRate" value="6.0" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Term</span>
+                <div class="suffix-input"><input type="number" id="armTerm" value="30" step="1"><span class="sfx">yrs</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Fixed period</span>
+                <div class="suffix-input"><input type="number" id="armFixed" value="5" step="1"><span class="sfx">yrs</span></div></label>
+              <label class="field"><span class="lbl">Adjusts every</span>
+                <select id="armAdjFreq"><option value="6">6 months</option><option value="12" selected>12 months</option></select></label>
+            </div>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Index &amp; margin</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Index rate</span>
+                <div class="suffix-input"><input type="number" id="armIndex" value="4.5" step="0.125"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Margin</span>
+                <div class="suffix-input"><input type="number" id="armMargin" value="2.75" step="0.125"><span class="sfx">%</span></div></label>
+            </div>
+            <button class="ghost-btn sm" id="armUseTnote" type="button" title="Fill the index from the latest bundled 1-year Treasury">Use latest 1-yr T-Note</button>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Caps (first / periodic / lifetime)</p>
+            <div class="three">
+              <label class="field"><span class="lbl">First</span>
+                <div class="suffix-input"><input type="number" id="armCapFirst" value="2" step="0.5"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Periodic</span>
+                <div class="suffix-input"><input type="number" id="armCapPeriodic" value="1" step="0.5"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Lifetime</span>
+                <div class="suffix-input"><input type="number" id="armCapLife" value="5" step="0.5"><span class="sfx">%</span></div></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles">
+          <div class="tile"><div class="k">Initial payment</div><div class="v" id="armInitPay">$0</div><div class="n" id="armInitPayNote">during fixed period</div></div>
+          <div class="tile" id="armFirstTile"><div class="k">After 1st adjustment</div><div class="v" id="armFirstPay">$0</div><div class="n" id="armFirstPayNote">if index holds</div></div>
+          <div class="tile" id="armMaxTile"><div class="k">Worst-case payment</div><div class="v" id="armMaxPay">$0</div><div class="n" id="armMaxPayNote">at lifetime cap</div></div>
+          <div class="tile"><div class="k">Fully-indexed rate</div><div class="v" id="armFullyIndexed" style="font-size:22px;">0%</div><div class="n">index + margin</div></div>
+        </div>
+        <div class="verdict good" id="armVerdict"></div>
+        <div class="card table-card">
+          <div class="panel" style="padding-bottom:8px;"><p class="eyebrow" style="margin:0;">Projected payment path</p></div>
+          <table><thead><tr><th>Stage</th><th>Rate</th><th>Payment</th></tr></thead><tbody id="armTable"></tbody></table>
+        </div>
+        <p class="foot-note">
+          Two scenarios: <b>index holds</b> (the rate moves toward the fully-indexed rate, capped) and <b>worst case</b> (the rate rises by the
+          maximum cap at every adjustment up to the lifetime ceiling). Each adjustment re-amortizes the remaining balance over the remaining
+          term. Floors are approximated at the margin. Estimate only &mdash; your note's exact caps, index, and rounding govern. Not financial advice.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RENT vs BUY VIEW ================= -->
+  <div id="view-rentbuy" class="view hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="panel">
+            <p class="eyebrow">Buying</p>
+            <label class="field"><span class="lbl">Home price</span>
+              <div class="money-input"><input type="number" id="rbPrice" value="400000" step="1000"></div></label>
+            <div class="two">
+              <label class="field"><span class="lbl">Down payment</span>
+                <div class="money-input"><input type="number" id="rbDown" value="80000" step="1000"></div></label>
+              <label class="field"><span class="lbl">Rate</span>
+                <div class="suffix-input"><input type="number" id="rbRate" value="6.5" step="0.125"><span class="sfx">%</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Term</span>
+                <div class="suffix-input"><input type="number" id="rbTerm" value="30" step="1"><span class="sfx">yrs</span></div></label>
+              <label class="field"><span class="lbl">Closing costs</span>
+                <div class="money-input"><input type="number" id="rbClosing" value="9000" step="500"></div></label>
+            </div>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Ownership costs</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Property tax /yr</span>
+                <div class="suffix-input"><input type="number" id="rbTax" value="1.1" step="0.05"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Insurance /yr</span>
+                <div class="money-input"><input type="number" id="rbIns" value="1800" step="100"></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">HOA /mo</span>
+                <div class="money-input"><input type="number" id="rbHoa" value="0" step="25"></div></label>
+              <label class="field"><span class="lbl">Maintenance /yr</span>
+                <div class="suffix-input"><input type="number" id="rbMaint" value="1" step="0.25"><span class="sfx">%</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Home appreciation /yr</span>
+                <div class="suffix-input"><input type="number" id="rbAppr" value="3" step="0.5"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Selling cost</span>
+                <div class="suffix-input"><input type="number" id="rbSellCost" value="6" step="0.5"><span class="sfx">%</span></div></label>
+            </div>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Renting &amp; investing</p>
+            <div class="two">
+              <label class="field"><span class="lbl">Rent /mo</span>
+                <div class="money-input"><input type="number" id="rbRent" value="2200" step="50"></div></label>
+              <label class="field"><span class="lbl">Rent growth /yr</span>
+                <div class="suffix-input"><input type="number" id="rbRentGrowth" value="3" step="0.5"><span class="sfx">%</span></div></label>
+            </div>
+            <div class="two">
+              <label class="field"><span class="lbl">Investment return /yr</span>
+                <div class="suffix-input"><input type="number" id="rbInvest" value="6" step="0.5"><span class="sfx">%</span></div></label>
+              <label class="field"><span class="lbl">Time horizon</span>
+                <div class="suffix-input"><input type="number" id="rbYears" value="7" step="1"><span class="sfx">yrs</span></div></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles">
+          <div class="tile" id="rbWinTile"><div class="k">Better after horizon</div><div class="v" id="rbWin" style="font-size:20px;">&mdash;</div><div class="n" id="rbWinNote">net worth</div></div>
+          <div class="tile"><div class="k">Buy net worth</div><div class="v" id="rbBuyNW">$0</div><div class="n">home equity, net of sale</div></div>
+          <div class="tile"><div class="k">Rent net worth</div><div class="v" id="rbRentNW">$0</div><div class="n">invested portfolio</div></div>
+          <div class="tile"><div class="k">Break-even</div><div class="v" id="rbBreakeven" style="font-size:20px;">&mdash;</div><div class="n">buying pulls ahead</div></div>
+        </div>
+        <div class="verdict good" id="rbVerdict"></div>
+        <div class="card table-card">
+          <div class="panel" style="padding-bottom:8px;"><p class="eyebrow" style="margin:0;">Net worth by year</p></div>
+          <table><thead><tr><th>Year</th><th>Buy</th><th>Rent</th></tr></thead><tbody id="rbTable"></tbody></table>
+        </div>
+        <p class="foot-note">
+          Both households are given the buyer's budget: the renter invests the down payment + closing costs and any monthly amount by which
+          owning costs more than renting (drawing it down when renting costs more), at the investment return. "Buy net worth" is home equity
+          after selling costs. Excludes income-tax effects (mortgage-interest / property-tax deductions) and rent deposits. Estimate only &mdash; not financial advice.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= T-NOTE LOOKUP VIEW ================= -->
   <div id="view-tnote" class="view hidden">
     <div class="grid">
@@ -917,7 +1096,7 @@
               <p class="eyebrow" style="margin:0;">Rate history</p>
               <div class="legend"><span><i class="bar"></i><span id="tnLegend">10Y</span></span><span style="color:var(--faint);">&#9679; resolved date</span></div>
             </div>
-            <canvas id="tnChart" width="760" height="220"></canvas>
+            <canvas id="tnChart" width="760" height="220" role="img" aria-label="Treasury rate history chart"></canvas>
           </div>
         </div>
 
@@ -940,7 +1119,7 @@
 
 <!-- Import modal -->
 <div class="modal-overlay hidden" id="importModal">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Import historical activity">
     <div class="modal-head"><h3>Import historical activity</h3><button class="modal-x" id="importClose" type="button">&times;</button></div>
     <p class="modal-sub">Paste a CSV export from your servicer or upload a file. Columns: <code>Date</code>, <code>Description</code>, and either <code>Amount</code> (negative = paid out) or separate <code>Deposit</code> / <code>Withdrawal</code> columns. A <code>Balance</code> column is used if present.</p>
     <div class="modal-actions-top">
@@ -958,7 +1137,7 @@
 
 <!-- Statement modal -->
 <div class="modal-overlay hidden" id="stmtModal">
-  <div class="modal modal-lg">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Escrow statement">
     <div class="modal-head"><h3>Escrow statement</h3><button class="modal-x" id="stmtClose" type="button">&times;</button></div>
     <p class="modal-sub">Add optional account details, then preview and print (Save as PDF) or download the statement.</p>
     <div class="stmt-fields">
@@ -1226,7 +1405,7 @@
 
 <!-- Settings modal -->
 <div class="modal-overlay hidden" id="settingsModal">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Settings">
     <div class="modal-head"><h3>Settings</h3><button class="modal-x" id="settingsClose" type="button">&times;</button></div>
 
     <div class="settings-section">
@@ -1311,11 +1490,17 @@
         <button class="btn-primary" type="submit" style="margin-top:14px;">Add user</button>
         <div class="auth-msg" id="addUserMsg"></div>
       </form>
+
+      <div class="mail-health" id="mailHealth" style="margin-top:18px;"></div>
+
+      <h4 style="margin-top:20px;">Recent admin activity</h4>
+      <div class="audit-list" id="auditList"></div>
     </div>
   </div>
 </div>
 
 <script src="tnote-rates.js"></script>
+<script src="calc.js"></script>
 <script>
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const FREQ = { annual: 1, "semi-annual": 2, quarterly: 4, monthly: 12 };
@@ -1331,15 +1516,50 @@
   // ---------- helpers ----------
   const fmt = (n) => { const v = Math.round(n); return (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US"); };
   const parseNum = (s) => { const v = parseFloat(String(s).replace(/[^0-9.\-]/g, "")); return isNaN(v) ? 0 : v; };
+  // HTML-escape untrusted strings (imported CSV descriptions, scenario names, user emails)
+  // before they go into innerHTML. Used app-wide.
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ---------- thousands separators on currency inputs ----------
+  // <input type=number> can't render commas, so these fields are text+inputmode and formatted
+  // live. All reads go through parseNum/gv, which strip the commas, so math is unaffected.
+  const CURRENCY_IDS = ["startBal","curPay","loanAmt","loanExtra","loanLump","payPrice","payDownAmt","payClosing","payIns","payPmi","afIncome","afDebts","afDown","afIns","rfBalance","rfClosing","cmpAmt","cmpFeeA","cmpFeeB","armAmt","rbPrice","rbDown","rbClosing","rbIns","rbRent"];
+  function formatThousandsEl(el) {
+    const raw = el.value;
+    const caret = el.selectionStart == null ? raw.length : el.selectionStart;
+    let digitsLeft = 0; for (let i = 0; i < caret; i++) if (raw[i] >= "0" && raw[i] <= "9") digitsLeft++;
+    const neg = raw.trim().startsWith("-");
+    let cleaned = raw.replace(/[^\d.]/g, "");
+    const dot = cleaned.indexOf(".");
+    if (dot !== -1) cleaned = cleaned.slice(0, dot + 1) + cleaned.slice(dot + 1).replace(/\./g, "");
+    let [intPart, decPart] = cleaned.split(".");
+    intPart = (intPart || "").replace(/^0+(?=\d)/, "");
+    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const formatted = (neg ? "-" : "") + grouped + (decPart !== undefined ? "." + decPart : "");
+    if (formatted === raw) return;
+    el.value = formatted;
+    let pos = 0, seen = 0;
+    while (pos < formatted.length && seen < digitsLeft) { const ch = formatted[pos]; if (ch >= "0" && ch <= "9") seen++; pos++; }
+    try { el.setSelectionRange(pos, pos); } catch (e) {}
+  }
+  function attachThousands(id) {
+    const el = document.getElementById(id); if (!el) return;
+    el.type = "text"; el.setAttribute("inputmode", "decimal");
+    el.addEventListener("input", () => formatThousandsEl(el));
+    formatThousandsEl(el);
+  }
+  function formatAllThousands() { CURRENCY_IDS.forEach(id => { const el = document.getElementById(id); if (el) formatThousandsEl(el); }); }
 
   // populate month selects
   const startMonthSel = document.getElementById("startMonth");
   const loanStartSel = document.getElementById("loanStartMonth");
+  const loanPayoffSel = document.getElementById("loanPayoffMonth");
   MONTHS.forEach((m, i) => {
     const a = document.createElement("option"); a.value = i; a.textContent = m; startMonthSel.appendChild(a);
     const b = document.createElement("option"); b.value = i; b.textContent = m; loanStartSel.appendChild(b);
+    const d = document.createElement("option"); d.value = i; d.textContent = m; loanPayoffSel.appendChild(d);
   });
-  startMonthSel.value = 0; loanStartSel.value = 0;
+  startMonthSel.value = 0; loanStartSel.value = 0; loanPayoffSel.value = 0;
 
   // ---------- disbursement editor ----------
   const disbList = document.getElementById("disbList");
@@ -1381,12 +1601,15 @@
 
   // ---------- escrow computation ----------
   function compute() {
-    const startBal = parseFloat(document.getElementById("startBal").value) || 0;
-    const curPay = parseFloat(document.getElementById("curPay").value) || 0;
+    const startBal = parseNum(document.getElementById("startBal").value);
+    const curPay = parseNum(document.getElementById("curPay").value);
     const startMo = parseInt(startMonthSel.value);
     const cushionMonths = parseFloat(document.getElementById("cushion").value);
+    const escalate = Math.max(0, parseFloat(document.getElementById("escalate").value) || 0) / 100;
 
-    const calSched = monthlySchedule();
+    // Optionally inflate the coming year's disbursements to model rising taxes/premiums.
+    const rawSched = monthlySchedule();
+    const calSched = escalate ? rawSched.map(v => v * (1 + escalate)) : rawSched;
     const annual = calSched.reduce((a,b) => a+b, 0);
     const baseDeposit = annual / 12;
     const cushionAmt = baseDeposit * cushionMonths;
@@ -1397,9 +1620,18 @@
 
     const diff = cushionAmt - low;
     const isShortage = diff > 0.5, isSurplus = diff < -0.5;
+    // A shortage where the projected balance actually goes negative is a RESPA *deficiency*
+    // (the servicer advanced funds), which is more serious than a balance that merely dips
+    // below the cushion. Repayment is still spread over 12 months here, but we flag it.
+    const isDeficiency = low < -0.5;
     const adjust = diff / 12;
     const newPay = baseDeposit + adjust;
     state.escrowMonthly = newPay;
+
+    // Initial escrow deposit for a NEW loan: the amount collected at closing so the account's
+    // projected low point sits exactly at the cushion (aggregate accounting, empty-account basis).
+    const low0 = low - startBal;                             // trial low starting from $0
+    const initialDeposit = Math.max(0, cushionAmt - low0);
 
     // tiles
     document.getElementById("mNewPay").textContent = fmt(newPay);
@@ -1411,9 +1643,17 @@
     const tileBal = document.getElementById("tileBalance");
     tileBal.classList.remove("warn","good");
     const balEl = document.getElementById("mBalance"), balLabel = document.getElementById("mBalLabel"), balNote = document.getElementById("mBalNote");
-    if (isShortage) { tileBal.classList.add("warn"); balLabel.textContent = "Escrow shortage"; balEl.textContent = fmt(Math.abs(diff)); balNote.textContent = "low point below cushion"; }
+    if (isDeficiency) { tileBal.classList.add("warn"); balLabel.textContent = "Escrow deficiency"; balEl.textContent = fmt(Math.abs(diff)); balNote.textContent = "balance goes negative (" + fmt(low) + " low)"; }
+    else if (isShortage) { tileBal.classList.add("warn"); balLabel.textContent = "Escrow shortage"; balEl.textContent = fmt(Math.abs(diff)); balNote.textContent = "low point below cushion"; }
     else if (isSurplus) { tileBal.classList.add("good"); balLabel.textContent = "Escrow surplus"; balEl.textContent = fmt(Math.abs(diff)); balNote.textContent = "above required cushion"; }
     else { balLabel.textContent = "Balanced"; balEl.textContent = fmt(0); balNote.textContent = "at required cushion"; }
+
+    // Initial-deposit line (useful for a purchase/refi setting up a fresh escrow account).
+    document.getElementById("initDepositNote").textContent =
+      "New-loan initial escrow deposit (to fund the account to its cushion at closing): " + fmt(initialDeposit) + ".";
+
+    document.getElementById("chart").setAttribute("aria-label",
+      `Escrow running balance over 12 months: projected low point ${fmt(low)} against a ${fmt(cushionAmt)} cushion (${isDeficiency ? "deficiency" : isShortage ? "shortage" : isSurplus ? "surplus" : "balanced"}).`);
 
     // payment comparison band
     const cmpDelta = newPay - curPay;
@@ -1434,7 +1674,8 @@
     // verdict
     const v = document.getElementById("verdict");
     v.className = "verdict " + (isShortage ? "warn" : "good");
-    if (isShortage) v.innerHTML = `<span class="dot">&#9650;</span><div><b>Shortage of ${fmt(Math.abs(diff))}.</b> The projected low point (${fmt(low)}) falls below the ${fmt(cushionAmt)} cushion. Raising the payment to <b>${fmt(newPay)}</b> spreads the catch-up over 12 months. A one-time ${fmt(Math.abs(diff))} deposit would keep it at ${fmt(baseDeposit)}.</div>`;
+    if (isDeficiency) v.innerHTML = `<span class="dot">&#9650;</span><div><b>Deficiency of ${fmt(Math.abs(diff))}.</b> The projected balance goes <b>negative</b> (low point ${fmt(low)}), meaning the servicer would advance funds to cover a disbursement. Under RESPA a deficiency can be spread over ~2&ndash;12 months, but your servicer may require faster repayment. Raising the payment to <b>${fmt(newPay)}</b> spreads it over 12; a one-time <b>${fmt(Math.abs(diff))}</b> deposit clears it and keeps the payment at ${fmt(baseDeposit)}.</div>`;
+    else if (isShortage) v.innerHTML = `<span class="dot">&#9650;</span><div><b>Shortage of ${fmt(Math.abs(diff))}.</b> The projected low point (${fmt(low)}) falls below the ${fmt(cushionAmt)} cushion (but stays positive). Raising the payment to <b>${fmt(newPay)}</b> spreads the catch-up over 12 months. A one-time ${fmt(Math.abs(diff))} deposit would keep it at ${fmt(baseDeposit)}.</div>`;
     else if (isSurplus) v.innerHTML = `<span class="dot">&#9660;</span><div><b>Surplus of ${fmt(Math.abs(diff))}.</b> The projected low point (${fmt(low)}) sits above the required cushion. Surpluses of $50+ are typically refunded; the payment can ease to <b>${fmt(newPay)}</b>.</div>`;
     else v.innerHTML = `<span class="dot">&#9679;</span><div><b>Right on target.</b> The projected low point matches the ${fmt(cushionAmt)} cushion. Keep the payment near <b>${fmt(newPay)}</b>.</div>`;
 
@@ -1499,34 +1740,20 @@
   // ---------- amortization ----------
   const round2 = (x) => Math.round(x * 100) / 100;
   function buildAmort() {
-    const P = parseFloat(document.getElementById("loanAmt").value) || 0;
+    const P = parseNum(document.getElementById("loanAmt").value);
     const rate = parseFloat(document.getElementById("loanRate").value) || 0;
     const term = parseFloat(document.getElementById("loanTerm").value) || 0;
-    const extra = parseFloat(document.getElementById("loanExtra").value) || 0;
-    const lumpAmt = parseFloat(document.getElementById("loanLump").value) || 0;
-    const lumpIdx = Math.max(1, Math.round(parseFloat(document.getElementById("loanLumpAt").value) || 1)) - 1;
+    const extra = parseNum(document.getElementById("loanExtra").value);
+    const lumpAmt = parseNum(document.getElementById("loanLump").value);
+    const lumpAt = Math.max(1, Math.round(parseFloat(document.getElementById("loanLumpAt").value) || 1));
     const biweekly = document.getElementById("loanBiweekly").checked;
     const r = rate/1200, n = Math.max(1, Math.round(term*12));
-    const basePmt = r === 0 ? P/n : P*r / (1 - Math.pow(1+r, -n));
-    // Bi-weekly (26 half-payments/yr = 13 monthly-equivalents) modeled as one extra payment spread monthly.
-    const biweeklyExtra = biweekly ? basePmt / 12 : 0;
-    const sched = []; let bal = P, totInt = 0, totPrin = 0;
-    // Values are rounded to cents each row so the displayed schedule foots exactly.
-    for (let i = 0; i < n * 2 && bal > 0.005; i++) {
-      const interest = round2(bal * r);
-      let principal = basePmt - interest + extra + biweeklyExtra;
-      if (i === lumpIdx && lumpAmt > 0) principal += lumpAmt;
-      if (principal > bal) principal = bal;
-      principal = round2(principal);
-      // Final scheduled payment (or early payoff) clears the balance, so the loan
-      // retires in exactly the term (real lenders adjust the last payment for rounding).
-      if (principal > bal || bal - principal < 0.01 || i === n - 1) principal = round2(bal);
-      const pay = round2(principal + interest);
-      bal = round2(bal - principal); totInt += interest; totPrin += principal;
-      sched.push({ i: i+1, pay, principal, interest, bal: Math.max(0, bal) });
-      if (sched.length > 1200) break;
-    }
-    return { basePmt, sched, totInt: round2(totInt), totPrin: round2(totPrin), extra, lumpAmt, biweekly, biweeklyExtra, P, r, n };
+    // Shared calc module (calc.js / window.MTK) — the SAME code the unit tests cover.
+    const a = MTK.amortize(P, rate, term, { extra, lumpAmount: lumpAmt, lumpAtPayment: lumpAt, biweekly, schedule: true });
+    return {
+      basePmt: a.basePmt, sched: a.schedule, totInt: a.totalInterest, totPrin: a.totalPrincipal,
+      extra, lumpAmt, biweekly, biweeklyExtra: biweekly ? a.basePmt / 12 : 0, P, r, n,
+    };
   }
 
   function computeAmort() {
@@ -1552,8 +1779,10 @@
     // interest saved from extra payments (recurring, lump sum, and/or bi-weekly)
     const savedEl = document.getElementById("amSaved");
     if (a.extra > 0 || a.lumpAmt > 0 || a.biweekly) {
-      const noExtra = (function(){ let bal=a.P, ti=0; const pmt=a.basePmt;
-        for (let i=0;i<a.n && bal>0.005;i++){ const it=bal*a.r; let pr=pmt-it; if(pr>bal)pr=bal; bal-=pr; ti+=it; } return ti; })();
+      // Baseline (no extra/lump/biweekly) interest, from the same shared calc module.
+      const rate = parseFloat(document.getElementById("loanRate").value) || 0;
+      const term = parseFloat(document.getElementById("loanTerm").value) || 0;
+      const noExtra = MTK.amortize(a.P, rate, term).totalInterest;
       const saved = noExtra - a.totInt, fewer = a.n - months;
       const parts = [];
       if (a.extra > 0) parts.push(fmt(a.extra) + "/mo extra");
@@ -1569,6 +1798,8 @@
 
     renderAmortTable(a, startMo, startYr);
     drawAmortChart(a);
+    document.getElementById("amChart").setAttribute("aria-label",
+      `Loan balance falling to zero by ${payMo} ${payYr} over ${months} payments, against ${fmt(a.totInt)} cumulative interest on ${fmt(a.P)} borrowed.`);
   }
 
   // build display rows for the amortization table (yearly aggregate or monthly)
@@ -1710,7 +1941,7 @@
     try {
       parsed = parseCSV(document.getElementById("importText").value);
       const rowsHtml = parsed.txns.slice(0, 60).map(t => `
-        <tr><td>${t.date||"&mdash;"}</td><td style="text-align:left;font-family:var(--sans)">${t.desc}</td>
+        <tr><td>${t.date?esc(t.date):"&mdash;"}</td><td style="text-align:left;font-family:var(--sans)">${esc(t.desc)}</td>
         <td><span class="pill ${t.amount<0?"out":"in"}">${t.amount<0?"out":"in"}</span></td>
         <td>${t.amount<0?"-":""}${fmt(Math.abs(t.amount))}</td><td>${fmt(t.bal)}</td></tr>`).join("");
       prev.innerHTML = `
@@ -1743,7 +1974,7 @@
       <div class="hstat"><div class="k">Paid out</div><div class="v out">${fmt(history.totalOut)}</div></div>
       <div class="hstat"><div class="k">Ending balance</div><div class="v">${fmt(history.endBal)}</div></div>`;
     document.getElementById("histBody").innerHTML = history.txns.map(t => `
-      <tr><td>${t.date||"&mdash;"}</td><td>${t.desc}</td>
+      <tr><td>${t.date?esc(t.date):"&mdash;"}</td><td>${esc(t.desc)}</td>
       <td style="text-align:right"><span class="pill ${t.amount<0?"out":"in"}">${t.amount<0?"out":"in"}</span></td>
       <td>${t.amount<0?"-":""}${fmt(Math.abs(t.amount))}</td><td class="end">${fmt(t.bal)}</td></tr>`).join("");
   }
@@ -1873,6 +2104,25 @@
     rows.push(["Cheaper overall", p.cheaper, "by " + Math.round(p.diff)]);
     return toCSV(rows);
   }
+  function armCSV() {
+    const p = armResult, rows = [["ARM projection"]];
+    if (!p) return toCSV(rows);
+    rows.push(["Loan amount", Math.round(p.P)], ["Fully-indexed rate %", p.fullyIndexed.toFixed(3)], ["Lifetime cap %", p.lifeMax.toFixed(3)]);
+    rows.push([], ["Stage", "Rate %", "Payment"]);
+    rows.push(["Initial", p.initRate.toFixed(3), Math.round(p.initPmt)]);
+    if (p.hold.firstAdjRate != null) rows.push(["First adjustment - index holds", p.hold.firstAdjRate.toFixed(3), Math.round(p.hold.firstAdjPmt)]);
+    if (p.worst.firstAdjRate != null) rows.push(["First adjustment - worst case", p.worst.firstAdjRate.toFixed(3), Math.round(p.worst.firstAdjPmt)]);
+    rows.push(["Lifetime maximum", p.lifeMax.toFixed(3), Math.round(p.worst.maxPmt)]);
+    return toCSV(rows);
+  }
+  function rentbuyCSV() {
+    const p = rbResult, rows = [["Rent vs. buy"]];
+    if (!p) return toCSV(rows);
+    rows.push(["Home price", Math.round(p.price)], ["Horizon (yrs)", p.years]);
+    rows.push(["Buy net worth", Math.round(p.buyNW)], ["Rent net worth", Math.round(p.rentNW)]);
+    rows.push(["Better outcome", p.buyWins ? "Buying" : "Renting"], ["Break-even year", p.breakevenYear || "none in horizon"]);
+    return toCSV(rows);
+  }
   document.getElementById("exportCsv").addEventListener("click", () => {
     const vis = (t) => !document.getElementById("view-" + t).classList.contains("hidden");
     if (vis("payment")) { computePayment(); downloadBlob("mortgage-payment.csv", paymentCSV(), "text/csv;charset=utf-8"); }
@@ -1881,6 +2131,8 @@
     else if (vis("afford")) { computeAfford(); downloadBlob("affordability.csv", affordCSV(), "text/csv;charset=utf-8"); }
     else if (vis("refi")) { computeRefi(); downloadBlob("refinance.csv", refiCSV(), "text/csv;charset=utf-8"); }
     else if (vis("compare")) { computeCompare(); downloadBlob("loan-comparison.csv", compareCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("arm")) { computeArm(); downloadBlob("arm-projection.csv", armCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("rentbuy")) { computeRentBuy(); downloadBlob("rent-vs-buy.csv", rentbuyCSV(), "text/csv;charset=utf-8"); }
     else { compute(); downloadBlob("escrow-projection.csv", escrowCSV(), "text/csv;charset=utf-8"); }
   });
 
@@ -2395,7 +2647,7 @@
   });
 
   // ---------- persistence: state snapshot + autosave ----------
-  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","tnDate","tnLookback","tnTenor"];
+  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","escalate","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","loanPayoffMonth","loanPayoffYear","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","armAmt","armInitRate","armTerm","armFixed","armAdjFreq","armIndex","armMargin","armCapFirst","armCapPeriodic","armCapLife","rbPrice","rbDown","rbRate","rbTerm","rbClosing","rbTax","rbIns","rbHoa","rbMaint","rbAppr","rbSellCost","rbRent","rbRentGrowth","rbInvest","rbYears","tnDate","tnLookback","tnTenor"];
   let restoring = false, saveTimer = null, defaultState = null, sharedState = null;
 
   // Encode/decode the full input state for shareable URLs (#s=<base64>).
@@ -2422,6 +2674,7 @@
       const el = document.getElementById(id); if (!el) return;
       if (el.type === "checkbox") el.checked = !!s.inputs[id]; else el.value = s.inputs[id];
     });
+    formatAllThousands();   // re-apply comma formatting to loaded currency values
     if (Array.isArray(s.disbursements)) { disbursements = s.disbursements.map(d => ({ ...d })); renderDisb(); }
     if (typeof s.pmiUserSet === "boolean") pmiUserSet = s.pmiUserSet;
     const cv = parseFloat(document.getElementById("cushion").value);
@@ -2540,8 +2793,39 @@
   document.getElementById("settingsClose").addEventListener("click", () => settingsModal.classList.add("hidden"));
   settingsModal.addEventListener("click", e => { if (e.target === settingsModal) settingsModal.classList.add("hidden"); });
 
+  // Modal accessibility: Escape closes the top-most open modal, Tab is trapped inside it,
+  // and opening a modal moves focus into it (via a class observer, regardless of the opener).
+  (function modalA11y() {
+    const overlays = ["importModal", "stmtModal", "settingsModal"].map(id => document.getElementById(id)).filter(Boolean);
+    const focusablesIn = (m) => [...m.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(el => el.offsetParent !== null);
+    document.addEventListener("keydown", (e) => {
+      const open = overlays.filter(m => !m.classList.contains("hidden")).pop();
+      if (!open) return;
+      if (e.key === "Escape") { open.classList.add("hidden"); return; }
+      if (e.key === "Tab") {
+        const f = focusablesIn(open); if (!f.length) return;
+        const first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+    overlays.forEach(m => new MutationObserver(() => {
+      if (!m.classList.contains("hidden")) { const f = focusablesIn(m); if (f.length) setTimeout(() => f[0].focus(), 30); }
+    }).observe(m, { attributes: true, attributeFilter: ["class"] }));
+  })();
+
+  // Segmented controls: expose them as tablists and keep aria-selected in sync with .active.
+  document.querySelectorAll(".seg").forEach(seg => {
+    if (!seg.hasAttribute("role")) seg.setAttribute("role", "tablist");
+    const sync = () => seg.querySelectorAll(".seg-btn").forEach(b => {
+      if (!b.hasAttribute("role")) b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", b.classList.contains("active") ? "true" : "false");
+    });
+    sync();
+    seg.addEventListener("click", () => setTimeout(sync, 0));
+  });
+
   // ---------- admin: user management ----------
-  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   async function refreshAdmin() {
     if (!isAdmin) return;
     const list = document.getElementById("userList");
@@ -2568,6 +2852,38 @@
         catch (e) { alert(e.message || "Failed to set password."); }
       }));
     } catch (e) { list.innerHTML = ""; }
+    refreshMailHealth();
+    refreshAudit();
+  }
+
+  // Mail-queue health: warn when the Jarvis relay looks stalled (pending mail piling up
+  // or delivery failing), so undelivered verification/reset emails are visible.
+  async function refreshMailHealth() {
+    const el = document.getElementById("mailHealth");
+    try {
+      const { outbox } = await api("/admin/health");
+      const ageMin = outbox.oldest_pending_age_ms != null ? Math.round(outbox.oldest_pending_age_ms / 60000) : null;
+      const stalled = (ageMin != null && ageMin > 30) || outbox.failed > 0;
+      const cls = stalled ? "warn" : (outbox.pending > 0 ? "" : "good");
+      const bits = [`${outbox.pending} pending`];
+      if (ageMin != null) bits.push(`oldest ${ageMin} min`);
+      if (outbox.failed > 0) bits.push(`<b>${outbox.failed} failed</b>`);
+      el.className = "mail-health " + cls;
+      el.innerHTML = `<span class="dot">${stalled ? "&#9650;" : "&#9679;"}</span><div><b>Mail queue:</b> ${bits.join(" &middot; ")}.${stalled ? " The relay may be down &mdash; verification/reset emails aren't going out." : " Delivery healthy."}</div>`;
+    } catch (e) { el.className = "mail-health"; el.innerHTML = ""; }
+  }
+
+  async function refreshAudit() {
+    const el = document.getElementById("auditList");
+    try {
+      const { entries } = await api("/admin/audit");
+      if (!entries.length) { el.innerHTML = `<p class="foot-note">No admin activity recorded yet.</p>`; return; }
+      const label = { "user.create": "created", "user.delete": "deleted", "user.password_reset": "reset password for" };
+      el.innerHTML = entries.map(e => {
+        const when = new Date(Number(e.created_at)).toLocaleString();
+        return `<div class="audit-row"><span class="audit-when">${esc(when)}</span><span class="audit-what"><b>${esc(e.actor_email || "?")}</b> ${label[e.action] || esc(e.action)} <b>${esc(e.target || "")}</b></span></div>`;
+      }).join("");
+    } catch (e) { el.innerHTML = ""; }
   }
   document.getElementById("addUserForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -2638,6 +2954,8 @@
       const sw = document.createElement("button");
       sw.type = "button"; sw.className = "swatch" + (key === accentKey ? " active" : "");
       sw.title = def.name;
+      sw.setAttribute("aria-label", "Accent color: " + def.name);
+      sw.setAttribute("aria-pressed", key === accentKey ? "true" : "false");
       sw.style.background = def[currentDark() ? "dark" : "light"].a;
       sw.addEventListener("click", () => {
         accentKey = key; localStorage.setItem("mtk-accent", key);
@@ -2701,7 +3019,8 @@
   const PAY_COLORS = { tax: "#c99a3b", ins: "#4a90c2", hoa: "#8a6fb0", pmi: "#c25b6e" };
   let pmiUserSet = false;
   let payResult = null, afResult = null, rfResult = null, cmpResult = null;
-  const gv = (id) => parseFloat(document.getElementById(id).value) || 0;
+  // parseNum strips thousands separators, so gv tolerates "400,000"-style currency inputs.
+  const gv = (id) => parseNum(document.getElementById(id).value);
 
   function computePayment() {
     const price = gv("payPrice"), rate = gv("payRate"), term = gv("payTerm");
@@ -2864,16 +3183,13 @@
   }));
 
   // Payment summary printout
-  function paymentStatementHTML() {
-    const p = payResult;
-    const d = (n) => { const v = Math.round(n); return (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US"); };
-    const rows = p.segs.map(s => `<tr><td class="l">${s.label}</td><td>${d(s.value)}</td><td>${p.total > 0 ? Math.round(s.value / p.total * 100) : 0}%</td></tr>`).join("");
-    const taxLine = p.taxMode === "pct" ? `${d(p.annualTax)}/yr (rate on taxable value)` : `${d(p.annualTax)}/yr`;
-    const css = `
+  // Shared print stylesheet for the payment statement and the full report.
+  const STATEMENT_CSS = `
       *{box-sizing:border-box} body{font:14px/1.5 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;color:#1a2420;background:#fff;padding:40px 44px;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0}
       .doc{max-width:640px;margin:0 auto}
       .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1f6e4f;padding-bottom:14px}
       .brand{font:700 11px/1 sans-serif;letter-spacing:.16em;color:#1f6e4f;text-transform:uppercase}
+      .gen{font:400 10.5px/1.4 sans-serif;color:#8a988f;text-align:right}
       h1{font:600 22px/1.25 Georgia,serif;margin:16px 0 20px}
       h2{font:600 13px/1.3 Georgia,serif;text-transform:uppercase;letter-spacing:.04em;color:#1f6e4f;margin:24px 0 10px;padding-bottom:5px;border-bottom:1px solid #dde3df}
       table{width:100%;border-collapse:collapse;font-size:13px}
@@ -2887,7 +3203,14 @@
       .big{display:flex;justify-content:space-between;align-items:baseline;background:#f6f8f6;border:1px solid #dde3df;border-radius:8px;padding:14px 16px;margin:10px 0}
       .big .v{font:600 24px/1 ui-monospace,Menlo,monospace;color:#1f6e4f}
       .disc{margin-top:26px;padding-top:12px;border-top:1px solid #dde3df;font-size:10.5px;color:#8a988f;line-height:1.5}
-      @media print{body{padding:0}}`;
+      @media print{body{padding:0} h2{break-after:avoid} table{break-inside:avoid}}`;
+
+  function paymentStatementHTML() {
+    const p = payResult;
+    const d = (n) => { const v = Math.round(n); return (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US"); };
+    const rows = p.segs.map(s => `<tr><td class="l">${s.label}</td><td>${d(s.value)}</td><td>${p.total > 0 ? Math.round(s.value / p.total * 100) : 0}%</td></tr>`).join("");
+    const taxLine = p.taxMode === "pct" ? `${d(p.annualTax)}/yr (rate on taxable value)` : `${d(p.annualTax)}/yr`;
+    const css = STATEMENT_CSS;
     const body = `<div class="doc">
       <div class="head"><div class="brand">Mortgage Tool Kit</div></div>
       <h1>Mortgage Payment Summary</h1>
@@ -2914,6 +3237,96 @@
     </div>`;
     return "<!doctype html><html><head><meta charset=\"utf-8\"><title>Mortgage Payment Summary</title><style>" + css + "</style></head><body>" + body + "</body></html>";
   }
+  // Combined report spanning every calculator (headline figures from each tab in one printable doc).
+  function fullReportHTML() {
+    // Populate every calculator so each result object is current.
+    compute(); computeAmort(); computePayment(); computeAfford(); computeRefi(); computeCompare(); computeArm(); computeRentBuy();
+    const d = (n) => { const v = Math.round(n); return (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US"); };
+    const g = (id) => document.getElementById(id).textContent;
+    const kv = (pairs) => `<table class="kv">${pairs.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+    const sec = [];
+
+    sec.push(`<h2>Escrow analysis</h2>` + kv([
+      ["Recommended monthly escrow", g("mNewPay")],
+      ["Annual disbursed", g("mAnnual")],
+      ["Required cushion", g("mCushion")],
+      [g("mBalLabel"), g("mBalance")],
+    ]));
+
+    if (payResult) { const p = payResult; sec.push(`<h2>Monthly payment</h2>` + kv([
+      ["Home price", d(p.price)],
+      ["Down payment", `${d(p.downAmt)} (${p.downPct.toFixed(1)}%)`],
+      ["Loan amount", d(p.loan)],
+      ["Rate / term", `${p.rate}% / ${p.term} yrs`],
+      ["Total monthly (PITI+)", `<b>${d(p.total)}</b>`],
+      ["Cash to close", d(p.cashToClose)],
+    ])); }
+
+    if (state.amort) { const a = state.amort.a; sec.push(`<h2>Amortization</h2>` + kv([
+      ["Loan amount", d(a.P)],
+      ["Principal & interest", d(a.basePmt)],
+      ["Full PITI (with escrow)", d(a.basePmt + state.amort.escrow)],
+      ["Total interest", d(a.totInt)],
+      ["Payoff", state.amort.payoffLabel],
+    ])); }
+
+    if (afResult) { const a = afResult; sec.push(`<h2>Affordability</h2>` + kv([
+      ["Annual income", d(a.income)],
+      ["Monthly debts", d(a.debts)],
+      ["Max home price", `<b>${d(a.price)}</b>`],
+      ["Max loan", d(a.loan)],
+      ["Housing budget /mo", d(a.maxHousing)],
+    ])); }
+
+    if (rfResult) { const r = rfResult; sec.push(`<h2>Refinance</h2>` + kv([
+      ["Current P&I", d(r.curPI)],
+      ["New P&I", d(r.newPI)],
+      ["Monthly change", (r.savings >= 0 ? "-" : "+") + d(Math.abs(r.savings))],
+      ["Break-even", isFinite(r.breakevenMo) ? Math.ceil(r.breakevenMo) + " mo" : "—"],
+      ["Lifetime change", (r.lifeChange < 0 ? "-" : "+") + d(Math.abs(r.lifeChange))],
+    ])); }
+
+    if (cmpResult) { const c = cmpResult; sec.push(`<h2>Loan comparison</h2>` + kv([
+      ["Loan amount", d(c.amt)],
+      ["Loan A payment", d(c.A.pi)],
+      ["Loan B payment", d(c.B.pi)],
+      ["Lower total cost", `Loan ${c.cheaper} (by ${d(c.diff)})`],
+    ])); }
+
+    if (armResult) { const a = armResult; sec.push(`<h2>ARM projection</h2>` + kv([
+      ["Loan amount", d(a.P)],
+      ["Initial payment", d(a.initPmt)],
+      ["After 1st adjustment (index holds)", a.hold.firstAdjPmt != null ? d(a.hold.firstAdjPmt) : "—"],
+      ["Worst-case payment", d(a.worst.maxPmt)],
+      ["Fully-indexed rate", a.fullyIndexed.toFixed(3) + "%"],
+    ])); }
+
+    if (rbResult) { const r = rbResult; sec.push(`<h2>Rent vs. buy (${r.years} yr)</h2>` + kv([
+      ["Home price", d(r.price)],
+      ["Buy net worth", d(r.buyNW)],
+      ["Rent net worth", d(r.rentNW)],
+      ["Better outcome", `${r.buyWins ? "Buying" : "Renting"}${r.breakevenYear ? " · breakeven yr " + r.breakevenYear : ""}`],
+    ])); }
+
+    const now = new Date().toLocaleString();
+    const body = `<div class="doc">
+      <div class="head"><div class="brand">Mortgage Tool Kit</div><div class="gen">Full report<br>${now}</div></div>
+      <h1>Full Mortgage Report</h1>
+      ${sec.join("")}
+      <p class="disc">A combined snapshot of every calculator using your current inputs. Estimates for planning only; excludes lender-specific fees, prepaids, credits, and income-tax effects. Not tax, legal, or financial advice.</p>
+    </div>`;
+    return "<!doctype html><html><head><meta charset=\"utf-8\"><title>Full Mortgage Report</title><style>" + STATEMENT_CSS + "</style></head><body>" + body + "</body></html>";
+  }
+
+  function printDoc(html) {
+    const f = document.createElement("iframe");
+    f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(f);
+    f.srcdoc = html;
+    f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 2000); };
+  }
+  document.getElementById("fullReport").addEventListener("click", () => printDoc(fullReportHTML()));
+
   document.getElementById("payPrintBtn").addEventListener("click", () => {
     computePayment();
     const html = paymentStatementHTML();
@@ -2925,30 +3338,21 @@
   });
 
   // ---------- Affordability + Refinance ----------
-  function pmtOf(principal, ratePct, months) {
-    const r = ratePct / 1200, n = Math.max(1, Math.round(months));
-    if (principal <= 0) return 0;
-    return r === 0 ? principal / n : principal * r / (1 - Math.pow(1 + r, -n));
-  }
+  // Payment formula from the shared calc module (calc.js / window.MTK).
+  const pmtOf = (principal, ratePct, months) => MTK.monthlyPI(principal, ratePct, months);
+  const PMI_RATE_PCT = 0.6;   // annual PMI as % of loan when LTV > 80% (affordability heuristic)
 
   function computeAfford() {
     const income = gv("afIncome"), debts = gv("afDebts");
-    const front = gv("afFront") / 100, back = gv("afBack") / 100;
+    const front = gv("afFront"), back = gv("afBack");
     const down = gv("afDown"), rate = gv("afRate"), term = gv("afTerm");
     const taxPct = gv("afTaxPct"), ins = gv("afIns"), hoa = gv("afHoa");
-    const grossMo = income / 12;
-    const maxHousing = Math.max(0, Math.min(front * grossMo, back * grossMo - debts));
-    const backBinds = (back * grossMo - debts) < (front * grossMo);
+    // Shared affordability solver — the SAME code the unit tests cover.
+    const r = MTK.affordability({ annualIncome: income, monthlyDebts: debts, frontDTI: front, backDTI: back,
+      down, ratePct: rate, termYears: term, taxRatePct: taxPct, insAnnual: ins, hoaMonthly: hoa, pmiRatePct: PMI_RATE_PCT });
+    const maxHousing = r.maxHousing, backBinds = r.backBinds, price = r.price, loan = r.loan;
     const n = Math.max(1, Math.round(term * 12));
-    // Binary-search the max price whose full PITI stays within the housing budget.
-    let lo = down, hi = down + 5_000_000;
-    for (let i = 0; i < 44; i++) {
-      const P = (lo + hi) / 2, loan = Math.max(0, P - down);
-      const piti = pmtOf(loan, rate, n) + P * taxPct / 100 / 12 + ins / 12 + hoa + ((P > 0 && loan / P > 0.8) ? loan * 0.006 / 12 : 0);
-      if (piti > maxHousing) hi = P; else lo = P;
-    }
-    const price = Math.max(down, lo), loan = Math.max(0, price - down);
-    const tax = price * taxPct / 100 / 12, pmi = (price > 0 && loan / price > 0.8) ? loan * 0.006 / 12 : 0;
+    const tax = price * taxPct / 100 / 12, pmi = (price > 0 && loan / price > 0.8) ? loan * PMI_RATE_PCT / 100 / 12 : 0;
     const pi = pmtOf(loan, rate, n), total = pi + tax + ins / 12 + hoa + pmi;
 
     document.getElementById("afPrice").textContent = fmt(price);
@@ -2974,13 +3378,13 @@
     const newRate = gv("rfNewRate"), newTerm = gv("rfNewTerm"), closing = gv("rfClosing");
     const roll = document.getElementById("rfRoll").checked;
     const curMonths = Math.max(1, Math.round(curTerm * 12)), newMonths = Math.max(1, Math.round(newTerm * 12));
-    const curPI = pmtOf(balance, curRate, curMonths);
+    // Shared refinance solver — the SAME code the unit tests cover.
+    const rf = MTK.refinance({ balance, curRatePct: curRate, curYearsLeft: curTerm, newRatePct: newRate, newYears: newTerm, closingCosts: closing, rollIntoLoan: roll });
+    const curPI = rf.curPI, newPI = rf.newPI, savings = rf.monthlySavings;   // savings positive = lower payment
     const newLoan = balance + (roll ? closing : 0);
-    const newPI = pmtOf(newLoan, newRate, newMonths);
-    const savings = curPI - newPI;                 // positive = lower payment
     const upfront = roll ? 0 : closing;
-    const breakevenMo = savings > 0 ? upfront / savings : Infinity;
-    const lifeChange = (newPI * newMonths + upfront) - (curPI * curMonths);   // negative = cheaper overall
+    const breakevenMo = rf.breakevenMonths;
+    const lifeChange = rf.lifetimeChange;                                    // negative = cheaper overall
     const curInterest = curPI * curMonths - balance, newInterest = newPI * newMonths - newLoan;
 
     document.getElementById("rfNewPay").textContent = fmt(newPI);
@@ -3061,13 +3465,149 @@
   document.getElementById("rfRoll").addEventListener("change", computeRefi);
   ["cmpAmt", "cmpRateA", "cmpTermA", "cmpPtsA", "cmpFeeA", "cmpRateB", "cmpTermB", "cmpPtsB", "cmpFeeB"].forEach(id => document.getElementById(id).addEventListener("input", computeCompare));
 
+  // ---------- ARM projection ----------
+  let armResult = null;
+  function computeArm() {
+    const P = gv("armAmt"), initRate = gv("armInitRate"), termYrs = gv("armTerm"), fixedYrs = gv("armFixed");
+    const index = gv("armIndex"), margin = gv("armMargin");
+    const capFirst = gv("armCapFirst"), capPer = gv("armCapPeriodic"), capLife = gv("armCapLife");
+    const adjFreq = parseInt(document.getElementById("armAdjFreq").value) || 12;
+    const n = Math.max(1, Math.round(termYrs * 12));
+    const fixedMonths = Math.max(0, Math.round(fixedYrs * 12));
+    const fullyIndexed = index + margin;
+    const lifeMax = initRate + capLife;
+    const lifeMin = Math.max(margin, initRate - capLife);   // floor ~ the margin
+
+    // Walk the loan month by month. On each adjustment date the rate re-sets (bounded by the
+    // per-adjustment and lifetime caps) and the payment re-amortizes over the remaining term.
+    function simulate(mode) {   // mode: 'hold' (index stays put) | 'worst' (max increase each time)
+      let bal = P, rate = initRate, prevRate = initRate, totalInterest = 0, months = 0;
+      let pmt = MTK.monthlyPI(P, initRate, n), firstAdjPmt = null, firstAdjRate = null, maxPmt = pmt;
+      for (let i = 0; i < n && bal > 0.005; i++) {
+        if (i >= fixedMonths && (i - fixedMonths) % adjFreq === 0) {
+          const cap = (i === fixedMonths) ? capFirst : capPer;
+          const target = mode === 'worst' ? prevRate + cap : fullyIndexed;
+          let newRate = Math.max(prevRate - cap, Math.min(prevRate + cap, target));  // limit the step
+          newRate = Math.max(lifeMin, Math.min(lifeMax, newRate));                   // lifetime bounds
+          rate = newRate; prevRate = newRate;
+          pmt = MTK.monthlyPI(bal, rate, n - i);
+          if (firstAdjPmt === null) { firstAdjPmt = pmt; firstAdjRate = rate; }
+          if (pmt > maxPmt) maxPmt = pmt;
+        }
+        const interest = bal * rate / 1200;
+        let prin = pmt - interest; if (prin > bal) prin = bal;
+        bal -= prin; totalInterest += interest; months++;
+      }
+      return { initPmt: MTK.monthlyPI(P, initRate, n), firstAdjPmt, firstAdjRate, maxPmt, totalInterest, finalRate: rate };
+    }
+    const hold = simulate('hold'), worst = simulate('worst');
+    const initPmt = MTK.monthlyPI(P, initRate, n);
+
+    document.getElementById("armInitPay").textContent = fmt(initPmt);
+    document.getElementById("armInitPayNote").textContent = `${initRate}% for ${fixedYrs} yr${fixedYrs == 1 ? "" : "s"}`;
+    document.getElementById("armFirstPay").textContent = hold.firstAdjPmt != null ? fmt(hold.firstAdjPmt) : "—";
+    document.getElementById("armFirstPayNote").textContent = hold.firstAdjRate != null ? `index holds → ${hold.firstAdjRate.toFixed(3)}%` : "no adjustment in term";
+    document.getElementById("armMaxPay").textContent = fmt(worst.maxPmt);
+    document.getElementById("armMaxPayNote").textContent = `at ${lifeMax.toFixed(2)}% lifetime cap`;
+    document.getElementById("armFullyIndexed").textContent = fullyIndexed.toFixed(3) + "%";
+
+    const firstTile = document.getElementById("armFirstTile"), maxTile = document.getElementById("armMaxTile");
+    firstTile.classList.toggle("warn", hold.firstAdjPmt != null && hold.firstAdjPmt > initPmt + 0.5);
+    firstTile.classList.toggle("good", hold.firstAdjPmt != null && hold.firstAdjPmt < initPmt - 0.5);
+    maxTile.classList.add("warn");
+
+    const jump = hold.firstAdjPmt != null ? hold.firstAdjPmt - initPmt : 0;
+    const V = document.getElementById("armVerdict");
+    V.className = "verdict " + (jump > 0.5 ? "warn" : "good");
+    if (hold.firstAdjPmt == null) {
+      V.innerHTML = `<span class="dot">&#9679;</span><div>The fixed period covers the whole term &mdash; this behaves like a fixed-rate loan at ${initRate}%.</div>`;
+    } else {
+      V.innerHTML = `<span class="dot">${jump > 0.5 ? "&#9650;" : "&#9679;"}</span><div>After the ${fixedYrs}-year fixed period, if the index stays at ${index}% the payment ${jump > 0.5 ? "rises" : "moves"} to <b>${fmt(hold.firstAdjPmt)}</b> (${jump > 0.5 ? "+" : ""}${fmt(jump)}/mo). In the worst case it can reach <b>${fmt(worst.maxPmt)}</b> at the ${lifeMax.toFixed(2)}% lifetime cap &mdash; budget for that, not just the teaser rate.</div>`;
+    }
+
+    const row = (l, r, p) => `<tr><td>${l}</td><td>${r}</td><td class="end">${p}</td></tr>`;
+    document.getElementById("armTable").innerHTML =
+      row(`Initial (yrs 1–${fixedYrs})`, initRate.toFixed(3) + "%", fmt(initPmt)) +
+      row("First adjustment · index holds", hold.firstAdjRate != null ? hold.firstAdjRate.toFixed(3) + "%" : "—", hold.firstAdjPmt != null ? fmt(hold.firstAdjPmt) : "—") +
+      row("First adjustment · worst case", worst.firstAdjRate != null ? worst.firstAdjRate.toFixed(3) + "%" : "—", worst.firstAdjPmt != null ? fmt(worst.firstAdjPmt) : "—") +
+      row("Lifetime maximum", lifeMax.toFixed(3) + "%", fmt(worst.maxPmt));
+    armResult = { P, initRate, fullyIndexed, initPmt, hold, worst, lifeMax };
+  }
+
+  // Fill the ARM index from the most recent bundled 1-year Treasury rate.
+  document.getElementById("armUseTnote").addEventListener("click", () => {
+    const s = tnSeries(0);   // tenor index 0 = 1Y
+    if (!s.length) return;
+    const latest = s[s.length - 1];
+    document.getElementById("armIndex").value = latest.val;
+    computeArm(); scheduleSave();
+    const btn = document.getElementById("armUseTnote");
+    const old = btn.textContent; btn.textContent = `Set ${latest.val}% (${latest.date})`;
+    setTimeout(() => { btn.textContent = old; }, 2200);
+  });
+  ["armAmt","armInitRate","armTerm","armFixed","armAdjFreq","armIndex","armMargin","armCapFirst","armCapPeriodic","armCapLife"].forEach(id => document.getElementById(id).addEventListener("input", computeArm));
+
+  // ---------- Rent vs. Buy ----------
+  let rbResult = null;
+  function computeRentBuy() {
+    const price = gv("rbPrice"), down = gv("rbDown"), rate = gv("rbRate"), term = gv("rbTerm"), closing = gv("rbClosing");
+    const taxPct = gv("rbTax"), ins = gv("rbIns"), hoa = gv("rbHoa"), maintPct = gv("rbMaint");
+    const apprPct = gv("rbAppr") / 100, sellPct = gv("rbSellCost") / 100;
+    const rent0 = gv("rbRent"), rentGrow = gv("rbRentGrowth") / 100, invest = gv("rbInvest") / 100;
+    const years = Math.max(1, Math.round(gv("rbYears")));
+    const loan = Math.max(0, price - down);
+    const pi = MTK.monthlyPI(loan, rate, term * 12);
+    const sched = MTK.amortize(loan, rate, term, { schedule: true }).schedule;
+    const balAfter = (yrs) => { const idx = Math.min(sched.length, yrs * 12) - 1; return idx < 0 ? loan : (sched[idx] ? sched[idx].bal : 0); };
+
+    // Renter portfolio: seeded with the buyer's upfront cash, invested; each year it also absorbs
+    // the amount by which owning costs more than renting (or is drawn down when renting costs more).
+    let renterNW = down + closing;
+    const rows = [];
+    let breakevenYear = null;
+    for (let y = 1; y <= years; y++) {
+      const homeValue = price * Math.pow(1 + apprPct, y);
+      const buyAnnual = pi * 12 + price * taxPct / 100 + ins + hoa * 12 + homeValue * maintPct / 100;
+      const rentThisYear = rent0 * Math.pow(1 + rentGrow, y - 1) * 12;
+      renterNW = renterNW * (1 + invest) + (buyAnnual - rentThisYear);
+      const buyNW = homeValue - balAfter(y) - homeValue * sellPct;
+      rows.push({ y, buyNW, rentNW: renterNW });
+      if (breakevenYear === null && buyNW >= renterNW) breakevenYear = y;
+    }
+    const final = rows[rows.length - 1];
+    const buyWins = final.buyNW >= final.rentNW;
+    const gap = Math.abs(final.buyNW - final.rentNW);
+
+    document.getElementById("rbBuyNW").textContent = fmt(final.buyNW);
+    document.getElementById("rbRentNW").textContent = fmt(final.rentNW);
+    const winTile = document.getElementById("rbWinTile");
+    winTile.classList.remove("good", "warn");
+    winTile.classList.add(buyWins ? "good" : "warn");
+    document.getElementById("rbWin").textContent = buyWins ? "Buying" : "Renting";
+    document.getElementById("rbWinNote").textContent = "by " + fmt(gap) + " at yr " + years;
+    document.getElementById("rbBreakeven").textContent = breakevenYear ? ("year " + breakevenYear) : "—";
+
+    const V = document.getElementById("rbVerdict");
+    V.className = "verdict " + (buyWins ? "good" : "warn");
+    const beText = breakevenYear
+      ? `Buying pulls ahead in <b>year ${breakevenYear}</b>.`
+      : `Renting-and-investing stays ahead for the whole ${years}-year horizon.`;
+    V.innerHTML = `<span class="dot">${buyWins ? "&#9679;" : "&#9650;"}</span><div>Over <b>${years} years</b>, ${buyWins ? "buying" : "renting"} comes out ahead by <b>${fmt(gap)}</b> in net worth. ${beText} Year-1 owning runs ${fmt(pi * 12 + price * taxPct / 100 + ins + hoa * 12 + price * maintPct / 100)}/yr vs ${fmt(rent0 * 12)}/yr renting.</div>`;
+
+    const step = years <= 12 ? 1 : Math.ceil(years / 12);
+    const rowH = (r) => `<tr><td>${r.y}</td><td>${fmt(r.buyNW)}</td><td class="end">${fmt(r.rentNW)}</td></tr>`;
+    document.getElementById("rbTable").innerHTML = rows.filter(r => r.y % step === 0 || r.y === years).map(rowH).join("");
+    rbResult = { price, years, buyNW: final.buyNW, rentNW: final.rentNW, breakevenYear, buyWins };
+  }
+  ["rbPrice","rbDown","rbRate","rbTerm","rbClosing","rbTax","rbIns","rbHoa","rbMaint","rbAppr","rbSellCost","rbRent","rbRentGrowth","rbInvest","rbYears"].forEach(id => document.getElementById(id).addEventListener("input", computeRentBuy));
+
   // ---------- tabs ----------
   document.querySelectorAll(".tab").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       const tab = btn.dataset.tab;
-      ["escrow", "amort", "payment", "afford", "refi", "compare", "tnote"].forEach(t =>
+      ["escrow", "amort", "payment", "afford", "refi", "compare", "arm", "rentbuy", "tnote"].forEach(t =>
         document.getElementById("view-" + t).classList.toggle("hidden", tab !== t));
       // The escrow statement only makes sense on the Escrow tab.
       document.getElementById("exportStmt").classList.toggle("hidden", tab !== "escrow");
@@ -3077,6 +3617,8 @@
       else if (tab === "afford") computeAfford();
       else if (tab === "refi") computeRefi();
       else if (tab === "compare") computeCompare();
+      else if (tab === "arm") computeArm();
+      else if (tab === "rentbuy") computeRentBuy();
       else compute();
     });
   });
@@ -3102,19 +3644,54 @@
     else if (vis("afford")) computeAfford();
     else if (vis("refi")) computeRefi();
     else if (vis("compare")) computeCompare();
+    else if (vis("arm")) computeArm();
+    else if (vis("rentbuy")) computeRentBuy();
     else compute();
   }
   themeBtn.addEventListener("click", () => applyThemeMode(currentDark() ? "light" : "dark"));
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncBtn(); applyAccent(); buildSwatches(); recomputeVisible(); });
 
   // ---------- wire inputs ----------
-  ["startBal","curPay","startMonth"].forEach(id => document.getElementById(id).addEventListener("input", compute));
+  ["startBal","curPay","startMonth","escalate"].forEach(id => document.getElementById(id).addEventListener("input", compute));
   document.getElementById("cushion").addEventListener("input", () => {
     const v = parseFloat(document.getElementById("cushion").value);
     document.getElementById("cushionVal").textContent = v + (v===1?" month":" months"); compute();
   });
   ["loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt"].forEach(id => document.getElementById(id).addEventListener("input", computeAmort));
   document.getElementById("loanBiweekly").addEventListener("change", computeAmort);
+
+  // "Pay off by date X -> required payment" solver: find the level payment that retires the
+  // loan by the chosen month, set the extra/month to match, and re-run the schedule.
+  document.getElementById("loanPayoffSolve").addEventListener("click", () => {
+    const P = parseNum(document.getElementById("loanAmt").value);
+    const rate = parseFloat(document.getElementById("loanRate").value) || 0;
+    const term = parseFloat(document.getElementById("loanTerm").value) || 0;
+    const startMo = parseInt(document.getElementById("loanStartMonth").value) || 0;
+    const startYr = parseInt(document.getElementById("loanStartYear").value) || 2026;
+    const tgtMo = parseInt(document.getElementById("loanPayoffMonth").value) || 0;
+    const tgtYr = parseInt(document.getElementById("loanPayoffYear").value) || startYr;
+    const out = document.getElementById("loanPayoffResult");
+    out.classList.remove("hidden", "warn"); out.classList.add("good");
+    const months = (tgtYr * 12 + tgtMo) - (startYr * 12 + startMo) + 1;   // inclusive of the final payment
+    const schedMonths = Math.max(1, Math.round(term * 12));
+    if (P <= 0) { out.innerHTML = `<span class="dot">&#9650;</span><div>Enter a loan amount first.</div>`; return; }
+    if (months < 1) { out.classList.replace("good", "warn"); out.innerHTML = `<span class="dot">&#9650;</span><div>Pick a target date after the first payment (${MONTHS[startMo]} ${startYr}).</div>`; return; }
+    if (months >= schedMonths) {
+      out.classList.replace("good", "warn");
+      out.innerHTML = `<span class="dot">&#9650;</span><div>${MONTHS[tgtMo]} ${tgtYr} is on or after the loan's own ${schedMonths / 12}-year payoff &mdash; the scheduled payment already gets you there. Choose an earlier date to accelerate.</div>`;
+      return;
+    }
+    const required = MTK.payoffPayment(P, rate, months);
+    const basePmt = MTK.monthlyPI(P, rate, schedMonths);
+    const extra = Math.max(0, Math.ceil(required - basePmt));
+    document.getElementById("loanExtra").value = extra;
+    computeAmort();
+    out.innerHTML = `<span class="dot">&#9679;</span><div>To retire this loan by <b>${MONTHS[tgtMo]} ${tgtYr}</b> (${months} payments) you need about <b>${fmt(required)}/mo</b> &mdash; roughly <b>${fmt(extra)}/mo extra</b> on top of the ${fmt(basePmt)} base. Applied above.</div>`;
+  });
+
+  // Live thousands separators on every currency field (after other listeners are wired).
+  CURRENCY_IDS.forEach(attachThousands);
+
   window.addEventListener("resize", recomputeVisible);
 
   // default the T-Note reference date to today (clamped to available data), preselect the 45-day preset
