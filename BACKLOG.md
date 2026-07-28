@@ -81,7 +81,7 @@ polish / accessibility / extras. Check items off as they ship.
 
 ### Nice-to-have
 - [x] Shareable read-only scenario links (encode inputs in the URL)
-- [ ] Full-scenario CSV/JSON export & import (not just per-tab)
+- [x] Full-scenario CSV/JSON export & import (not just per-tab)
 - [ ] Currency / locale formatting option
 - [ ] Admin audit log for user add/delete
 - [ ] Email verification for new accounts (if signup is ever opened up)
