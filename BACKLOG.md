@@ -59,7 +59,7 @@ polish / accessibility / extras. Check items off as they ship.
 ### Ops & reliability
 - [ ] CI/CD for the Worker (deploy on merge to `main` + run D1 migrations automatically)
 - [ ] Monitoring / alert on the weekly T-Note data refresh (notify on failure)
-- [ ] Surface the T-Note data "fetched" date + a staleness warning in the UI when it's old
+- [x] Surface the T-Note data "fetched" date + a staleness warning in the UI when it's old
 
 ---
 
@@ -70,7 +70,7 @@ polish / accessibility / extras. Check items off as they ship.
 - [ ] Thousands separators in number inputs while typing (400,000 vs 400000)
 - [ ] "Reset to defaults" control per tab
 - [ ] Combined **full mortgage report** print (all tabs in one PDF)
-- [ ] Make export / statement buttons context-aware per tab (hide "Escrow statement" on non-escrow tabs)
+- [x] Make export / statement buttons context-aware per tab (hide "Escrow statement" on non-escrow tabs)
 - [ ] Short onboarding / "what each tab does" intro for first-time users
 
 ### Accessibility

@@ -853,7 +853,7 @@
           </div>
         </div>
 
-        <p class="foot-note">Source: <span id="tnSource"></span>. Bundled data range <span id="tnRange"></span>. Constant-maturity yields; the value shown is the last published rate on or before the resolved business day. Reference only &mdash; not financial advice.</p>
+        <p class="foot-note">Source: <span id="tnSource"></span>. Bundled data range <span id="tnRange"></span>.<span id="tnStale"></span> Constant-maturity yields; the value shown is the last published rate on or before the resolved business day. Reference only &mdash; not financial advice.</p>
       </div>
     </div>
   </div>
@@ -1524,10 +1524,35 @@
     rows.push(["Cash to close", Math.round(p.cashToClose)]);
     return toCSV(rows);
   }
+  function affordCSV() {
+    const p = afResult, rows = [["Affordability / DTI"]];
+    if (!p) return toCSV(rows);
+    rows.push(["Gross annual income", Math.round(p.income)], ["Monthly debts", Math.round(p.debts)]);
+    rows.push(["Max monthly housing", Math.round(p.maxHousing)], ["Binding limit", p.backBinds ? "back-end" : "front-end"]);
+    rows.push(["Max home price", Math.round(p.price)], ["Max loan", Math.round(p.loan)]);
+    rows.push(["Rate (APR %)", p.rate], ["Term (years)", p.term]);
+    rows.push([], ["Component (at max price)", "Monthly"]);
+    [["Principal & interest", p.pi], ["Property tax", p.tax], ["Home insurance", p.ins], ["HOA", p.hoa], ["PMI", p.pmi]].filter(s => s[1] > 0.5).forEach(s => rows.push([s[0], Math.round(s[1])]));
+    rows.push(["Total housing", Math.round(p.total)]);
+    return toCSV(rows);
+  }
+  function refiCSV() {
+    const p = rfResult, rows = [["Refinance analysis"]];
+    if (!p) return toCSV(rows);
+    rows.push(["Current balance", Math.round(p.balance)], ["Current rate (%)", p.curRate], ["Years left", p.curTerm]);
+    rows.push(["New rate (%)", p.newRate], ["New term (years)", p.newTerm], ["Closing costs", Math.round(p.closing)], ["Rolled into loan", p.roll ? "yes" : "no"]);
+    rows.push([], ["Current monthly P&I", Math.round(p.curPI)], ["New monthly P&I", Math.round(p.newPI)]);
+    rows.push(["Monthly savings", Math.round(p.savings)], ["Break-even (months)", isFinite(p.breakevenMo) && p.savings > 0 ? Math.ceil(p.breakevenMo) : "n/a"]);
+    rows.push(["Lifetime cost change", Math.round(p.lifeChange)]);
+    return toCSV(rows);
+  }
   document.getElementById("exportCsv").addEventListener("click", () => {
-    if (!document.getElementById("view-payment").classList.contains("hidden")) { computePayment(); downloadBlob("mortgage-payment.csv", paymentCSV(), "text/csv;charset=utf-8"); }
-    else if (!document.getElementById("view-tnote").classList.contains("hidden")) { computeTnote(); downloadBlob("tnote-lookup.csv", tnoteCSV(), "text/csv;charset=utf-8"); }
-    else if (!document.getElementById("view-amort").classList.contains("hidden")) { computeAmort(); downloadBlob("amortization-schedule.csv", amortCSV(), "text/csv;charset=utf-8"); }
+    const vis = (t) => !document.getElementById("view-" + t).classList.contains("hidden");
+    if (vis("payment")) { computePayment(); downloadBlob("mortgage-payment.csv", paymentCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("tnote")) { computeTnote(); downloadBlob("tnote-lookup.csv", tnoteCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("amort")) { computeAmort(); downloadBlob("amortization-schedule.csv", amortCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("afford")) { computeAfford(); downloadBlob("affordability.csv", affordCSV(), "text/csv;charset=utf-8"); }
+    else if (vis("refi")) { computeRefi(); downloadBlob("refinance.csv", refiCSV(), "text/csv;charset=utf-8"); }
     else { compute(); downloadBlob("escrow-projection.csv", escrowCSV(), "text/csv;charset=utf-8"); }
   });
 
@@ -1716,6 +1741,14 @@
     TN.tenors.forEach((t, i) => { const o = document.createElement("option"); o.value = t; o.textContent = t + " Treasury"; if (t === "10Y") o.selected = true; tnTenorSel.appendChild(o); });
     document.getElementById("tnSource").textContent = TN.source;
     document.getElementById("tnRange").textContent = TN.start + " to " + TN.end;
+    // Staleness: the weekly refresh should keep the end date within ~2 weeks of today.
+    const endMs = Date.parse(TN.end + "T00:00:00Z");
+    const ageDays = isFinite(endMs) ? Math.floor((Date.now() - endMs) / 86400000) : 0;
+    const stEl = document.getElementById("tnStale");
+    if (stEl) {
+      if (ageDays > 12) { stEl.textContent = " Data is " + ageDays + " days old (last updated " + (TN.fetched || TN.end) + ") - the weekly refresh may need attention."; stEl.className = "field-note"; stEl.style.color = "var(--shortage)"; }
+      else { stEl.textContent = " Updated " + (TN.fetched || TN.end) + "."; stEl.className = "field-note"; }
+    }
   }
 
   let tnResult = null; // for CSV export
@@ -2510,6 +2543,8 @@
       const tab = btn.dataset.tab;
       ["escrow", "amort", "payment", "afford", "refi", "tnote"].forEach(t =>
         document.getElementById("view-" + t).classList.toggle("hidden", tab !== t));
+      // The escrow statement only makes sense on the Escrow tab.
+      document.getElementById("exportStmt").classList.toggle("hidden", tab !== "escrow");
       if (tab === "amort") computeAmort();
       else if (tab === "tnote") computeTnote();
       else if (tab === "payment") computePayment();
