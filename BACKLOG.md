@@ -84,5 +84,5 @@ polish / accessibility / extras. Check items off as they ship.
 - [x] Full-scenario CSV/JSON export & import (not just per-tab)
 - [ ] Currency / locale formatting option
 - [ ] Admin audit log for user add/delete
-- [ ] Email verification for new accounts (if signup is ever opened up)
+- [x] Email verification for new accounts (Worker outbox -> Jarvis Gmail relay; sends on user-create + Settings resend)
 - [ ] Rent vs. buy calculator (stretch)

@@ -1062,6 +1062,10 @@
         <div class="set-label">Signed in as<small id="setEmail">&mdash;</small></div>
         <button class="danger-btn" id="logoutBtn" type="button">Log out</button>
       </div>
+      <div class="set-row" id="verifyRow" hidden>
+        <div class="set-label">Email address<small id="verifyState">&mdash;</small></div>
+        <button class="link-btn" id="resendVerifyBtn" type="button">Resend verification</button>
+      </div>
       <div class="set-row">
         <div class="set-label">Password</div>
         <button class="link-btn" id="changePwToggle" type="button">Change password</button>
@@ -2014,6 +2018,46 @@
     document.getElementById("setEmail").textContent = u.email;
     updateAuthUI();
     document.getElementById("pwChangeGate").classList.toggle("hidden", !u.must_change);
+    // Email-verification status row (only meaningful for signed-in users).
+    const vrow = document.getElementById("verifyRow");
+    if (u.email_verified) {
+      vrow.hidden = true;
+    } else {
+      vrow.hidden = false;
+      document.getElementById("verifyState").textContent = "Not verified yet";
+    }
+  }
+
+  // Minimal self-contained toast (no dependency on existing styles).
+  function toast(text, kind) {
+    const t = document.createElement("div");
+    t.textContent = text;
+    t.setAttribute("role", "status");
+    const bg = kind === "err" ? "#c25b6e" : (kind === "ok" ? "#3b8a5a" : "#333");
+    t.style.cssText = "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999;" +
+      "background:" + bg + ";color:#fff;padding:11px 18px;border-radius:10px;font-size:14px;" +
+      "box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:90vw;opacity:0;transition:opacity .2s;";
+    document.body.appendChild(t);
+    requestAnimationFrame(() => { t.style.opacity = "1"; });
+    setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 4200);
+  }
+
+  document.getElementById("resendVerifyBtn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget; btn.disabled = true;
+    try {
+      const r = await api("/auth/resend-verification", { method: "POST", body: JSON.stringify({}) });
+      toast(r && r.already ? "Your email is already verified." : "Verification email sent - check your inbox.", "ok");
+    } catch (err) { toast(err.message || "Couldn't send the email.", "err"); }
+    finally { btn.disabled = false; }
+  });
+
+  // Landing back from the emailed verify link (Worker redirects to #verify=ok|invalid).
+  function handleVerifyHash() {
+    const m = (location.hash || "").match(/verify=(ok|invalid)/);
+    if (!m) return;
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    if (m[1] === "ok") toast("Email verified - thanks!", "ok");
+    else toast("That verification link is invalid or expired. Try Resend from Settings.", "err");
   }
 
   document.getElementById("forceChangeForm").addEventListener("submit", async (e) => {
@@ -2929,4 +2973,5 @@
   if (sharedState) { applyState(sharedState); try { history.replaceState(null, "", location.pathname); } catch (e) {} }
 
   checkAuth();      // gate the app until signed in
+  handleVerifyHash();   // toast if we just came back from an email verify link
 </script>

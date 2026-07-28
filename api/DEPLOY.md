@@ -32,8 +32,21 @@ That's it. The account ID is already baked into the workflow (not secret). Next 
 touches `api/` will deploy automatically; you can also trigger it from the **Actions** tab
 (**Deploy Worker API** → **Run workflow**).
 
+## Email verification / outbox relay
+
+Signup verification emails aren't sent by the Worker (Workers can't do SMTP). The Worker
+parks them in a D1 `email_outbox`; Jarvis polls `/relay/outbox` and sends via Gmail. See
+the jarvis repo: `scripts/mtk_mail_relay.py` + `deploy/jarvis-mtk-mail-relay.{service,timer}`.
+
+Set the shared secret once per env (already done on dev):
+```bash
+openssl rand -base64 32 | tr '+/' '-_' | tr -d '=' | npx wrangler secret put MAIL_RELAY_TOKEN --env dev
+```
+The **same value** goes in Jarvis's `config.yaml` under `mtk_mail_relay.token`. For prod,
+repeat with `MAIL_RELAY_TOKEN` (no `--env`) and point the relay at `https://mtk-api.dabrewer.dev`.
+
 ## Notes
-- Worker secrets (e.g. `SESSION_SECRET`) are set once with `wrangler secret put SESSION_SECRET
-  [--env dev]` and **persist across deploys** — CI does not touch them.
+- Worker secrets (e.g. `SESSION_SECRET`, `MAIL_RELAY_TOKEN`) are set once with `wrangler secret put
+  <NAME> [--env dev]` and **persist across deploys** — CI does not touch them.
 - Manual deploy still works locally: `npm run deploy:dev` / `npm run deploy`,
   `npm run migrate:dev` / `npm run migrate:prod`.

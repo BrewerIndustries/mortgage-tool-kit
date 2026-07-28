@@ -3,14 +3,16 @@ import { cors } from 'hono/cors';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { hashPassword, verifyPassword, newToken, sessionId } from './auth';
 import { uuid } from './util';
+import { enqueueEmail, issueVerification, safeEqual } from './mail';
 
 type Bindings = {
   DB: D1Database;
   ALLOWED_ORIGIN: string;
   SESSION_SECRET: string;
+  MAIL_RELAY_TOKEN: string;   // shared secret Jarvis uses to drain the outbox
 };
 
-type SessionUser = { id: string; email: string; display_name: string | null; role: string; must_change: boolean };
+type SessionUser = { id: string; email: string; display_name: string | null; role: string; must_change: boolean; email_verified: boolean };
 
 const app = new Hono<{ Bindings: Bindings; Variables: { user: SessionUser } }>();
 
@@ -32,15 +34,23 @@ app.use('*', cors({
 
 // ---------------- helpers ----------------
 function publicUser(row: any): SessionUser {
-  return { id: row.id, email: row.email, display_name: row.display_name ?? null, role: row.role ?? 'user', must_change: !!row.must_change_password };
+  return { id: row.id, email: row.email, display_name: row.display_name ?? null, role: row.role ?? 'user', must_change: !!row.must_change_password, email_verified: !!row.email_verified };
 }
+
+// Bearer-token guard for the endpoints Jarvis's mail relay calls.
+const relayAuth = async (c: any, next: any) => {
+  const secret = c.env.MAIL_RELAY_TOKEN || '';
+  const hdr = (c.req.header('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!secret || !hdr || !safeEqual(hdr, secret)) return c.json({ error: 'unauthorized' }, 401);
+  await next();
+};
 
 async function currentUser(c: any): Promise<SessionUser | null> {
   const token = getCookie(c, COOKIE);
   if (!token) return null;
   const id = await sessionId(token, c.env.SESSION_SECRET);
   const row = await c.env.DB.prepare(
-    `SELECT u.id, u.email, u.display_name, u.role, u.must_change_password, s.expires_at
+    `SELECT u.id, u.email, u.display_name, u.role, u.must_change_password, u.email_verified, s.expires_at
      FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ?`,
   ).bind(id).first();
   if (!row) return null;
@@ -246,6 +256,9 @@ app.post('/admin/users', auth, requireAdmin, async (c) => {
   await c.env.DB.prepare(
     'INSERT INTO users (id, email, password_hash, display_name, role, must_change_password, created_at) VALUES (?,?,?,?,?,1,?)',
   ).bind(id, email, await hashPassword(password), display_name, role, Date.now()).run();
+  // Queue a verification email (Jarvis's relay actually sends it).
+  const apiBase = new URL(c.req.url).origin;
+  await issueVerification(c.env.DB, { id, email, display_name }, apiBase, c.env.ALLOWED_ORIGIN).catch(() => {});
   return c.json({ user: { id, email, display_name, role, created_at: Date.now() } }, 201);
 });
 
@@ -273,6 +286,56 @@ app.delete('/admin/users/:id', auth, requireAdmin, async (c) => {
     c.env.DB.prepare('DELETE FROM scenarios WHERE user_id = ?').bind(id),
     c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id),
   ]);
+  return c.json({ ok: true });
+});
+
+// ---------------- email verification ----------------
+// User clicks the emailed link. Marks them verified, then bounces to the site.
+app.get('/auth/verify', async (c) => {
+  const token = c.req.query('token') || '';
+  const site = c.env.ALLOWED_ORIGIN;
+  const row = token
+    ? await c.env.DB.prepare('SELECT token, user_id, expires_at, used_at FROM email_verifications WHERE token = ?').bind(token).first()
+    : null;
+  if (!row || row.used_at || Number(row.expires_at) < Date.now()) {
+    return c.redirect(`${site}/#verify=invalid`, 302);
+  }
+  await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').bind(row.user_id),
+    c.env.DB.prepare('UPDATE email_verifications SET used_at = ? WHERE token = ?').bind(Date.now(), token),
+  ]);
+  return c.redirect(`${site}/#verify=ok`, 302);
+});
+
+// Signed-in user asks for a fresh verification link.
+app.post('/auth/resend-verification', auth, async (c) => {
+  const u = c.get('user');
+  if (u.email_verified) return c.json({ ok: true, already: true });
+  const apiBase = new URL(c.req.url).origin;
+  await issueVerification(c.env.DB, { id: u.id, email: u.email, display_name: u.display_name }, apiBase, c.env.ALLOWED_ORIGIN);
+  return c.json({ ok: true });
+});
+
+// ---------------- outbox relay (Jarvis) ----------------
+// Jarvis's timer pulls unsent messages, sends them, then reports the result.
+app.get('/relay/outbox', relayAuth, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, to_email, subject, body, kind, attempts FROM email_outbox
+     WHERE sent_at IS NULL AND attempts < 5 ORDER BY created_at LIMIT 25`,
+  ).all();
+  return c.json({ messages: results });
+});
+
+app.post('/relay/outbox/:id/result', relayAuth, async (c) => {
+  const id = c.req.param('id');
+  const b = await c.req.json().catch(() => ({} as any));
+  if (b.success) {
+    await c.env.DB.prepare('UPDATE email_outbox SET sent_at = ?, last_error = NULL WHERE id = ?')
+      .bind(Date.now(), id).run();
+  } else {
+    await c.env.DB.prepare('UPDATE email_outbox SET attempts = attempts + 1, last_error = ? WHERE id = ?')
+      .bind(String(b.error ?? 'send failed').slice(0, 500), id).run();
+  }
   return c.json({ ok: true });
 });
 
