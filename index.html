@@ -520,6 +520,16 @@
                 <input type="number" id="loanStartYear" value="2026" step="1"></label>
             </div>
           </div>
+          <div class="panel">
+            <p class="eyebrow">Extra payments</p>
+            <div class="two">
+              <label class="field"><span class="lbl">One-time lump sum</span>
+                <div class="money-input"><input type="number" id="loanLump" value="0" step="1000"></div></label>
+              <label class="field"><span class="lbl">At payment #</span>
+                <input type="number" id="loanLumpAt" value="12" step="1" min="1"></label>
+            </div>
+            <label class="toggle-row"><input type="checkbox" id="loanBiweekly"><span class="switch"></span><span>Bi-weekly payments (adds ~1 payment/yr)</span></label>
+          </div>
         </div>
       </div>
 
@@ -1154,22 +1164,34 @@
   }
 
   // ---------- amortization ----------
+  const round2 = (x) => Math.round(x * 100) / 100;
   function buildAmort() {
     const P = parseFloat(document.getElementById("loanAmt").value) || 0;
     const rate = parseFloat(document.getElementById("loanRate").value) || 0;
     const term = parseFloat(document.getElementById("loanTerm").value) || 0;
     const extra = parseFloat(document.getElementById("loanExtra").value) || 0;
+    const lumpAmt = parseFloat(document.getElementById("loanLump").value) || 0;
+    const lumpIdx = Math.max(1, Math.round(parseFloat(document.getElementById("loanLumpAt").value) || 1)) - 1;
+    const biweekly = document.getElementById("loanBiweekly").checked;
     const r = rate/1200, n = Math.max(1, Math.round(term*12));
     const basePmt = r === 0 ? P/n : P*r / (1 - Math.pow(1+r, -n));
+    // Bi-weekly (26 half-payments/yr = 13 monthly-equivalents) modeled as one extra payment spread monthly.
+    const biweeklyExtra = biweekly ? basePmt / 12 : 0;
     const sched = []; let bal = P, totInt = 0, totPrin = 0;
-    for (let i = 0; i < n*2 && bal > 0.005; i++) {
-      const interest = bal * r; let principal = basePmt - interest + extra;
+    // Values are rounded to cents each row so the displayed schedule foots exactly.
+    for (let i = 0; i < n * 2 && bal > 0.005; i++) {
+      const interest = round2(bal * r);
+      let principal = basePmt - interest + extra + biweeklyExtra;
+      if (i === lumpIdx && lumpAmt > 0) principal += lumpAmt;
       if (principal > bal) principal = bal;
-      const pay = principal + interest; bal -= principal; totInt += interest; totPrin += principal;
+      principal = round2(principal);
+      if (principal > bal) principal = round2(bal);
+      const pay = round2(principal + interest);
+      bal = round2(bal - principal); totInt += interest; totPrin += principal;
       sched.push({ i: i+1, pay, principal, interest, bal: Math.max(0, bal) });
       if (sched.length > 1200) break;
     }
-    return { basePmt, sched, totInt, totPrin, extra, P, r, n };
+    return { basePmt, sched, totInt: round2(totInt), totPrin: round2(totPrin), extra, lumpAmt, biweekly, biweeklyExtra, P, r, n };
   }
 
   function computeAmort() {
@@ -1192,14 +1214,18 @@
     document.getElementById("amPayoffNote").textContent = months + " payments (" + yrs + "y " + rem + "m)";
     document.getElementById("amIntNote").textContent = "on " + fmt(a.P) + " borrowed";
 
-    // interest saved from extra payments
+    // interest saved from extra payments (recurring, lump sum, and/or bi-weekly)
     const savedEl = document.getElementById("amSaved");
-    if (a.extra > 0) {
+    if (a.extra > 0 || a.lumpAmt > 0 || a.biweekly) {
       const noExtra = (function(){ let bal=a.P, ti=0; const pmt=a.basePmt;
         for (let i=0;i<a.n && bal>0.005;i++){ const it=bal*a.r; let pr=pmt-it; if(pr>bal)pr=bal; bal-=pr; ti+=it; } return ti; })();
       const saved = noExtra - a.totInt, fewer = a.n - months;
+      const parts = [];
+      if (a.extra > 0) parts.push(fmt(a.extra) + "/mo extra");
+      if (a.lumpAmt > 0) parts.push("a " + fmt(a.lumpAmt) + " lump sum");
+      if (a.biweekly) parts.push("bi-weekly (" + fmt(a.basePmt / 2) + " every 2 wks)");
       savedEl.classList.remove("hidden");
-      savedEl.innerHTML = `<span class="dot">&#9660;</span><div><b>Extra ${fmt(a.extra)}/mo saves ${fmt(saved)}</b> in interest and retires the loan <b>${fewer} payments</b> (${Math.floor(fewer/12)}y ${fewer%12}m) early.</div>`;
+      savedEl.innerHTML = `<span class="dot">&#9660;</span><div><b>${parts.join(" + ")}</b> saves <b>${fmt(saved)}</b> in interest and retires the loan <b>${fewer} payments</b> (${Math.floor(fewer/12)}y ${fewer%12}m) early.</div>`;
     } else savedEl.classList.add("hidden");
 
     state.amort = { a, startMo, startYr, escrow, months, payoffLabel: payMo + " " + payYr,
@@ -1878,7 +1904,7 @@
   });
 
   // ---------- persistence: state snapshot + autosave ----------
-  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","tnDate","tnLookback","tnTenor"];
+  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","tnDate","tnLookback","tnTenor"];
   let restoring = false, saveTimer = null;
 
   function collectState() {
@@ -2172,8 +2198,15 @@
     document.getElementById("payLtvNote").textContent = ltv.toFixed(0) + "% LTV" + (roll && closing > 0 ? " (incl. costs)" : "");
     document.getElementById("payDownTile").textContent = fmt(downAmt);
     document.getElementById("payDownPctNote").textContent = downPct.toFixed(1) + "% down";
+    // PMI drop-off: months until the balance amortizes to 80% of the original price (20% equity).
+    let pmiOff = "";
+    if (pmi > 0 && loan > 0 && price > 0) {
+      const target = price * 0.80; let b = loan, m = 0;
+      while (b > target && m < n) { b -= (pi - b * r); m++; }
+      pmiOff = m < n ? ` It falls off around payment ${m} (~${(m / 12).toFixed(1)} yrs) at 20% equity, on schedule.` : "";
+    }
     document.getElementById("payPmiNote").textContent = ltv > 80
-      ? "PMI auto-estimated at ~0.6%/yr while under 20% down \u2014 edit to match your quote."
+      ? "PMI auto-estimated at ~0.6%/yr while under 20% down \u2014 edit to match your quote." + pmiOff
       : "No PMI \u2014 20% or more equity.";
 
     // Cash to close
@@ -2473,7 +2506,8 @@
     const v = parseFloat(document.getElementById("cushion").value);
     document.getElementById("cushionVal").textContent = v + (v===1?" month":" months"); compute();
   });
-  ["loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear"].forEach(id => document.getElementById(id).addEventListener("input", computeAmort));
+  ["loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt"].forEach(id => document.getElementById(id).addEventListener("input", computeAmort));
+  document.getElementById("loanBiweekly").addEventListener("change", computeAmort);
   window.addEventListener("resize", recomputeVisible);
 
   // default the T-Note reference date to today (clamped to available data), preselect the 45-day preset
@@ -2505,6 +2539,8 @@
     loanExtra: "An extra amount added to principal every month. It shortens the term and cuts total interest.",
     loanStartMonth: "When the first payment is made - used to date the payoff and each schedule row.",
     loanStartYear: "The year of the first payment - used to date the payoff.",
+    loanLump: "A single one-time extra payment applied to principal (e.g., a bonus or tax refund). Cuts interest and shortens the term.",
+    loanLumpAt: "Which payment number the lump sum lands on (payment 12 = end of year one).",
     payPrice: "The purchase price or appraised value of the home.",
     payDownAmt: "Your upfront cash toward the price. 20% or more avoids PMI.",
     payDownPct: "Down payment as a percent of price. Loan-to-value (LTV) is the mirror image - under 80% LTV (20%+ down) avoids PMI.",
