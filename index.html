@@ -975,6 +975,197 @@
   </div>
 </div>
 
+<!-- Learn: mortgage guide drawer (slides from the right edge) -->
+<style>
+  .learn-handle { position: fixed; right: 0; top: 42%; z-index: 1150; transform: translateY(-50%);
+    background: var(--accent); color: #fff; border: none; cursor: pointer; padding: 14px 8px;
+    border-radius: 10px 0 0 10px; box-shadow: var(--shadow); writing-mode: vertical-rl;
+    text-orientation: mixed; font: 600 12.5px/1 var(--sans); letter-spacing: .08em; }
+  .learn-handle:hover { filter: brightness(1.06); }
+  .learn-handle .lh-ico { display:block; transform: rotate(90deg); margin: 0 0 6px; font-size: 13px; }
+  .learn-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.42); z-index: 1160; opacity: 1; transition: opacity .25s; }
+  .learn-backdrop.hidden { opacity: 0; pointer-events: none; }
+  .learn-drawer { position: fixed; top: 0; right: 0; height: 100%; width: min(500px, 94vw);
+    background: var(--paper); color: var(--ink); z-index: 1170; box-shadow: -12px 0 40px rgba(0,0,0,.28);
+    transform: translateX(100%); transition: transform .28s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column; }
+  .learn-drawer.open { transform: translateX(0); }
+  .learn-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
+  .learn-head h2 { margin: 0; font: 600 18px/1.2 var(--serif); }
+  .learn-close { background: none; border: none; font-size: 26px; line-height: 1; cursor: pointer; color: var(--muted); padding: 0 4px; }
+  .learn-close:hover { color: var(--ink); }
+  .learn-search { margin: 12px 18px 0; padding: 9px 12px; border: 1px solid var(--line-strong);
+    border-radius: 8px; background: var(--card); color: var(--ink); font: 14px var(--sans); }
+  .learn-body { overflow-y: auto; padding: 8px 18px 40px; }
+  .learn-intro { font-size: 12.5px; color: var(--muted); margin: 12px 0 6px; }
+  .kb-group { margin-top: 18px; }
+  .kb-group > h3 { font: 600 12px/1 var(--sans); text-transform: uppercase; letter-spacing: .09em;
+    color: var(--accent); margin: 0 0 8px; }
+  .kb-item { border-bottom: 1px solid var(--line); }
+  .kb-item > summary { cursor: pointer; padding: 10px 2px; font-size: 14px; font-weight: 600; list-style: none; position: relative; }
+  .kb-item > summary::-webkit-details-marker { display: none; }
+  .kb-item > summary::after { content: "+"; position: absolute; right: 4px; color: var(--muted); font-weight: 400; }
+  .kb-item[open] > summary::after { content: "\2212"; }
+  .kb-item .kb-def { padding: 0 2px 12px; font-size: 13px; line-height: 1.55; color: var(--ink); }
+  .kb-item .kb-def p { margin: 0 0 8px; }
+  .kb-item .kb-def ul { margin: 4px 0 8px; padding-left: 18px; }
+  .kb-item .kb-def li { margin: 3px 0; }
+  .kb-src { font-size: 11.5px; color: var(--muted); }
+  .kb-src a, .learn-body a { color: var(--accent); text-decoration: none; }
+  .kb-src a:hover, .learn-body a:hover { text-decoration: underline; }
+  .kb-no-results { font-size: 13px; color: var(--muted); padding: 16px 2px; display: none; }
+  .kb-disclaimer { font-size: 11.5px; color: var(--faint); margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--line); line-height: 1.5; }
+  @media (prefers-reduced-motion: reduce) { .learn-drawer, .learn-backdrop { transition: none; } }
+</style>
+
+<button id="learnHandle" class="learn-handle" type="button" aria-label="Open the mortgage guide" aria-expanded="false" aria-controls="learnDrawer">
+  <span class="lh-ico">&#128218;</span><span>Learn</span>
+</button>
+<div id="learnBackdrop" class="learn-backdrop hidden"></div>
+<aside id="learnDrawer" class="learn-drawer" role="dialog" aria-modal="true" aria-label="Mortgage guide" aria-hidden="true">
+  <div class="learn-head">
+    <h2>Mortgage guide <span class="dev-badge hidden" id="devBadge4">Dev</span></h2>
+    <button id="learnClose" class="learn-close" type="button" aria-label="Close guide">&times;</button>
+  </div>
+  <input id="learnSearch" class="learn-search" type="search" placeholder="Search terms, topics, how-to&#8230;" aria-label="Search the guide" autocomplete="off">
+  <div class="learn-body" id="learnBody">
+    <p class="learn-intro">Plain-language help for this app and for mortgages in general. Search above, or expand a topic. Figures are current as of 2026 &mdash; always confirm specifics with a lender.</p>
+    <p class="kb-no-results" id="kbNoResults">No matches. Try a different word.</p>
+
+    <div class="kb-group">
+      <h3>Using this app</h3>
+      <details class="kb-item"><summary>What this app does</summary><div class="kb-def">
+        <p>The Mortgage Tool Kit is a set of calculators: escrow analysis, an amortization schedule, a full payment (PITI) estimate, an affordability/DTI solver, a refinance break-even, a side-by-side loan comparison, and a historical Treasury-rate lookup. You can use every calculator without an account; signing in adds saved scenarios and cross-device sync.</p>
+      </div></details>
+      <details class="kb-item"><summary>Escrow Analysis tab</summary><div class="kb-def">
+        <p>Projects your escrow account 12 months out from a starting balance and monthly deposit, netting out tax and insurance disbursements. It flags a shortage or surplus versus the RESPA cushion and suggests a new monthly payment. You can import a CSV of servicer history to auto-fill disbursements, and export a CSV or a printable Annual Escrow Account Disclosure Statement.</p>
+      </div></details>
+      <details class="kb-item"><summary>Amortization Schedule tab</summary><div class="kb-def">
+        <p>Enter a loan amount, rate, and term to see the full month-by-month (or yearly) split of principal vs interest, remaining balance, and total interest. Add a recurring extra payment, a one-time lump sum, or bi-weekly payments to see how much interest and time you save.</p>
+      </div></details>
+      <details class="kb-item"><summary>Payment tab</summary><div class="kb-def">
+        <p>Estimates the full monthly payment &mdash; principal, interest, property tax, insurance, HOA, and PMI (PITI). Options include closing costs (with a roll-into-loan toggle), cash-to-close, property tax as a rate or dollar amount with a homestead exemption, and an estimated APR and full-term cost. It also notes when PMI is projected to drop off.</p>
+      </div></details>
+      <details class="kb-item"><summary>Affordability tab</summary><div class="kb-def">
+        <p>Works backward from your income, debts, and down payment to a maximum home price, using front-end and back-end DTI limits. It shows which ratio is the binding constraint.</p>
+      </div></details>
+      <details class="kb-item"><summary>Refinance tab</summary><div class="kb-def">
+        <p>Compares your current loan to a new one and computes the monthly change, the break-even month (how long until the savings cover the closing costs), and the lifetime cost difference. You can roll closing costs into the new loan or pay them upfront.</p>
+      </div></details>
+      <details class="kb-item"><summary>Compare tab</summary><div class="kb-def">
+        <p>Puts two loan options side by side &mdash; different rates, terms, points, or fees &mdash; and shows the monthly payment, total interest, and the break-even between them. Useful for weighing a rate buydown (paying points) against a higher-rate, lower-cost option.</p>
+      </div></details>
+      <details class="kb-item"><summary>T-Note Lookup tab</summary><div class="kb-def">
+        <p>Looks up a historical U.S. Treasury constant-maturity yield for a date (with a configurable lookback), rolling back to the previous business day on weekends and federal holidays. Data is bundled from the Federal Reserve / FRED so lookups are instant and offline. Reference only.</p>
+      </div></details>
+      <details class="kb-item"><summary>Accounts, saving &amp; syncing</summary><div class="kb-def">
+        <p>Optional sign-in unlocks <strong>saved scenarios</strong> (a full snapshot of every tab), autosave, and theme/accent sync. Other tools that work with or without an account:</p>
+        <ul>
+          <li><strong>Share link</strong> &mdash; copies a URL that reopens your exact inputs.</li>
+          <li><strong>Backup &amp; restore</strong> (Settings) &mdash; download all inputs as a JSON file and load it back later.</li>
+          <li><strong>Reset to defaults</strong> (Settings) &mdash; restore every tab to factory values.</li>
+          <li><strong>Forgot your password?</strong> Use the link on the sign-in screen; you will get an emailed reset link.</li>
+        </ul>
+      </div></details>
+    </div>
+
+    <div class="kb-group">
+      <h3>How mortgages work</h3>
+      <details class="kb-item"><summary>Principal, interest &amp; amortization</summary><div class="kb-def">
+        <p>A mortgage is repaid in equal monthly payments over a set term. Each payment covers that month&rsquo;s interest first, and the rest reduces the <em>principal</em> (the balance you owe). Early on, most of the payment is interest; over time the principal share grows &mdash; this schedule is called <em>amortization</em>.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/owning-a-home/" target="_blank" rel="noopener">CFPB &mdash; Buying a house</a></p>
+      </div></details>
+      <details class="kb-item"><summary>PITI: what&rsquo;s in a payment</summary><div class="kb-def">
+        <p>Lenders think of your payment as <strong>PITI</strong>: Principal, Interest, Taxes, and Insurance. Property taxes and homeowners insurance are usually collected monthly into an escrow account and paid on your behalf. HOA dues and mortgage insurance may be added on top.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/ask-cfpb/what-is-an-escrow-or-impound-account-en-140/" target="_blank" rel="noopener">CFPB &mdash; Escrow accounts</a></p>
+      </div></details>
+      <details class="kb-item"><summary>Down payment &amp; loan-to-value (LTV)</summary><div class="kb-def">
+        <p>Your down payment is the cash you put in up front; the rest is the loan. <strong>LTV</strong> is the loan divided by the home&rsquo;s value. A bigger down payment means a lower LTV, which usually means a better rate and no mortgage insurance (conventional loans avoid PMI at 80% LTV or lower &mdash; i.e. 20% down).</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/ask-cfpb/what-is-private-mortgage-insurance-en-122/" target="_blank" rel="noopener">CFPB &mdash; Private mortgage insurance</a></p>
+      </div></details>
+      <details class="kb-item"><summary>Escrow accounts (taxes &amp; insurance)</summary><div class="kb-def">
+        <p>Your servicer collects 1/12 of your annual property tax and insurance each month and pays those bills when due. Federal law (RESPA) lets them keep a cushion of up to two months of payments and requires an annual escrow analysis; if costs rise you may see a shortage and a higher payment.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/ask-cfpb/what-is-an-escrow-or-impound-account-en-140/" target="_blank" rel="noopener">CFPB</a>, <a href="https://www.hud.gov/program_offices/housing/rmra/res/respa_hm" target="_blank" rel="noopener">HUD &mdash; RESPA</a></p>
+      </div></details>
+      <details class="kb-item"><summary>PMI &mdash; when it starts and stops</summary><div class="kb-def">
+        <p>Private mortgage insurance protects the <em>lender</em> when you put down less than 20% on a conventional loan. Under the federal Homeowners Protection Act you can <strong>request cancellation at 80% LTV</strong> of the original value, and the servicer must <strong>automatically terminate it at 78% LTV</strong> (if you are current). It also ends at the loan&rsquo;s amortization midpoint &mdash; 15 years into a 30-year loan.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/ask-cfpb/when-can-i-remove-private-mortgage-insurance-pmi-from-my-loan-en-202/" target="_blank" rel="noopener">CFPB &mdash; Removing PMI</a></p>
+      </div></details>
+      <details class="kb-item"><summary>Closing costs</summary><div class="kb-def">
+        <p>One-time costs to finalize the loan &mdash; typically 2%&ndash;5% of the loan amount &mdash; covering origination, appraisal, title, recording, and prepaid escrow. Your lender must give you a <strong>Loan Estimate</strong> up front and a <strong>Closing Disclosure</strong> at least three business days before closing so you can compare.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/owning-a-home/loan-estimate/" target="_blank" rel="noopener">CFPB &mdash; Loan Estimate</a></p>
+      </div></details>
+      <details class="kb-item"><summary>Discount points (buying down the rate)</summary><div class="kb-def">
+        <p>A discount point costs 1% of the loan amount and lowers your interest rate by a set amount. Paying points can lower your monthly payment; whether it pays off depends on how long you keep the loan (the break-even). The Compare tab helps you weigh this.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/ask-cfpb/what-are-discount-points-and-lender-credits-and-how-do-they-work-en-136/" target="_blank" rel="noopener">CFPB &mdash; Discount points</a></p>
+      </div></details>
+      <details class="kb-item"><summary>APR vs interest rate</summary><div class="kb-def">
+        <p>The <strong>interest rate</strong> is the cost of borrowing the principal. The <strong>APR</strong> is broader &mdash; it rolls in points and certain fees to reflect the yearly cost of the loan, so it&rsquo;s the better number for comparing offers.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/ask-cfpb/what-is-the-difference-between-a-mortgage-interest-rate-and-an-apr-en-135/" target="_blank" rel="noopener">CFPB &mdash; APR vs rate</a></p>
+      </div></details>
+      <details class="kb-item"><summary>Debt-to-income (DTI) &amp; qualifying</summary><div class="kb-def">
+        <p>DTI compares your monthly debt payments to gross monthly income. A common guideline is the <strong>28/36 rule</strong>: housing &le; 28% of income (front-end), total debt &le; 36% (back-end). Lenders also follow the federal Ability-to-Repay rule; the old 43% DTI cap for a Qualified Mortgage has largely been replaced by a price-based (APR) test.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/" target="_blank" rel="noopener">CFPB &mdash; DTI</a>, <a href="https://www.consumerfinance.gov/rules-policy/final-rules/qualified-mortgage-definition-under-truth-lending-act-regulation-z-general-qm-loan-definition/" target="_blank" rel="noopener">CFPB &mdash; QM rule</a></p>
+      </div></details>
+    </div>
+
+    <div class="kb-group">
+      <h3>Types of mortgages</h3>
+      <details class="kb-item"><summary>Fixed-rate</summary><div class="kb-def">
+        <p>The interest rate never changes, so principal-and-interest stays the same for the whole term. Predictable and simple; the most common choice. A 30-year term means lower payments but more total interest than a 15-year.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/owning-a-home/loan-options/" target="_blank" rel="noopener">CFPB &mdash; Loan options</a></p>
+      </div></details>
+      <details class="kb-item"><summary>Adjustable-rate (ARM)</summary><div class="kb-def">
+        <p>The rate is fixed for an intro period (e.g. 5 years in a 5/6 ARM), then adjusts periodically based on an index plus a margin, within periodic and lifetime caps. Lower to start, but the payment can rise. Know your caps before choosing one.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/owning-a-home/explore/home-loan-toolkit/" target="_blank" rel="noopener">CFPB &mdash; Home Loan Toolkit (ARMs)</a></p>
+      </div></details>
+      <details class="kb-item"><summary>Conventional: conforming vs jumbo</summary><div class="kb-def">
+        <p>A <strong>conventional</strong> loan isn&rsquo;t government-backed. If it&rsquo;s within the annual conforming limit set by the FHFA it can be sold to Fannie Mae/Freddie Mac; above that it&rsquo;s a <strong>jumbo</strong> loan (stricter terms). For 2026 the baseline one-unit limit is <strong>$832,750</strong> (up to <strong>$1,249,125</strong> in high-cost areas).</p>
+        <p class="kb-src">Source: <a href="https://www.fhfa.gov/news/news-release/fhfa-announces-conforming-loan-limit-values-for-2026" target="_blank" rel="noopener">FHFA &mdash; 2026 conforming loan limits</a></p>
+      </div></details>
+      <details class="kb-item"><summary>FHA loans</summary><div class="kb-def">
+        <p>Insured by the Federal Housing Administration and popular with first-time and lower-credit buyers. Key points:</p>
+        <ul>
+          <li><strong>Down payment:</strong> as low as <strong>3.5%</strong> with a credit score of 580+ (10% for scores 500&ndash;579).</li>
+          <li><strong>Mortgage insurance (MIP):</strong> an upfront premium of <strong>1.75%</strong> of the loan (usually financed) plus an annual premium (commonly ~0.55%) paid monthly.</li>
+          <li><strong>Duration:</strong> if you put down less than 10%, annual MIP lasts the life of the loan; with 10%+ down it drops off after 11 years. Many borrowers refinance to a conventional loan to shed MIP once they have 20% equity.</li>
+          <li><strong>2026 limits:</strong> floor $541,287 for one unit, up to $1,249,125 in high-cost areas.</li>
+        </ul>
+        <p class="kb-src">Source: <a href="https://www.hud.gov/buying/loans" target="_blank" rel="noopener">HUD &mdash; FHA loans</a>, <a href="https://www.consumerfinance.gov/ask-cfpb/what-is-the-difference-between-an-fha-loan-and-a-conventional-mortgage-en-131/" target="_blank" rel="noopener">CFPB &mdash; FHA vs conventional</a></p>
+      </div></details>
+      <details class="kb-item"><summary>VA loans</summary><div class="kb-def">
+        <p>Guaranteed by the Dept. of Veterans Affairs for eligible service members, veterans, and surviving spouses. Often <strong>0% down</strong>, <strong>no monthly mortgage insurance</strong>, and competitive rates. Most borrowers pay a one-time <strong>VA funding fee</strong> (which can be financed); some are exempt.</p>
+        <p class="kb-src">Source: <a href="https://www.va.gov/housing-assistance/home-loans/" target="_blank" rel="noopener">VA &mdash; Home loans</a></p>
+      </div></details>
+      <details class="kb-item"><summary>USDA rural loans</summary><div class="kb-def">
+        <p>Backed by the U.S. Dept. of Agriculture for buyers in eligible rural and some suburban areas. <strong>0% down</strong>, with income limits (generally &le; 115% of the area median income). Costs include a 1% upfront guarantee fee and a 0.35% annual fee.</p>
+        <p class="kb-src">Source: <a href="https://www.rd.usda.gov/programs-services/single-family-housing-programs/single-family-housing-guaranteed-loan-program" target="_blank" rel="noopener">USDA &mdash; Rural housing loans</a></p>
+      </div></details>
+      <details class="kb-item"><summary>Refinancing: rate-and-term vs cash-out</summary><div class="kb-def">
+        <p>A <strong>rate-and-term</strong> refinance replaces your loan to get a lower rate or different term. A <strong>cash-out</strong> refinance borrows more than you owe and gives you the difference in cash, tapping your equity. Both have closing costs &mdash; use the Refinance tab to find the break-even.</p>
+        <p class="kb-src">Source: <a href="https://www.consumerfinance.gov/ask-cfpb/what-is-refinancing-en-1963/" target="_blank" rel="noopener">CFPB &mdash; Refinancing</a></p>
+      </div></details>
+    </div>
+
+    <div class="kb-group">
+      <h3>Glossary</h3>
+      <details class="kb-item"><summary>Amortization</summary><div class="kb-def"><p>The schedule by which a loan is paid off in equal payments, with interest front-loaded and principal growing over time.</p></div></details>
+      <details class="kb-item"><summary>APR (annual percentage rate)</summary><div class="kb-def"><p>The yearly cost of a loan including interest plus points and certain fees &mdash; the best number for comparing offers.</p></div></details>
+      <details class="kb-item"><summary>Equity</summary><div class="kb-def"><p>The part of the home you own outright: current value minus what you still owe.</p></div></details>
+      <details class="kb-item"><summary>Escrow / impound account</summary><div class="kb-def"><p>An account your servicer uses to collect and pay property taxes and insurance on your behalf.</p></div></details>
+      <details class="kb-item"><summary>LTV (loan-to-value)</summary><div class="kb-def"><p>The loan balance divided by the property value, as a percent. Lower LTV generally means better terms.</p></div></details>
+      <details class="kb-item"><summary>MIP / PMI</summary><div class="kb-def"><p>Mortgage insurance that protects the lender when the down payment is small &mdash; MIP on FHA loans, PMI on conventional loans.</p></div></details>
+      <details class="kb-item"><summary>Origination</summary><div class="kb-def"><p>The process (and fees) of creating a new loan.</p></div></details>
+      <details class="kb-item"><summary>Points</summary><div class="kb-def"><p>Upfront charges equal to 1% of the loan each; discount points buy a lower rate.</p></div></details>
+      <details class="kb-item"><summary>Principal</summary><div class="kb-def"><p>The amount you borrow (and still owe), separate from interest.</p></div></details>
+      <details class="kb-item"><summary>Underwriting</summary><div class="kb-def"><p>The lender&rsquo;s review of your income, assets, credit, and the property to decide whether to approve the loan.</p></div></details>
+    </div>
+
+    <p class="kb-disclaimer" id="kbDisclaimer">This guide is general educational information, not financial, legal, or tax advice, and it is not a loan offer. Figures such as loan limits and insurance premiums change and vary by lender and location &mdash; verify current numbers with the official sources linked above and a licensed professional before making decisions.</p>
+  </div>
+</aside>
+
 <!-- Auth gate (login) -->
 <div class="auth-gate hidden" id="authGate">
   <div class="auth-card">
@@ -3034,7 +3225,52 @@
     document.getElementById("devBadge").classList.remove("hidden");
     document.getElementById("devBadge2").classList.remove("hidden");
     document.getElementById("devBadge3").classList.remove("hidden");
+    document.getElementById("devBadge4").classList.remove("hidden");
   }
+
+  // ---------- Learn drawer (mortgage guide) ----------
+  (function initLearnDrawer() {
+    const drawer = document.getElementById("learnDrawer");
+    const backdrop = document.getElementById("learnBackdrop");
+    const handle = document.getElementById("learnHandle");
+    const closeBtn = document.getElementById("learnClose");
+    const search = document.getElementById("learnSearch");
+    const noResults = document.getElementById("kbNoResults");
+    const items = Array.from(drawer.querySelectorAll(".kb-item"));
+    let lastFocus = null;
+    function open() {
+      lastFocus = document.activeElement;
+      drawer.classList.add("open"); backdrop.classList.remove("hidden");
+      drawer.setAttribute("aria-hidden", "false"); handle.setAttribute("aria-expanded", "true");
+      setTimeout(() => search.focus(), 60);
+    }
+    function close() {
+      drawer.classList.remove("open"); backdrop.classList.add("hidden");
+      drawer.setAttribute("aria-hidden", "true"); handle.setAttribute("aria-expanded", "false");
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+    handle.addEventListener("click", open);
+    closeBtn.addEventListener("click", close);
+    backdrop.addEventListener("click", close);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && drawer.classList.contains("open")) close(); });
+    // Live search: show only items whose text matches; auto-expand matches.
+    search.addEventListener("input", () => {
+      const q = search.value.trim().toLowerCase();
+      let shown = 0;
+      items.forEach(it => {
+        const match = !q || it.textContent.toLowerCase().includes(q);
+        it.style.display = match ? "" : "none";
+        it.open = q && match;
+        if (match) shown++;
+      });
+      // Hide a group heading when all its items are filtered out.
+      drawer.querySelectorAll(".kb-group").forEach(g => {
+        const any = Array.from(g.querySelectorAll(".kb-item")).some(it => it.style.display !== "none");
+        g.style.display = any ? "" : "none";
+      });
+      noResults.style.display = shown ? "none" : "block";
+    });
+  })();
 
   renderDisb(); syncBtn();
   compute();
