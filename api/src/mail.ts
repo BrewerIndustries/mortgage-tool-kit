@@ -53,6 +53,41 @@ export async function issueVerification(
   return token;
 }
 
+const RESET_TTL_MS = 60 * 60 * 1000;   // reset links are good for 1 hour
+
+// Issue a password-reset link and queue the email. `siteBase` is the public site;
+// the SPA picks up `#reset=<token>` and shows the set-new-password form.
+export async function issuePasswordReset(
+  db: D1Database,
+  user: { id: string; email: string; display_name?: string | null },
+  siteBase: string,
+): Promise<string> {
+  const token = newToken();
+  const created = Date.now();
+  await db
+    .prepare('INSERT INTO password_resets (token, user_id, created_at, expires_at) VALUES (?,?,?,?)')
+    .bind(token, user.id, created, created + RESET_TTL_MS)
+    .run();
+
+  const link = `${siteBase}/#reset=${encodeURIComponent(token)}`;
+  const hi = user.display_name ? `Hi ${user.display_name},` : 'Hi,';
+  const body =
+    `${hi}\n\n` +
+    `We got a request to reset the password on your Mortgage Tool Kit account. ` +
+    `Open the link below to choose a new one:\n\n` +
+    `${link}\n\n` +
+    `The link expires in 1 hour and can be used once. If you didn't ask for this, ` +
+    `you can safely ignore this email - your password won't change.\n`;
+
+  await enqueueEmail(db, {
+    to: user.email,
+    subject: 'Reset your Mortgage Tool Kit password',
+    body,
+    kind: 'reset',
+  });
+  return token;
+}
+
 // Timing-safe string compare for the relay bearer token.
 export function safeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;

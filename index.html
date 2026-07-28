@@ -988,8 +988,30 @@
       <button class="btn-primary" id="loginBtn" type="submit">Sign in</button>
       <div class="auth-msg" id="loginMsg"></div>
     </form>
+    <button class="link-btn" id="forgotToggle" type="button" style="margin-top:10px;display:block;width:100%;text-align:center;font-size:12px;">Forgot password?</button>
+    <form id="forgotForm" class="hidden" autocomplete="on" style="margin-top:10px;">
+      <label for="forgotEmail">Email</label>
+      <input type="email" id="forgotEmail" autocomplete="username">
+      <button class="btn-primary" id="forgotBtn" type="submit">Send reset link</button>
+      <div class="auth-msg" id="forgotMsg"></div>
+    </form>
     <button class="link-btn" id="guestBtn" type="button" style="margin-top:16px;display:block;width:100%;text-align:center;">Continue without an account &rarr;</button>
     <p class="muted" style="margin:8px 0 0;font-size:11.5px;text-align:center;">You'll get the calculators. Sign in to save scenarios &amp; sync across devices.</p>
+  </div>
+</div>
+
+<div class="auth-gate hidden" id="resetGate">
+  <div class="auth-card">
+    <div class="brand-row"><h2>Set a new password</h2><span class="dev-badge hidden" id="devBadge3">Dev</span></div>
+    <p class="muted">Choose a new password for your account.</p>
+    <form id="resetForm" autocomplete="off">
+      <label for="resetNew">New password</label>
+      <input type="password" id="resetNew" autocomplete="new-password" required>
+      <label for="resetConfirm">Confirm new password</label>
+      <input type="password" id="resetConfirm" autocomplete="new-password" required>
+      <button class="btn-primary" id="resetBtn" type="submit">Update password</button>
+      <div class="auth-msg" id="resetMsg"></div>
+    </form>
   </div>
 </div>
 
@@ -2121,6 +2143,59 @@
     finally { btn.disabled = false; }
   });
 
+  // --- Forgot password: request a reset link ---
+  document.getElementById("forgotToggle").addEventListener("click", () => {
+    const f = document.getElementById("forgotForm");
+    f.classList.toggle("hidden");
+    if (!f.classList.contains("hidden")) {
+      document.getElementById("forgotEmail").value = document.getElementById("loginEmail").value.trim();
+      document.getElementById("forgotEmail").focus();
+    }
+  });
+  document.getElementById("forgotForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("forgotBtn"), msg = document.getElementById("forgotMsg");
+    const email = document.getElementById("forgotEmail").value.trim();
+    if (!email || !email.includes("@")) { msg.className = "auth-msg err"; msg.textContent = "Enter your email."; return; }
+    btn.disabled = true; msg.className = "auth-msg"; msg.textContent = "Sending...";
+    try {
+      await api("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+      // Neutral wording on purpose - we never reveal whether an account exists.
+      msg.className = "auth-msg ok";
+      msg.textContent = "If that email has an account, a reset link is on its way. Check your inbox.";
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = "Couldn't send just now - try again in a moment."; }
+    finally { btn.disabled = false; }
+  });
+
+  // --- Reset password: arrive via the emailed #reset=<token> link ---
+  let resetToken = null;
+  function handleResetHash() {
+    const m = (location.hash || "").match(/reset=([^&]+)/);
+    if (!m) return false;
+    resetToken = decodeURIComponent(m[1]);
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    showGate(false);
+    document.getElementById("resetGate").classList.remove("hidden");
+    return true;
+  }
+  document.getElementById("resetForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("resetBtn"), msg = document.getElementById("resetMsg");
+    const nw = document.getElementById("resetNew").value, cf = document.getElementById("resetConfirm").value;
+    msg.className = "auth-msg";
+    if (nw.length < 8) { msg.className = "auth-msg err"; msg.textContent = "New password must be at least 8 characters."; return; }
+    if (nw !== cf) { msg.className = "auth-msg err"; msg.textContent = "Passwords don't match."; return; }
+    btn.disabled = true; msg.textContent = "Updating...";
+    try {
+      await api("/auth/reset-password", { method: "POST", body: JSON.stringify({ token: resetToken, new_password: nw }) });
+      document.getElementById("resetNew").value = ""; document.getElementById("resetConfirm").value = "";
+      document.getElementById("resetGate").classList.add("hidden");
+      showGate(true);
+      toast("Password updated - please sign in with your new password.", "ok");
+    } catch (err) { msg.className = "auth-msg err"; msg.textContent = err.message || "Couldn't reset - the link may have expired."; }
+    finally { btn.disabled = false; }
+  });
+
   document.getElementById("logoutBtn").addEventListener("click", async () => {
     try { await api("/auth/logout", { method: "POST" }); } catch (e) {}
     authMode = null; updateAuthUI();
@@ -2958,6 +3033,7 @@
   if (IS_DEV) {
     document.getElementById("devBadge").classList.remove("hidden");
     document.getElementById("devBadge2").classList.remove("hidden");
+    document.getElementById("devBadge3").classList.remove("hidden");
   }
 
   renderDisb(); syncBtn();
@@ -2974,4 +3050,5 @@
 
   checkAuth();      // gate the app until signed in
   handleVerifyHash();   // toast if we just came back from an email verify link
+  handleResetHash();    // show the set-new-password panel if arriving from a reset link
 </script>

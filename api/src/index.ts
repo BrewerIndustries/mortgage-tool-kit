@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { hashPassword, verifyPassword, newToken, sessionId } from './auth';
 import { uuid } from './util';
-import { enqueueEmail, issueVerification, safeEqual } from './mail';
+import { enqueueEmail, issueVerification, issuePasswordReset, safeEqual } from './mail';
 
 type Bindings = {
   DB: D1Database;
@@ -313,6 +313,41 @@ app.post('/auth/resend-verification', auth, async (c) => {
   if (u.email_verified) return c.json({ ok: true, already: true });
   const apiBase = new URL(c.req.url).origin;
   await issueVerification(c.env.DB, { id: u.id, email: u.email, display_name: u.display_name }, apiBase, c.env.ALLOWED_ORIGIN);
+  return c.json({ ok: true });
+});
+
+// ---------------- password reset ----------------
+// Anyone can request a reset link. Always return ok so we never reveal whether an
+// email has an account (no user enumeration).
+app.post('/auth/forgot-password', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  const email = String(b.email ?? '').trim().toLowerCase();
+  if (email && email.includes('@')) {
+    const user = await c.env.DB.prepare('SELECT id, email, display_name FROM users WHERE email = ?').bind(email).first();
+    if (user) await issuePasswordReset(c.env.DB, user as any, c.env.ALLOWED_ORIGIN).catch(() => {});
+  }
+  return c.json({ ok: true });
+});
+
+// Complete the reset with the emailed token.
+app.post('/auth/reset-password', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  const token = String(b.token ?? '');
+  const password = String(b.new_password ?? '');
+  if (password.length < 8) return c.json({ error: 'password must be at least 8 characters' }, 400);
+  const row = token
+    ? await c.env.DB.prepare('SELECT token, user_id, expires_at, used_at FROM password_resets WHERE token = ?').bind(token).first()
+    : null;
+  if (!row || row.used_at || Number(row.expires_at) < Date.now()) {
+    return c.json({ error: 'this reset link is invalid or has expired' }, 400);
+  }
+  await c.env.DB.batch([
+    // A used reset link proves control of the inbox, so clear must-change and mark verified.
+    c.env.DB.prepare('UPDATE users SET password_hash = ?, must_change_password = 0, email_verified = 1 WHERE id = ?')
+      .bind(await hashPassword(password), row.user_id),
+    c.env.DB.prepare('UPDATE password_resets SET used_at = ? WHERE token = ?').bind(Date.now(), token),
+    c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(row.user_id),   // sign out everywhere
+  ]);
   return c.json({ ok: true });
 });
 
