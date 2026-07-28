@@ -68,7 +68,7 @@ polish / accessibility / extras. Check items off as they ship.
 ### UX
 - [x] Info tooltips / popovers defining RESPA cushion, PITI, LTV, PMI, ARM lookback, escrow shortage, etc.
 - [ ] Thousands separators in number inputs while typing (400,000 vs 400000)
-- [ ] "Reset to defaults" control per tab
+- [x] "Reset to defaults" control per tab
 - [ ] Combined **full mortgage report** print (all tabs in one PDF)
 - [x] Make export / statement buttons context-aware per tab (hide "Escrow statement" on non-escrow tabs)
 - [ ] Short onboarding / "what each tab does" intro for first-time users

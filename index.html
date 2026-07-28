@@ -42,6 +42,9 @@
   }
 
   * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
   body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
   .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
   .hidden { display: none !important; }
@@ -1025,6 +1028,10 @@
       <div class="set-row" style="align-items:flex-start;">
         <div class="set-label">Accent color<small>Applies in light &amp; dark</small></div>
         <div class="swatches" id="accentSwatches"></div>
+      </div>
+      <div class="set-row">
+        <div class="set-label">Calculator inputs<small>Restore every tab's defaults</small></div>
+        <button class="link-btn" id="resetDefaultsBtn" type="button">Reset to defaults</button>
       </div>
     </div>
 
@@ -2065,7 +2072,7 @@
 
   // ---------- persistence: state snapshot + autosave ----------
   const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","tnDate","tnLookback","tnTenor"];
-  let restoring = false, saveTimer = null;
+  let restoring = false, saveTimer = null, defaultState = null;
 
   function collectState() {
     const inputs = {};
@@ -2312,6 +2319,14 @@
     syncBtn();
   }
   document.querySelectorAll("#themeSeg .seg-btn").forEach(b => b.addEventListener("click", () => applyThemeMode(b.dataset.mode)));
+
+  document.getElementById("resetDefaultsBtn").addEventListener("click", () => {
+    if (!defaultState) return;
+    if (!confirm("Reset all calculator inputs on every tab to their defaults?")) return;
+    currentScnId = null; if (document.getElementById("scenarioSelect")) document.getElementById("scenarioSelect").value = "";
+    applyState(JSON.parse(JSON.stringify(defaultState)));
+    persistState();
+  });
 
   // ---------- Payment calculator ----------
   const PAY_COLORS = { tax: "#c99a3b", ins: "#4a90c2", hoa: "#8a6fb0", pmi: "#c25b6e" };
@@ -2850,6 +2865,7 @@
   computeRefi();
   computeCompare();
   injectTips();
+  defaultState = collectState();   // snapshot factory defaults for "Reset to defaults"
 
   checkAuth();      // gate the app until signed in
 </script>
