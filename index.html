@@ -1938,6 +1938,7 @@
   async function loadScenarios() { try { const r = await api("/scenarios"); scenarios = r.scenarios || []; renderScenarioSelect(); } catch (e) {} }
   document.getElementById("scenarioSelect").addEventListener("change", async (e) => {
     const id = e.target.value;
+    document.getElementById("scnDelete").disabled = !id;
     if (!id) { currentScnId = null; setScnStatus("Working copy"); return; }
     try {
       const { scenario } = await api("/scenarios/" + id);
