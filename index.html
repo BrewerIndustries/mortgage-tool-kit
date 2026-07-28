@@ -390,6 +390,7 @@
     <button class="tab" data-tab="compare" type="button">Compare</button>
     <button class="tab" data-tab="tnote" type="button">T-Note Lookup</button>
     <div class="tab-actions">
+      <button class="ghost-btn sm" id="shareBtn" type="button" title="Copy a link that reopens these exact inputs">&#128279; Share</button>
       <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
       <button class="ghost-btn sm accent-btn" id="exportStmt" type="button">&#128196; Escrow statement</button>
     </div>
@@ -2072,7 +2073,15 @@
 
   // ---------- persistence: state snapshot + autosave ----------
   const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","tnDate","tnLookback","tnTenor"];
-  let restoring = false, saveTimer = null, defaultState = null;
+  let restoring = false, saveTimer = null, defaultState = null, sharedState = null;
+
+  // Encode/decode the full input state for shareable URLs (#s=<base64>).
+  function encodeShare() { try { return btoa(unescape(encodeURIComponent(JSON.stringify(collectState())))); } catch (e) { return ""; } }
+  function parseHashState() {
+    const m = (location.hash || "").match(/[#&]s=([^&]+)/);
+    if (!m) return null;
+    try { return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); } catch (e) { return null; }
+  }
 
   function collectState() {
     const inputs = {};
@@ -2110,14 +2119,24 @@
         .then(() => { if (!currentScnId) setScnStatus("Autosaved", true); }).catch(() => {});
     }
   }
-  function loadLocalState() { try { const s = localStorage.getItem("mtk-work"); if (s) applyState(JSON.parse(s)); } catch (e) {} }
+  function loadLocalState() {
+    if (sharedState) { applyState(sharedState); return; }
+    try { const s = localStorage.getItem("mtk-work"); if (s) applyState(JSON.parse(s)); } catch (e) {}
+  }
   async function loadServerState() {
     try {
       const { work_state, prefs } = await api("/state");
       if (prefs) applyPrefs(prefs);
+      if (sharedState) { applyState(sharedState); return; }   // a shared link overrides saved state
       if (work_state) applyState(work_state); else loadLocalState();
     } catch (e) { loadLocalState(); }
   }
+  document.getElementById("shareBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("shareBtn");
+    const url = location.origin + location.pathname + "#s=" + encodeURIComponent(encodeShare());
+    try { await navigator.clipboard.writeText(url); const old = btn.innerHTML; btn.innerHTML = "&#10003; Copied"; setTimeout(() => { btn.innerHTML = old; }, 1800); }
+    catch (e) { prompt("Copy this link to share these inputs:", url); }
+  });
   function applyPrefs(p) {
     if (p && p.accent && ACCENTS[p.accent]) { accentKey = p.accent; localStorage.setItem("mtk-accent", p.accent); }
     if (p && p.theme) applyThemeMode(p.theme); else { applyAccent(); buildSwatches(); }
@@ -2866,6 +2885,8 @@
   computeCompare();
   injectTips();
   defaultState = collectState();   // snapshot factory defaults for "Reset to defaults"
+  sharedState = parseHashState();  // a "#s=" link reopens someone's exact inputs
+  if (sharedState) { applyState(sharedState); try { history.replaceState(null, "", location.pathname); } catch (e) {} }
 
   checkAuth();      // gate the app until signed in
 </script>

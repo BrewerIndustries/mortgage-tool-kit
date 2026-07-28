@@ -80,7 +80,7 @@ polish / accessibility / extras. Check items off as they ship.
 - [ ] Full keyboard + ARIA pass on segmented controls, the switch, accent swatches, and modals (focus trap in modals)
 
 ### Nice-to-have
-- [ ] Shareable read-only scenario links (encode inputs in the URL)
+- [x] Shareable read-only scenario links (encode inputs in the URL)
 - [ ] Full-scenario CSV/JSON export & import (not just per-tab)
 - [ ] Currency / locale formatting option
 - [ ] Admin audit log for user add/delete
