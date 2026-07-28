@@ -357,6 +357,14 @@
   .seg.tiny { padding: 2px; }
   .seg.tiny .seg-btn { padding: 2px 8px; font-size: 11px; min-width: 26px; }
   .field-note { font-size: 11.5px; color: var(--faint); font-family: var(--mono); margin-top: 5px; }
+
+  /* Tooltips ("?" info badges) */
+  .tip { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--faint); font-size: 10px; font-weight: 700; line-height: 1; cursor: help; margin-left: 5px; vertical-align: middle; position: relative; font-family: var(--sans); text-transform: none; letter-spacing: normal; }
+  .tip:hover, .tip:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; }
+  .tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%); width: 230px; background: var(--ink); color: var(--paper); padding: 9px 11px; border-radius: 8px; font-size: 12px; font-weight: 400; line-height: 1.45; text-transform: none; letter-spacing: normal; text-align: left; box-shadow: 0 6px 22px rgba(0,0,0,.35); opacity: 0; visibility: hidden; transition: opacity .12s; z-index: 70; pointer-events: none; }
+  .tip::before { content: ""; position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--ink); opacity: 0; visibility: hidden; transition: opacity .12s; z-index: 70; }
+  .tip:hover::after, .tip:focus-visible::after, .tip:hover::before, .tip:focus-visible::before { opacity: 1; visibility: visible; }
+  @media (prefers-reduced-motion: reduce) { .tip::after, .tip::before { transition: none; } }
 </style>
 
 <div class="wrap">
@@ -2479,6 +2487,79 @@
     computeTnote();
   })();
 
+  // ---------- tooltips ----------
+  function makeTip(text) {
+    const s = document.createElement("span");
+    s.className = "tip"; s.tabIndex = 0; s.setAttribute("role", "note"); s.setAttribute("aria-label", text);
+    s.dataset.tip = text; s.textContent = "?";
+    return s;
+  }
+  const FIELD_TIPS = {
+    startBal: "The balance in your escrow account at the start of this 12-month projection - your servicer lists it on your statement.",
+    curPay: "What you currently pay into escrow each month (the taxes & insurance part of your mortgage payment, not principal & interest).",
+    startMonth: "The first month of the 12-month projection window - usually your escrow computation-year start.",
+    cushion: "A reserve the servicer keeps so the account never runs dry. RESPA caps it at 2 months of escrow payments (one-sixth of annual disbursements).",
+    loanAmt: "The loan principal you're borrowing (or today's balance if you're modeling from now).",
+    loanRate: "Annual mortgage interest rate used to compute the monthly principal & interest.",
+    loanTerm: "Loan length in years. 30 and 15 are the most common.",
+    loanExtra: "An extra amount added to principal every month. It shortens the term and cuts total interest.",
+    loanStartMonth: "When the first payment is made - used to date the payoff and each schedule row.",
+    loanStartYear: "The year of the first payment - used to date the payoff.",
+    payPrice: "The purchase price or appraised value of the home.",
+    payDownAmt: "Your upfront cash toward the price. 20% or more avoids PMI.",
+    payDownPct: "Down payment as a percent of price. Loan-to-value (LTV) is the mirror image - under 80% LTV (20%+ down) avoids PMI.",
+    payRate: "Annual mortgage interest rate.",
+    payTerm: "Loan length in years.",
+    payTax: "Annual property tax as a fixed dollar amount. Switch to % to enter a tax rate on the home's value.",
+    payTaxPct: "Annual property tax as a percent of the home's (post-exemption) value.",
+    payHomestead: "A homestead exemption lowers the home's taxable value before the tax rate is applied. Many states offer one for a primary residence.",
+    payIns: "Annual homeowner's (hazard) insurance premium.",
+    payHoa: "Homeowners-association dues. Toggle /mo or /yr for how you're entering it.",
+    payPmi: "Private mortgage insurance - required when your down payment is under 20%. Auto-estimated at ~0.6%/yr of the loan; edit it to match your quote. It typically drops off near 20% equity.",
+    payClosing: "One-time fees paid at closing (lender, title, appraisal, escrow prepaids...). Toggle 'roll into loan' to finance them instead of paying cash.",
+    afIncome: "Your gross (pre-tax) household income per year.",
+    afDebts: "Total minimum monthly payments on your other debts - car loans, student loans, credit-card minimums, etc.",
+    afFront: "Front-end DTI: the largest share of gross monthly income a lender allows for housing (full PITI). ~28% is a common guideline.",
+    afBack: "Back-end DTI: the largest share of income for housing PLUS all other debt payments. ~36-43% is common.",
+    afDown: "Cash you'll put down. More down means a higher price for the same payment, and 20%+ avoids PMI.",
+    afRate: "Annual mortgage interest rate you expect to qualify for.",
+    afTerm: "Loan length in years.",
+    afTaxPct: "Estimated annual property tax as a percent of home value (varies widely by area).",
+    afIns: "Estimated annual homeowner's insurance premium.",
+    afHoa: "Estimated monthly HOA dues, if any.",
+    rfBalance: "How much you still owe on your current mortgage today.",
+    rfCurRate: "The interest rate on your current loan.",
+    rfCurTerm: "Years remaining on your current loan.",
+    rfNewRate: "The interest rate you'd get on the new (refinanced) loan.",
+    rfNewTerm: "Length of the new loan. A longer term lowers the payment but can raise lifetime interest.",
+    rfClosing: "Fees to complete the refinance. Toggle 'roll into loan' to avoid paying them out of pocket.",
+    tnDate: "The reference date (for an ARM, the rate-change date). The index is read a set number of days before it.",
+    tnLookback: "How many days before the reference date to read the rate - the ARM 'lookback' period, commonly 45 days.",
+    tnTenor: "Which Treasury constant-maturity to read (1-10 years). An ARM uses a specific tenor as its index.",
+  };
+  const EYEBROW_TIPS = {
+    "Annual disbursements": "The bills your servicer pays out of escrow (property taxes, insurance, etc.) and when. These drive the required monthly deposit.",
+    "Taxes, insurance & fees": "The parts of your monthly payment beyond principal & interest.",
+    "Closing costs": "One-time costs to finalize the purchase or refinance.",
+    "Monthly payment breakdown": "Your total monthly payment split into principal & interest (P&I), property tax, insurance, HOA, and PMI - together called PITI.",
+    "Income & debts": "Used to compute your debt-to-income (DTI) ratios, which cap how much a lender will lend.",
+    "Cash to close": "The cash you need at the closing table: down payment plus any closing costs you don't roll into the loan.",
+    "Current loan": "Your existing mortgage as it stands today.",
+    "New loan": "The loan you'd replace it with.",
+  };
+  function injectTips() {
+    Object.entries(FIELD_TIPS).forEach(([id, t]) => {
+      const el = document.getElementById(id); if (!el) return;
+      const lbl = el.closest(".field") && el.closest(".field").querySelector(".lbl"); if (!lbl) return;
+      const target = lbl.querySelector("span") || lbl;
+      if (!target.querySelector(".tip")) target.appendChild(makeTip(t));
+    });
+    document.querySelectorAll(".eyebrow").forEach(e => {
+      const t = EYEBROW_TIPS[e.textContent.trim()];
+      if (t && !e.querySelector(".tip")) e.appendChild(makeTip(t));
+    });
+  }
+
   // ---------- init ----------
   // Apply stored theme mode + accent before first paint of computed colors.
   (function initAppearance() {
@@ -2499,6 +2580,7 @@
   computePayment(); // ready the Payment tab
   computeAfford();
   computeRefi();
+  injectTips();
 
   checkAuth();      // gate the app until signed in
 </script>
