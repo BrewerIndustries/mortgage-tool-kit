@@ -659,6 +659,16 @@
           </div>
         </div>
 
+        <div class="card cash-card">
+          <div class="panel">
+            <p class="eyebrow" style="margin-bottom:12px;">Loan cost over the full term</p>
+            <div class="cash-row"><span class="lbl">Est. APR <span id="aprTip"></span></span><span id="payApr">&mdash;</span></div>
+            <div class="cash-row"><span class="lbl">Total principal &amp; interest paid</span><span id="payTotPaid">$0</span></div>
+            <div class="cash-row"><span class="lbl">Total interest</span><span id="payTotInt">$0</span></div>
+            <div class="cash-row total"><span class="lbl">Lifetime cost (P&amp;I + taxes + ins + PMI)</span><span id="payLifetime">$0</span></div>
+          </div>
+        </div>
+
         <div class="card chart-card">
           <div class="panel">
             <div class="chart-head" style="margin-bottom:16px;">
@@ -2354,15 +2364,29 @@
     document.getElementById("payDownTile").textContent = fmt(downAmt);
     document.getElementById("payDownPctNote").textContent = downPct.toFixed(1) + "% down";
     // PMI drop-off: months until the balance amortizes to 80% of the original price (20% equity).
-    let pmiOff = "";
+    let pmiOff = "", pmiMonths = pmi > 0 ? n : 0;
     if (pmi > 0 && loan > 0 && price > 0) {
       const target = price * 0.80; let b = loan, m = 0;
       while (b > target && m < n) { b -= (pi - b * r); m++; }
-      pmiOff = m < n ? ` It falls off around payment ${m} (~${(m / 12).toFixed(1)} yrs) at 20% equity, on schedule.` : "";
+      pmiMonths = m; pmiOff = m < n ? ` It falls off around payment ${m} (~${(m / 12).toFixed(1)} yrs) at 20% equity, on schedule.` : "";
     }
     document.getElementById("payPmiNote").textContent = ltv > 80
       ? "PMI auto-estimated at ~0.6%/yr while under 20% down \u2014 edit to match your quote." + pmiOff
       : "No PMI \u2014 20% or more equity.";
+
+    // Loan cost + APR (estimate): the rate whose payment amortizes the amount financed
+    // net of upfront closing costs; equals the note rate when no fees are paid.
+    const financed = loan - (roll ? 0 : closing);
+    let apr = rate;
+    if (pi > 0 && financed > 0) {
+      let lo = 0, hi = 1;
+      for (let k = 0; k < 60; k++) { const mm = (lo + hi) / 2; const pay = mm === 0 ? financed / n : financed * mm / (1 - Math.pow(1 + mm, -n)); if (pay > pi) hi = mm; else lo = mm; }
+      apr = lo * 1200;
+    }
+    document.getElementById("payApr").textContent = pi > 0 ? apr.toFixed(3) + "%" : "\u2014";
+    document.getElementById("payTotPaid").textContent = fmt(pi * n);
+    document.getElementById("payTotInt").textContent = fmt(pi * n - loan);
+    document.getElementById("payLifetime").textContent = fmt(pi * n + (tax + ins + hoa) * n + pmi * pmiMonths);
 
     // Cash to close
     document.getElementById("cashDown").textContent = fmt(downAmt);
@@ -2798,6 +2822,8 @@
       const t = EYEBROW_TIPS[e.textContent.trim()];
       if (t && !e.querySelector(".tip")) e.appendChild(makeTip(t));
     });
+    const aprT = document.getElementById("aprTip");
+    if (aprT && !aprT.querySelector(".tip")) aprT.appendChild(makeTip("APR folds your closing costs into the interest rate, so it reads higher than the note rate when you pay fees - a standard way to compare loans' true cost. Estimate; excludes some fee types."));
   }
 
   // ---------- init ----------

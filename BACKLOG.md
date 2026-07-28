@@ -38,10 +38,10 @@ polish / accessibility / extras. Check items off as they ship.
 ### Financial correctness
 - [x] Make PMI a real input (rate + amount) with a sensible default instead of the flat 0.6%/yr heuristic
 - [x] Model **PMI drop-off** at ~78–80% LTV over the amortization timeline (show the month it ends)
-- [ ] Add **APR / true cost** (note rate + fees) alongside the interest rate
+- [x] Add **APR / true cost** (note rate + fees) alongside the interest rate
 - [ ] Escrow: handle RESPA deficiency vs. shortage distinction and the initial escrow deposit at closing
 - [x] Fix schedule rounding so displayed amortization rows foot exactly (carry the rounding remainder)
-- [ ] Add total-cost-of-ownership view (lifetime interest + taxes + insurance + PMI)
+- [x] Add total-cost-of-ownership view (lifetime interest + taxes + insurance + PMI)
 
 ### Security hardening
 - [x] Bump the password KDF (PBKDF2 → ~600k+ iterations, or move to scrypt/argon2)
