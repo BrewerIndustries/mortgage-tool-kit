@@ -1037,6 +1037,19 @@
     </div>
 
     <div class="settings-section">
+      <h4>Backup &amp; restore</h4>
+      <div class="set-row">
+        <div class="set-label">Download<small>Save every tab's inputs as a .json file</small></div>
+        <button class="link-btn" id="backupBtn" type="button">Download backup</button>
+      </div>
+      <div class="set-row">
+        <div class="set-label">Restore<small>Load inputs from a saved backup file</small></div>
+        <button class="link-btn" id="restoreBtn" type="button">Restore from file&#8230;</button>
+      </div>
+      <input type="file" id="restoreFile" accept="application/json,.json" class="hidden">
+    </div>
+
+    <div class="settings-section">
       <h4>Account</h4>
       <div id="accountGuest" class="hidden">
         <div class="set-row">
@@ -2345,6 +2358,33 @@
     currentScnId = null; if (document.getElementById("scenarioSelect")) document.getElementById("scenarioSelect").value = "";
     applyState(JSON.parse(JSON.stringify(defaultState)));
     persistState();
+  });
+
+  document.getElementById("backupBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify({ app: "mortgage-tool-kit", v: 1, state: collectState() }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "mtk-backup.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  document.getElementById("restoreBtn").addEventListener("click", () => document.getElementById("restoreFile").click());
+  document.getElementById("restoreFile").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const state = parsed && parsed.state ? parsed.state : parsed;   // accept wrapped or raw
+        if (!state || typeof state !== "object") throw new Error("not a state object");
+        currentScnId = null; if (document.getElementById("scenarioSelect")) document.getElementById("scenarioSelect").value = "";
+        applyState(state);
+        persistState();
+      } catch (err) { alert("Could not read that file - it doesn't look like a Mortgage Tool Kit backup."); }
+      e.target.value = "";   // allow re-importing the same file
+    };
+    reader.readAsText(file);
   });
 
   // ---------- Payment calculator ----------
