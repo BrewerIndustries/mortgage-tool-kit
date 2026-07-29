@@ -47,7 +47,8 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   }
-  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  html { overflow-x: hidden; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
   .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
   .hidden { display: none !important; }
 
@@ -95,7 +96,8 @@
   .tool-card { text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 13px; padding: 18px 18px 16px; cursor: pointer; font-family: var(--sans); display: flex; flex-direction: column; gap: 5px; transition: border-color .13s, transform .13s, box-shadow .13s; }
   .tool-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.10); }
   .tool-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .tool-card .ic { font-size: 21px; line-height: 1; }
+  .tool-card .ic { color: var(--accent); display: inline-flex; margin-bottom: 2px; }
+  .tool-card .ic svg { width: 25px; height: 25px; }
   .tool-card .tt { font-family: var(--serif); font-weight: 600; font-size: 17px; color: var(--ink); }
   .tool-card .td { font-size: 12.5px; color: var(--muted); line-height: 1.5; flex: 1; }
   .tool-card .go { margin-top: 7px; font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .01em; }
@@ -109,7 +111,9 @@
   .seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   .grid { display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
+  .grid > * { min-width: 0; }                 /* let columns shrink so wide charts/tables can't force horizontal scroll */
   @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  canvas { max-width: 100%; }                 /* charts scale to their container instead of their pixel width */
 
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
   .panel { padding: 20px; }
@@ -231,6 +235,7 @@
   .ghost-btn { background: none; border: 1px solid var(--line-strong); color: var(--muted); border-radius: 7px; padding: 6px 12px; font-size: 12.5px; cursor: pointer; font-family: var(--sans); font-weight: 600; }
   .ghost-btn:hover { color: var(--ink); border-color: var(--ink); }
   .ghost-btn.sm { padding: 4px 10px; font-size: 11.5px; }
+  .btn-ic { width: 13px; height: 13px; vertical-align: -2px; margin-right: 5px; flex: none; }
   .ghost-btn.danger-armed, .ghost-btn.danger-armed:hover { color: var(--shortage); border-color: color-mix(in srgb, var(--shortage) 55%, transparent); background: var(--shortage-soft); }
 
   /* Import modal */
@@ -401,6 +406,7 @@
   .tip::before { content: ""; position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--ink); opacity: 0; visibility: hidden; transition: opacity .12s; z-index: 70; }
   .tip:hover::after, .tip:focus-visible::after, .tip:hover::before, .tip:focus-visible::before { opacity: 1; visibility: visible; }
   @media (prefers-reduced-motion: reduce) { .tip::after, .tip::before { transition: none; } }
+  @media (max-width: 620px) { .tip::after { width: min(230px, 76vw); } }
 </style>
 
 <div class="wrap">
@@ -417,11 +423,11 @@
     <button class="ghost-btn sm" id="homeBtn" type="button">&#8592; All tools</button>
     <select id="toolSwitch" class="tool-switch" aria-label="Switch tool"></select>
     <div class="tab-actions">
-      <button class="ghost-btn sm hidden" id="clearFields" type="button" title="Blank every field on all tabs">&#129529; Clear fields</button>
-      <button class="ghost-btn sm" id="shareBtn" type="button" title="Copy a link that reopens these exact inputs">&#128279; Share</button>
-      <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
-      <button class="ghost-btn sm" id="fullReport" type="button" title="Print a combined report of every calculator">&#128203; Full report</button>
-      <button class="ghost-btn sm accent-btn" id="exportStmt" type="button">&#128196; Escrow statement</button>
+      <button class="ghost-btn sm hidden" id="clearFields" type="button" title="Blank every field on all tabs">Clear fields</button>
+      <button class="ghost-btn sm" id="shareBtn" type="button" title="Copy a link that reopens these exact inputs">Share</button>
+      <button class="ghost-btn sm" id="exportCsv" type="button">Export CSV</button>
+      <button class="ghost-btn sm" id="fullReport" type="button" title="Print a combined report of every calculator">Full report</button>
+      <button class="ghost-btn sm accent-btn" id="exportStmt" type="button">Escrow statement</button>
     </div>
   </div>
 
@@ -429,7 +435,7 @@
   <div id="view-home" class="view">
     <div class="home-head">
       <h2>Your mortgage toolkit</h2>
-      <p>Pick a calculator to get started &mdash; each one is self-contained.</p>
+      <p id="homeSub">Pick a calculator to get started.</p>
     </div>
     <div class="home-grid" id="homeGrid"></div>
   </div>
@@ -2512,6 +2518,12 @@
     // "Clear fields" is a signed-in convenience (guests just refill their independent tabs).
     const clr = document.getElementById("clearFields"); if (clr) clr.classList.toggle("hidden", !user);
     const lo = document.getElementById("logoutHeaderBtn"); if (lo) lo.classList.toggle("hidden", !user);
+    // Homepage subtitle reflects the cross-tab behavior: guests are fully independent;
+    // signed-in users have the Escrow figure flow into the Amortization tab.
+    const sub = document.getElementById("homeSub");
+    if (sub) sub.textContent = user
+      ? "Pick a calculator to get started. Signed in, your recommended escrow flows from the Escrow Analysis tab into Amortization."
+      : "Pick a calculator to get started — as a guest, each one is self-contained.";
     // Amortization escrow hint: signed-in auto-syncs from the Escrow tab; guests fill it themselves.
     const hint = document.getElementById("amEscrowHint");
     if (hint) hint.textContent = user
@@ -3054,12 +3066,12 @@
   // "Clear fields" needs a second, deliberate click to confirm (no accidental wipes).
   let clearArmed = false, clearTimer = null;
   const clearBtn = document.getElementById("clearFields");
-  function resetClearBtn() { clearArmed = false; clearBtn.classList.remove("danger-armed"); clearBtn.innerHTML = "&#129529; Clear fields"; }
+  function resetClearBtn() { clearArmed = false; clearBtn.classList.remove("danger-armed"); clearBtn.innerHTML = miniIcon(CLEAR_ICON) + "Clear fields"; }
   clearBtn.addEventListener("click", () => {
     if (!clearArmed) {
       clearArmed = true;
       clearBtn.classList.add("danger-armed");
-      clearBtn.innerHTML = "&#9888; Click again to clear all";
+      clearBtn.innerHTML = miniIcon(ALERT_ICON) + "Click again to clear all";
       clearTimer = setTimeout(resetClearBtn, 3500);
       return;
     }
@@ -3238,6 +3250,7 @@
     const price = gv("payPrice"), pct = gv("payDownPct");
     document.getElementById("payDownAmt").value = Math.round(price * pct / 100);
     computePayment();
+    propagateShared("payDownAmt");   // editing the % is a real down-payment change; share it
   });
   ["payRate", "payTerm", "payTax", "payTaxPct", "payHomestead", "payIns", "payHoa", "payClosing"].forEach(id =>
     document.getElementById(id).addEventListener("input", computePayment));
@@ -3683,16 +3696,41 @@
 
   // ---------- home launcher + tool navigation ----------
   const TOOLS = [
-    { id: "escrow",  name: "Escrow Analysis",  icon: "🏦", desc: "Project the account 12 months out, size the RESPA cushion, and catch shortages or deficiencies." },
-    { id: "amort",   name: "Amortization",     icon: "📉", desc: "P&I and full PITI, extra / lump-sum payments, a payoff-by-date solver, and the full schedule." },
-    { id: "payment", name: "Payment",          icon: "🧾", desc: "Full monthly payment: taxes, insurance, HOA, PMI, LTV, and cash to close." },
-    { id: "afford",  name: "Affordability",    icon: "⚖️", desc: "Income, debts, and DTI limits to the home price and payment you qualify for." },
-    { id: "refi",    name: "Refinance",        icon: "🔁", desc: "Current vs. new loan: monthly savings, break-even months, and lifetime cost." },
-    { id: "compare", name: "Compare",          icon: "📊", desc: "Two loans side by side — rate, points, total cost, and the break-even on the upfront gap." },
-    { id: "arm",     name: "ARM",              icon: "📈", desc: "Adjustable-rate projection with caps: index-holds vs. worst-case payment path." },
-    { id: "rentbuy", name: "Rent vs. Buy",     icon: "🏠", desc: "Renting-and-investing vs. buying over a horizon — net worth and the break-even year." },
-    { id: "tnote",   name: "T-Note Lookup",    icon: "📅", desc: "Historical Treasury rates with an ARM-style business-day lookback." },
+    { id: "escrow",  name: "Escrow Analysis",  desc: "Project the account 12 months out, size the RESPA cushion, and catch shortages or deficiencies." },
+    { id: "amort",   name: "Amortization",     desc: "P&I and full PITI, extra / lump-sum payments, a payoff-by-date solver, and the full schedule." },
+    { id: "payment", name: "Payment",          desc: "Full monthly payment: taxes, insurance, HOA, PMI, LTV, and cash to close." },
+    { id: "afford",  name: "Affordability",    desc: "Income, debts, and DTI limits to the home price and payment you qualify for." },
+    { id: "refi",    name: "Refinance",        desc: "Current vs. new loan: monthly savings, break-even months, and lifetime cost." },
+    { id: "compare", name: "Compare",          desc: "Two loans side by side — rate, points, total cost, and the break-even on the upfront gap." },
+    { id: "arm",     name: "ARM",              desc: "Adjustable-rate projection with caps: index-holds vs. worst-case payment path." },
+    { id: "rentbuy", name: "Rent vs. Buy",     desc: "Renting-and-investing vs. buying over a horizon — net worth and the break-even year." },
+    { id: "tnote",   name: "T-Note Lookup",    desc: "Historical Treasury rates with an ARM-style business-day lookback." },
   ];
+  // Clean line-art (Feather/Lucide-style) icons — monochrome, inherit the theme color.
+  const ICON_INNER = {
+    escrow:  '<polygon points="12 2 21 7 3 7"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/>',
+    amort:   '<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>',
+    payment: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
+    afford:  '<path d="M12 3v18"/><path d="M7 21h10"/><path d="M3 7h3c2 0 5-1 6-2 1 1 4 2 6 2h3"/><path d="m2 15 3-8 3 8c-.9.7-1.9 1-3 1s-2.1-.3-3-1Z"/><path d="m16 15 3-8 3 8c-.9.7-1.9 1-3 1s-2.1-.3-3-1Z"/>',
+    refi:    '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+    compare: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    arm:     '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+    rentbuy: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+    tnote:   '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  };
+  const toolIcon = (id) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_INNER[id] || ""}</svg>`;
+
+  // Small line-art icons for the action buttons (replace the old emoji glyphs).
+  const miniIcon = (inner) => `<svg class="btn-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+  const CLEAR_ICON = '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>';
+  const ALERT_ICON = '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
+  [
+    ["shareBtn",   '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>', "Share"],
+    ["exportCsv",  '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>', "Export CSV"],
+    ["fullReport", '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>', "Full report"],
+    ["exportStmt", '<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>', "Escrow statement"],
+    ["clearFields",CLEAR_ICON, "Clear fields"],
+  ].forEach(([id, inner, label]) => { const b = document.getElementById(id); if (b) b.innerHTML = miniIcon(inner) + label; });
   const computeFor = (id) => ({ escrow: compute, amort: computeAmort, payment: computePayment, afford: computeAfford, refi: computeRefi, compare: computeCompare, arm: computeArm, rentbuy: computeRentBuy, tnote: computeTnote }[id] || compute)();
 
   function selectTool(id) {
@@ -3720,7 +3758,7 @@
   // Build the launcher grid + the in-tool switcher from TOOLS.
   document.getElementById("homeGrid").innerHTML = TOOLS.map(t =>
     `<button class="tool-card" data-tool="${t.id}" type="button">
-      <span class="ic" aria-hidden="true">${t.icon}</span>
+      <span class="ic" aria-hidden="true">${toolIcon(t.id)}</span>
       <span class="tt">${esc(t.name)}</span>
       <span class="td">${esc(t.desc)}</span>
       <span class="go">Open &rarr;</span>
@@ -3794,6 +3832,52 @@
   // Live thousands separators on every currency field (after other listeners are wired).
   CURRENCY_IDS.forEach(attachThousands);
 
+  // ---------- shared cross-tab model (signed-in only) ----------
+  // Each group lists the fields that hold the SAME real-world quantity on different tabs.
+  // Editing one propagates to the others so signed-in users enter shared inputs once.
+  // Comparison-style fields are deliberately excluded (Compare's two loans, Refinance's new
+  // loan, and the ARM teaser rate are meant to differ). Guests are unaffected.
+  const SHARED_GROUPS = [
+    { fields: ["payPrice", "rbPrice"] },                                    // home price
+    { fields: ["payDownAmt", "afDown", "rbDown"] },                         // down payment ($)
+    { fields: ["loanRate", "payRate", "afRate", "rbRate"] },                // mortgage rate (not ARM teaser)
+    { fields: ["loanTerm", "payTerm", "afTerm", "rbTerm", "armTerm"] },     // loan term (yrs)
+    { fields: ["payTaxPct", "afTaxPct", "rbTax"] },                         // property tax (%)
+    { fields: ["payIns", "afIns", "rbIns"] },                               // insurance ($/yr)
+    { fields: ["afHoa", "rbHoa", "payHoa"], hoa: true },                    // HOA (monthly; payHoa may be /yr)
+    { fields: ["loanAmt", "armAmt"] },                                      // loan amount
+  ];
+  const SHARED_CURRENCY = new Set(["payPrice","rbPrice","payDownAmt","afDown","rbDown","payIns","afIns","rbIns","loanAmt","armAmt","payHoa"]);
+  const hoaFreqIsYr = () => { const f = document.querySelector("#hoaFreqSeg .seg-btn.active"); return !!(f && f.dataset.f === "yr"); };
+  const hoaToMonthly = (id, raw) => (id === "payHoa" && hoaFreqIsYr()) ? raw / 12 : raw;
+  const hoaFromMonthly = (id, m) => (id === "payHoa" && hoaFreqIsYr()) ? m * 12 : m;
+
+  function reconcilePayDownPct() {
+    const price = parseNum(document.getElementById("payPrice").value);
+    const amt = parseNum(document.getElementById("payDownAmt").value);
+    document.getElementById("payDownPct").value = price > 0 ? +(amt / price * 100).toFixed(1) : 0;
+  }
+  function propagateShared(sourceId) {
+    if (restoring || authMode !== "user") return;   // guests stay independent; skip during restore
+    const group = SHARED_GROUPS.find(g => g.fields.includes(sourceId));
+    if (!group) return;
+    const raw = parseNum(document.getElementById(sourceId).value);
+    const monthly = group.hoa ? hoaToMonthly(sourceId, raw) : null;
+    group.fields.forEach(fid => {
+      if (fid === sourceId) return;
+      const el = document.getElementById(fid); if (!el) return;
+      const v = group.hoa ? hoaFromMonthly(fid, monthly) : raw;
+      el.value = SHARED_CURRENCY.has(fid) ? Math.round(v) : v;
+      if (el.type === "text") formatThousandsEl(el);   // comma-format only the text currency inputs (number inputs reject commas)
+    });
+    reconcilePayDownPct();   // keep Payment's down % in step when price/down move
+    scheduleSave();
+  }
+  // Attach propagation to every shared field (in addition to its own compute listener).
+  new Set(SHARED_GROUPS.flatMap(g => g.fields)).forEach(id => {
+    const el = document.getElementById(id); if (el) el.addEventListener("input", () => propagateShared(id));
+  });
+
   window.addEventListener("resize", recomputeVisible);
 
   // default the T-Note reference date to today (clamped to available data), preselect the 45-day preset
@@ -3865,6 +3949,47 @@
     tnDate: "The reference date (for an ARM, the rate-change date). The index is read a set number of days before it.",
     tnLookback: "How many days before the reference date to read the rate - the ARM 'lookback' period, commonly 45 days.",
     tnTenor: "Which Treasury constant-maturity to read (1-10 years). An ARM uses a specific tenor as its index.",
+    // Escrow (added)
+    escalate: "Optional: inflate the disbursements above by this percent to model rising taxes/premiums for the coming year.",
+    // Amortization (added)
+    amEscrow: "Monthly escrow (property tax + insurance) added to principal & interest for full PITI. Signed in, this auto-fills from the Escrow Analysis tab; as a guest you set it here.",
+    loanPayoffMonth: "The month you want the loan paid off by - the solver finds the monthly payment that gets you there.",
+    loanPayoffYear: "The year you want the loan paid off by - the solver finds the required monthly payment.",
+    loanBiweekly: "Pay half the monthly amount every two weeks. That's 26 half-payments (13 monthly-equivalents) a year, retiring the loan early.",
+    // Payment (added)
+    payRoll: "Finance the closing costs into the loan instead of paying them in cash - a larger balance but less cash needed at closing.",
+    // Compare (added)
+    cmpTermA: "Loan A's length in years.",
+    cmpTermB: "Loan B's length in years.",
+    // Refinance (added)
+    rfRoll: "Finance the refinance costs into the new loan (nothing out of pocket) instead of paying them upfront.",
+    // ARM
+    armAmt: "The starting loan balance the ARM is based on.",
+    armInitRate: "The fixed 'teaser' rate you pay during the initial fixed period, before the first adjustment.",
+    armTerm: "Total loan length in years (e.g., 30). Fixed for the first few years, then it adjusts.",
+    armFixed: "How many years the initial rate is locked before the first adjustment (the '5' in a 5/6 ARM).",
+    armAdjFreq: "How often the rate re-sets once the fixed period ends - every 6 or 12 months.",
+    armIndex: "The benchmark rate the ARM tracks (e.g., a Treasury or SOFR index). Use the T-Note tab for a historical value.",
+    armMargin: "A fixed amount the lender adds to the index at every adjustment. Index + margin = your 'fully-indexed' rate.",
+    armCapFirst: "The most the rate can move at the FIRST adjustment, in percentage points.",
+    armCapPeriodic: "The most the rate can move at each adjustment AFTER the first, in percentage points.",
+    armCapLife: "The most the rate can ever rise above the initial rate over the life of the loan.",
+    // Rent vs. Buy
+    rbPrice: "The purchase price of the home you're considering.",
+    rbDown: "Your upfront cash down payment on the purchase.",
+    rbRate: "The mortgage interest rate on the purchase loan.",
+    rbTerm: "The mortgage length in years.",
+    rbClosing: "One-time buying costs (lender, title, inspection...) paid at closing.",
+    rbTax: "Annual property tax as a percent of the home's value.",
+    rbIns: "Annual homeowner's insurance premium.",
+    rbHoa: "Monthly HOA dues, if any.",
+    rbMaint: "Yearly upkeep and repairs as a percent of the home's value (1% is a common rule of thumb).",
+    rbAppr: "How much you expect the home's value to grow each year.",
+    rbSellCost: "Costs to sell at the end of the horizon (agent commission, etc.) as a percent of the sale price.",
+    rbRent: "What you'd pay in rent each month instead of buying.",
+    rbRentGrowth: "How much you expect rent to rise each year.",
+    rbInvest: "The annual return you'd earn investing the money you didn't tie up in buying (down payment + any monthly savings).",
+    rbYears: "How long you plan to stay - the horizon over which buying and renting are compared.",
   };
   const EYEBROW_TIPS = {
     "Annual disbursements": "The bills your servicer pays out of escrow (property taxes, insurance, etc.) and when. These drive the required monthly deposit.",
@@ -3875,17 +4000,44 @@
     "Cash to close": "The cash you need at the closing table: down payment plus any closing costs you don't roll into the loan.",
     "Current loan": "Your existing mortgage as it stands today.",
     "New loan": "The loan you'd replace it with.",
+    "Index & margin": "The benchmark rate the ARM tracks, plus the lender's fixed add-on. Index + margin is your 'fully-indexed' rate at each adjustment.",
+    "Caps (first / periodic / lifetime)": "Limits on how far the rate can move: at the first adjustment, at each later one, and over the loan's whole life.",
+    "Buying": "The purchase itself - price, financing, and upfront costs.",
+    "Ownership costs": "Recurring and end-of-horizon costs of owning: taxes, insurance, upkeep, appreciation, and selling costs.",
+    "Renting & investing": "The alternative to buying: paying rent, and investing the cash you didn't tie up in a purchase.",
+  };
+  const DISB_HEAD_TIPS = {
+    "Item": "The bill paid from escrow - property taxes, homeowner's insurance, HOA, PMI, etc.",
+    "Annual $": "The total yearly amount for this item, across all of its payments.",
+    "Frequency": "How often it's paid: annual, semi-annual, quarterly, or monthly.",
+    "1st mo.": "The month the first payment of the year is disbursed.",
   };
   function injectTips() {
     Object.entries(FIELD_TIPS).forEach(([id, t]) => {
       const el = document.getElementById(id); if (!el) return;
-      const lbl = el.closest(".field") && el.closest(".field").querySelector(".lbl"); if (!lbl) return;
-      const target = lbl.querySelector("span") || lbl;
-      if (!target.querySelector(".tip")) target.appendChild(makeTip(t));
+      const field = el.closest(".field");
+      if (field) {
+        const lbl = field.querySelector(".lbl"); if (!lbl) return;
+        const target = lbl.querySelector("span") || lbl;
+        if (!target.querySelector(".tip")) target.appendChild(makeTip(t));
+        return;
+      }
+      // Toggle checkboxes (bi-weekly, roll costs in): attach to the visible label span.
+      const toggle = el.closest(".toggle-row");
+      if (toggle) {
+        const spans = toggle.querySelectorAll("span");
+        const target = spans[spans.length - 1];
+        if (target && !target.querySelector(".tip")) target.appendChild(makeTip(t));
+      }
     });
     document.querySelectorAll(".eyebrow").forEach(e => {
       const t = EYEBROW_TIPS[e.textContent.trim()];
       if (t && !e.querySelector(".tip")) e.appendChild(makeTip(t));
+    });
+    // Disbursement editor column headers.
+    document.querySelectorAll(".disb-head span").forEach(sp => {
+      const t = DISB_HEAD_TIPS[sp.textContent.trim()];
+      if (t && !sp.querySelector(".tip")) sp.appendChild(makeTip(t));
     });
     const aprT = document.getElementById("aprTip");
     if (aprT && !aprT.querySelector(".tip")) aprT.appendChild(makeTip("APR folds your closing costs into the interest rate, so it reads higher than the note rate when you pay fees - a standard way to compare loans' true cost. Estimate; excludes some fee types."));
