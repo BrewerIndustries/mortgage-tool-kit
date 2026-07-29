@@ -1,7 +1,10 @@
 # Mortgage Tool Kit
 
 A ledger-styled mortgage toolkit — a static Pages frontend plus a small Cloudflare
-Worker for auth. Tabs:
+Worker for auth. The landing page is a **launcher**: a card grid of every tool.
+Opening one shows a slim toolbar (**← All tools**, a tool switcher, and the export
+actions); the title/logo returns home. Signed-in users get a **Log out** button by
+the settings gear. The tools:
 
 - **Escrow Analysis** — projects an escrow account 12 months out, sizes the RESPA
   cushion (0–2 months), and flags a **shortage**, **surplus**, or **deficiency**
