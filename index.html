@@ -83,6 +83,24 @@
   .tab:hover { color: var(--ink); }
   .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
 
+  /* In-tool toolbar (replaces the wide tab bar) */
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); margin-bottom: 26px; padding-bottom: 8px; }
+  .tool-switch { width: auto; min-width: 180px; padding: 7px 12px; font-size: 14px; font-weight: 600; font-family: var(--sans); }
+  @media (max-width: 620px) { .toolbar .tool-switch { flex: 1; } }
+
+  /* Home / launcher */
+  .home-head h2 { font-family: var(--serif); font-weight: 600; font-size: 25px; margin: 4px 0 3px; letter-spacing: -.01em; }
+  .home-head p { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+  .home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+  .tool-card { text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 13px; padding: 18px 18px 16px; cursor: pointer; font-family: var(--sans); display: flex; flex-direction: column; gap: 5px; transition: border-color .13s, transform .13s, box-shadow .13s; }
+  .tool-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.10); }
+  .tool-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tool-card .ic { font-size: 21px; line-height: 1; }
+  .tool-card .tt { font-family: var(--serif); font-weight: 600; font-size: 17px; color: var(--ink); }
+  .tool-card .td { font-size: 12.5px; color: var(--muted); line-height: 1.5; flex: 1; }
+  .tool-card .go { margin-top: 7px; font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .01em; }
+  .brand[role="button"] { cursor: pointer; }
+
   /* Segmented toggle */
   .seg { display: inline-flex; gap: 3px; padding: 3px; background: var(--paper); border: 1px solid var(--line-strong); border-radius: 9px; }
   .seg-btn { appearance: none; border: none; background: none; cursor: pointer; font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: var(--muted); padding: 6px 16px; border-radius: 6px; transition: color .12s, background .12s; }
@@ -387,23 +405,17 @@
 
 <div class="wrap">
   <header class="masthead">
-    <div class="brand"><h1>Mortgage Tool Kit</h1><span class="dev-badge hidden" id="devBadge">Dev</span></div>
+    <div class="brand" id="brandHome" role="button" tabindex="0" title="Back to all tools"><h1>Mortgage Tool Kit</h1><span class="dev-badge hidden" id="devBadge">Dev</span></div>
     <div style="display:flex; align-items:center; gap:10px;">
       <button class="theme-btn" id="themeBtn" type="button">Dark</button>
+      <button class="theme-btn hidden" id="logoutHeaderBtn" type="button" title="Log out">Log out</button>
       <button class="icon-btn" id="settingsBtn" type="button" title="Settings" aria-label="Settings">&#9881;</button>
     </div>
   </header>
 
-  <nav class="tabs">
-    <button class="tab active" data-tab="escrow" type="button">Escrow Analysis</button>
-    <button class="tab" data-tab="amort" type="button">Amortization Schedule</button>
-    <button class="tab" data-tab="payment" type="button">Payment</button>
-    <button class="tab" data-tab="afford" type="button">Affordability</button>
-    <button class="tab" data-tab="refi" type="button">Refinance</button>
-    <button class="tab" data-tab="compare" type="button">Compare</button>
-    <button class="tab" data-tab="arm" type="button">ARM</button>
-    <button class="tab" data-tab="rentbuy" type="button">Rent vs. Buy</button>
-    <button class="tab" data-tab="tnote" type="button">T-Note Lookup</button>
+  <div class="toolbar hidden" id="toolbar">
+    <button class="ghost-btn sm" id="homeBtn" type="button">&#8592; All tools</button>
+    <select id="toolSwitch" class="tool-switch" aria-label="Switch tool"></select>
     <div class="tab-actions">
       <button class="ghost-btn sm hidden" id="clearFields" type="button" title="Blank every field on all tabs">&#129529; Clear fields</button>
       <button class="ghost-btn sm" id="shareBtn" type="button" title="Copy a link that reopens these exact inputs">&#128279; Share</button>
@@ -411,7 +423,16 @@
       <button class="ghost-btn sm" id="fullReport" type="button" title="Print a combined report of every calculator">&#128203; Full report</button>
       <button class="ghost-btn sm accent-btn" id="exportStmt" type="button">&#128196; Escrow statement</button>
     </div>
-  </nav>
+  </div>
+
+  <!-- ================= HOME / LAUNCHER ================= -->
+  <div id="view-home" class="view">
+    <div class="home-head">
+      <h2>Your mortgage toolkit</h2>
+      <p>Pick a calculator to get started &mdash; each one is self-contained.</p>
+    </div>
+    <div class="home-grid" id="homeGrid"></div>
+  </div>
 
   <div class="scenario-bar hidden" id="scenarioBar">
     <span class="sb-label">Scenario</span>
@@ -423,7 +444,7 @@
   </div>
 
   <!-- ================= ESCROW VIEW ================= -->
-  <div id="view-escrow" class="view">
+  <div id="view-escrow" class="view hidden">
     <div class="grid">
       <!-- CONTROLS -->
       <div>
@@ -1517,6 +1538,7 @@
   let history = null;                 // parsed historical activity
   const state = { escrowMonthly: 0 }; // shared with amortization tab
   let amortMode = "yearly";
+  let currentTool = null;             // null = on the home launcher; else the active tool id
 
   // ---------- helpers ----------
   const fmt = (n) => { const v = Math.round(n); return (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US"); };
@@ -2486,9 +2508,10 @@
     document.getElementById("accountUser").classList.toggle("hidden", !user);
     document.getElementById("accountGuest").classList.toggle("hidden", user);
     document.getElementById("adminSection").classList.toggle("hidden", !(user && isAdmin));
-    document.getElementById("scenarioBar").classList.toggle("hidden", !user);
+    document.getElementById("scenarioBar").classList.toggle("hidden", !(user && currentTool));
     // "Clear fields" is a signed-in convenience (guests just refill their independent tabs).
     const clr = document.getElementById("clearFields"); if (clr) clr.classList.toggle("hidden", !user);
+    const lo = document.getElementById("logoutHeaderBtn"); if (lo) lo.classList.toggle("hidden", !user);
     // Amortization escrow hint: signed-in auto-syncs from the Escrow tab; guests fill it themselves.
     const hint = document.getElementById("amEscrowHint");
     if (hint) hint.textContent = user
@@ -2657,12 +2680,14 @@
     finally { btn.disabled = false; }
   });
 
-  document.getElementById("logoutBtn").addEventListener("click", async () => {
+  async function doLogout() {
     try { await api("/auth/logout", { method: "POST" }); } catch (e) {}
     authMode = null; updateAuthUI();
     document.getElementById("settingsModal").classList.add("hidden");
     showGate(true);
-  });
+  }
+  document.getElementById("logoutBtn").addEventListener("click", doLogout);
+  document.getElementById("logoutHeaderBtn").addEventListener("click", doLogout);
 
   // ---------- persistence: state snapshot + autosave ----------
   const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","escalate","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","loanPayoffMonth","loanPayoffYear","amEscrow","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","armAmt","armInitRate","armTerm","armFixed","armAdjFreq","armIndex","armMargin","armCapFirst","armCapPeriodic","armCapLife","rbPrice","rbDown","rbRate","rbTerm","rbClosing","rbTax","rbIns","rbHoa","rbMaint","rbAppr","rbSellCost","rbRent","rbRentGrowth","rbInvest","rbYears","tnDate","tnLookback","tnTenor"];
@@ -2701,6 +2726,7 @@
     if (s.hoaFreq) { const b = document.querySelector('#hoaFreqSeg .seg-btn[data-f="' + s.hoaFreq + '"]'); if (b) b.click(); }
     if (s.amortMode) setAmortMode(s.amortMode);
     compute(); computeAmort(); computePayment(); computeAfford(); computeRefi(); computeCompare(); computeTnote();
+    if (currentTool) computeFor(currentTool);   // ensure the active tool (incl. ARM / Rent-vs-Buy) reflects the load
     restoring = false;
   }
 
@@ -3655,27 +3681,58 @@
   }
   ["rbPrice","rbDown","rbRate","rbTerm","rbClosing","rbTax","rbIns","rbHoa","rbMaint","rbAppr","rbSellCost","rbRent","rbRentGrowth","rbInvest","rbYears"].forEach(id => document.getElementById(id).addEventListener("input", computeRentBuy));
 
-  // ---------- tabs ----------
-  document.querySelectorAll(".tab").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      const tab = btn.dataset.tab;
-      ["escrow", "amort", "payment", "afford", "refi", "compare", "arm", "rentbuy", "tnote"].forEach(t =>
-        document.getElementById("view-" + t).classList.toggle("hidden", tab !== t));
-      // The escrow statement only makes sense on the Escrow tab.
-      document.getElementById("exportStmt").classList.toggle("hidden", tab !== "escrow");
-      if (tab === "amort") computeAmort();
-      else if (tab === "tnote") computeTnote();
-      else if (tab === "payment") computePayment();
-      else if (tab === "afford") computeAfford();
-      else if (tab === "refi") computeRefi();
-      else if (tab === "compare") computeCompare();
-      else if (tab === "arm") computeArm();
-      else if (tab === "rentbuy") computeRentBuy();
-      else compute();
-    });
-  });
+  // ---------- home launcher + tool navigation ----------
+  const TOOLS = [
+    { id: "escrow",  name: "Escrow Analysis",  icon: "🏦", desc: "Project the account 12 months out, size the RESPA cushion, and catch shortages or deficiencies." },
+    { id: "amort",   name: "Amortization",     icon: "📉", desc: "P&I and full PITI, extra / lump-sum payments, a payoff-by-date solver, and the full schedule." },
+    { id: "payment", name: "Payment",          icon: "🧾", desc: "Full monthly payment: taxes, insurance, HOA, PMI, LTV, and cash to close." },
+    { id: "afford",  name: "Affordability",    icon: "⚖️", desc: "Income, debts, and DTI limits to the home price and payment you qualify for." },
+    { id: "refi",    name: "Refinance",        icon: "🔁", desc: "Current vs. new loan: monthly savings, break-even months, and lifetime cost." },
+    { id: "compare", name: "Compare",          icon: "📊", desc: "Two loans side by side — rate, points, total cost, and the break-even on the upfront gap." },
+    { id: "arm",     name: "ARM",              icon: "📈", desc: "Adjustable-rate projection with caps: index-holds vs. worst-case payment path." },
+    { id: "rentbuy", name: "Rent vs. Buy",     icon: "🏠", desc: "Renting-and-investing vs. buying over a horizon — net worth and the break-even year." },
+    { id: "tnote",   name: "T-Note Lookup",    icon: "📅", desc: "Historical Treasury rates with an ARM-style business-day lookback." },
+  ];
+  const computeFor = (id) => ({ escrow: compute, amort: computeAmort, payment: computePayment, afford: computeAfford, refi: computeRefi, compare: computeCompare, arm: computeArm, rentbuy: computeRentBuy, tnote: computeTnote }[id] || compute)();
+
+  function selectTool(id) {
+    if (!TOOLS.some(t => t.id === id)) return;
+    currentTool = id;
+    document.getElementById("view-home").classList.add("hidden");
+    TOOLS.forEach(t => document.getElementById("view-" + t.id).classList.toggle("hidden", t.id !== id));
+    document.getElementById("toolbar").classList.remove("hidden");
+    document.getElementById("toolSwitch").value = id;
+    // The escrow statement only makes sense on the Escrow tool.
+    document.getElementById("exportStmt").classList.toggle("hidden", id !== "escrow");
+    document.getElementById("scenarioBar").classList.toggle("hidden", authMode !== "user");
+    computeFor(id);
+    window.scrollTo(0, 0);
+  }
+  function showHome() {
+    currentTool = null;
+    document.getElementById("toolbar").classList.add("hidden");
+    TOOLS.forEach(t => document.getElementById("view-" + t.id).classList.add("hidden"));
+    document.getElementById("scenarioBar").classList.add("hidden");
+    document.getElementById("view-home").classList.remove("hidden");
+    window.scrollTo(0, 0);
+  }
+
+  // Build the launcher grid + the in-tool switcher from TOOLS.
+  document.getElementById("homeGrid").innerHTML = TOOLS.map(t =>
+    `<button class="tool-card" data-tool="${t.id}" type="button">
+      <span class="ic" aria-hidden="true">${t.icon}</span>
+      <span class="tt">${esc(t.name)}</span>
+      <span class="td">${esc(t.desc)}</span>
+      <span class="go">Open &rarr;</span>
+    </button>`).join("");
+  document.querySelectorAll(".tool-card").forEach(c => c.addEventListener("click", () => selectTool(c.dataset.tool)));
+  const toolSwitch = document.getElementById("toolSwitch");
+  toolSwitch.innerHTML = TOOLS.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+  toolSwitch.addEventListener("change", () => selectTool(toolSwitch.value));
+  document.getElementById("homeBtn").addEventListener("click", showHome);
+  const brandHome = document.getElementById("brandHome");
+  brandHome.addEventListener("click", showHome);
+  brandHome.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showHome(); } });
   function setAmortMode(m) {
     amortMode = m;
     const yBtn = document.getElementById("viewYearly"), mBtn = document.getElementById("viewMonthly");
@@ -3691,16 +3748,7 @@
   function currentDark() { const t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; }
   function syncBtn(){ themeBtn.textContent = currentDark() ? "Light" : "Dark"; }
   function recomputeVisible(){
-    const vis = (t) => !document.getElementById("view-" + t).classList.contains("hidden");
-    if (vis("payment")) computePayment();
-    else if (vis("tnote")) computeTnote();
-    else if (vis("amort")) computeAmort();
-    else if (vis("afford")) computeAfford();
-    else if (vis("refi")) computeRefi();
-    else if (vis("compare")) computeCompare();
-    else if (vis("arm")) computeArm();
-    else if (vis("rentbuy")) computeRentBuy();
-    else compute();
+    if (currentTool) computeFor(currentTool);   // no-op on the home launcher (no charts to redraw)
   }
   themeBtn.addEventListener("click", () => applyThemeMode(currentDark() ? "light" : "dark"));
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncBtn(); applyAccent(); buildSwatches(); recomputeVisible(); });
