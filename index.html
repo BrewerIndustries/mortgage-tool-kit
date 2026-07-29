@@ -429,7 +429,7 @@
   <div id="view-home" class="view">
     <div class="home-head">
       <h2>Your mortgage toolkit</h2>
-      <p>Pick a calculator to get started &mdash; each one is self-contained.</p>
+      <p id="homeSub">Pick a calculator to get started.</p>
     </div>
     <div class="home-grid" id="homeGrid"></div>
   </div>
@@ -2512,6 +2512,12 @@
     // "Clear fields" is a signed-in convenience (guests just refill their independent tabs).
     const clr = document.getElementById("clearFields"); if (clr) clr.classList.toggle("hidden", !user);
     const lo = document.getElementById("logoutHeaderBtn"); if (lo) lo.classList.toggle("hidden", !user);
+    // Homepage subtitle reflects the cross-tab behavior: guests are fully independent;
+    // signed-in users have the Escrow figure flow into the Amortization tab.
+    const sub = document.getElementById("homeSub");
+    if (sub) sub.textContent = user
+      ? "Pick a calculator to get started. Signed in, your recommended escrow flows from the Escrow Analysis tab into Amortization."
+      : "Pick a calculator to get started — as a guest, each one is self-contained.";
     // Amortization escrow hint: signed-in auto-syncs from the Escrow tab; guests fill it themselves.
     const hint = document.getElementById("amEscrowHint");
     if (hint) hint.textContent = user
@@ -3865,6 +3871,47 @@
     tnDate: "The reference date (for an ARM, the rate-change date). The index is read a set number of days before it.",
     tnLookback: "How many days before the reference date to read the rate - the ARM 'lookback' period, commonly 45 days.",
     tnTenor: "Which Treasury constant-maturity to read (1-10 years). An ARM uses a specific tenor as its index.",
+    // Escrow (added)
+    escalate: "Optional: inflate the disbursements above by this percent to model rising taxes/premiums for the coming year.",
+    // Amortization (added)
+    amEscrow: "Monthly escrow (property tax + insurance) added to principal & interest for full PITI. Signed in, this auto-fills from the Escrow Analysis tab; as a guest you set it here.",
+    loanPayoffMonth: "The month you want the loan paid off by - the solver finds the monthly payment that gets you there.",
+    loanPayoffYear: "The year you want the loan paid off by - the solver finds the required monthly payment.",
+    loanBiweekly: "Pay half the monthly amount every two weeks. That's 26 half-payments (13 monthly-equivalents) a year, retiring the loan early.",
+    // Payment (added)
+    payRoll: "Finance the closing costs into the loan instead of paying them in cash - a larger balance but less cash needed at closing.",
+    // Compare (added)
+    cmpTermA: "Loan A's length in years.",
+    cmpTermB: "Loan B's length in years.",
+    // Refinance (added)
+    rfRoll: "Finance the refinance costs into the new loan (nothing out of pocket) instead of paying them upfront.",
+    // ARM
+    armAmt: "The starting loan balance the ARM is based on.",
+    armInitRate: "The fixed 'teaser' rate you pay during the initial fixed period, before the first adjustment.",
+    armTerm: "Total loan length in years (e.g., 30). Fixed for the first few years, then it adjusts.",
+    armFixed: "How many years the initial rate is locked before the first adjustment (the '5' in a 5/6 ARM).",
+    armAdjFreq: "How often the rate re-sets once the fixed period ends - every 6 or 12 months.",
+    armIndex: "The benchmark rate the ARM tracks (e.g., a Treasury or SOFR index). Use the T-Note tab for a historical value.",
+    armMargin: "A fixed amount the lender adds to the index at every adjustment. Index + margin = your 'fully-indexed' rate.",
+    armCapFirst: "The most the rate can move at the FIRST adjustment, in percentage points.",
+    armCapPeriodic: "The most the rate can move at each adjustment AFTER the first, in percentage points.",
+    armCapLife: "The most the rate can ever rise above the initial rate over the life of the loan.",
+    // Rent vs. Buy
+    rbPrice: "The purchase price of the home you're considering.",
+    rbDown: "Your upfront cash down payment on the purchase.",
+    rbRate: "The mortgage interest rate on the purchase loan.",
+    rbTerm: "The mortgage length in years.",
+    rbClosing: "One-time buying costs (lender, title, inspection...) paid at closing.",
+    rbTax: "Annual property tax as a percent of the home's value.",
+    rbIns: "Annual homeowner's insurance premium.",
+    rbHoa: "Monthly HOA dues, if any.",
+    rbMaint: "Yearly upkeep and repairs as a percent of the home's value (1% is a common rule of thumb).",
+    rbAppr: "How much you expect the home's value to grow each year.",
+    rbSellCost: "Costs to sell at the end of the horizon (agent commission, etc.) as a percent of the sale price.",
+    rbRent: "What you'd pay in rent each month instead of buying.",
+    rbRentGrowth: "How much you expect rent to rise each year.",
+    rbInvest: "The annual return you'd earn investing the money you didn't tie up in buying (down payment + any monthly savings).",
+    rbYears: "How long you plan to stay - the horizon over which buying and renting are compared.",
   };
   const EYEBROW_TIPS = {
     "Annual disbursements": "The bills your servicer pays out of escrow (property taxes, insurance, etc.) and when. These drive the required monthly deposit.",
@@ -3875,17 +3922,44 @@
     "Cash to close": "The cash you need at the closing table: down payment plus any closing costs you don't roll into the loan.",
     "Current loan": "Your existing mortgage as it stands today.",
     "New loan": "The loan you'd replace it with.",
+    "Index & margin": "The benchmark rate the ARM tracks, plus the lender's fixed add-on. Index + margin is your 'fully-indexed' rate at each adjustment.",
+    "Caps (first / periodic / lifetime)": "Limits on how far the rate can move: at the first adjustment, at each later one, and over the loan's whole life.",
+    "Buying": "The purchase itself - price, financing, and upfront costs.",
+    "Ownership costs": "Recurring and end-of-horizon costs of owning: taxes, insurance, upkeep, appreciation, and selling costs.",
+    "Renting & investing": "The alternative to buying: paying rent, and investing the cash you didn't tie up in a purchase.",
+  };
+  const DISB_HEAD_TIPS = {
+    "Item": "The bill paid from escrow - property taxes, homeowner's insurance, HOA, PMI, etc.",
+    "Annual $": "The total yearly amount for this item, across all of its payments.",
+    "Frequency": "How often it's paid: annual, semi-annual, quarterly, or monthly.",
+    "1st mo.": "The month the first payment of the year is disbursed.",
   };
   function injectTips() {
     Object.entries(FIELD_TIPS).forEach(([id, t]) => {
       const el = document.getElementById(id); if (!el) return;
-      const lbl = el.closest(".field") && el.closest(".field").querySelector(".lbl"); if (!lbl) return;
-      const target = lbl.querySelector("span") || lbl;
-      if (!target.querySelector(".tip")) target.appendChild(makeTip(t));
+      const field = el.closest(".field");
+      if (field) {
+        const lbl = field.querySelector(".lbl"); if (!lbl) return;
+        const target = lbl.querySelector("span") || lbl;
+        if (!target.querySelector(".tip")) target.appendChild(makeTip(t));
+        return;
+      }
+      // Toggle checkboxes (bi-weekly, roll costs in): attach to the visible label span.
+      const toggle = el.closest(".toggle-row");
+      if (toggle) {
+        const spans = toggle.querySelectorAll("span");
+        const target = spans[spans.length - 1];
+        if (target && !target.querySelector(".tip")) target.appendChild(makeTip(t));
+      }
     });
     document.querySelectorAll(".eyebrow").forEach(e => {
       const t = EYEBROW_TIPS[e.textContent.trim()];
       if (t && !e.querySelector(".tip")) e.appendChild(makeTip(t));
+    });
+    // Disbursement editor column headers.
+    document.querySelectorAll(".disb-head span").forEach(sp => {
+      const t = DISB_HEAD_TIPS[sp.textContent.trim()];
+      if (t && !sp.querySelector(".tip")) sp.appendChild(makeTip(t));
     });
     const aprT = document.getElementById("aprTip");
     if (aprT && !aprT.querySelector(".tip")) aprT.appendChild(makeTip("APR folds your closing costs into the interest rate, so it reads higher than the note rate when you pay fees - a standard way to compare loans' true cost. Estimate; excludes some fee types."));
