@@ -10,7 +10,7 @@ Worker for auth. Tabs:
   escalation**. Editable disbursement list (taxes, insurance, HOA, PMI…) with per-item
   frequency and due month. Live current → recommended payment comparison.
 - **Amortization Schedule** — P&I payment, extra-payment savings, payoff date,
-  and full **PITI** (P&I + the recommended escrow from the Analysis tab). Recurring
+  and full **PITI** (P&I + its own **Monthly escrow** input). Recurring
   extra, one-time **lump sum**, **bi-weekly**, and a **"pay off by date X → required
   payment" solver**. Balance vs. cumulative-interest chart and a **Yearly / Monthly** toggle.
 - **Payment** — full monthly payment calculator: home price, down payment ($/%),
@@ -52,6 +52,11 @@ Worker for auth. Tabs:
 - **Shared calc module** — the mortgage math lives in `calc.js`, loaded by the app
   (`window.MTK`) *and* imported by the unit tests, so the tested code is the code
   that ships (no inline copies to drift). Refresh formulas in one place.
+- **Independent tabs vs. sign-in convenience** — as a **guest**, every tab is
+  independent: each field (including the Amortization tab's monthly escrow) is
+  filled separately, and nothing carries between tabs. **Signed in**, the Escrow
+  Analysis tab auto-fills the Amortization escrow, and a **Clear fields** button
+  (in the tab actions, with a two-step confirm) blanks every input across all tabs.
 - **Accounts (optional sign-in)** — the calculators are usable without an account
   via **Continue without an account** (guest mode, autosaved to the browser only).
   Signing in adds **saved scenarios** (name + reload a full property snapshot),

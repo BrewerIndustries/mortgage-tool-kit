@@ -213,6 +213,7 @@
   .ghost-btn { background: none; border: 1px solid var(--line-strong); color: var(--muted); border-radius: 7px; padding: 6px 12px; font-size: 12.5px; cursor: pointer; font-family: var(--sans); font-weight: 600; }
   .ghost-btn:hover { color: var(--ink); border-color: var(--ink); }
   .ghost-btn.sm { padding: 4px 10px; font-size: 11.5px; }
+  .ghost-btn.danger-armed, .ghost-btn.danger-armed:hover { color: var(--shortage); border-color: color-mix(in srgb, var(--shortage) 55%, transparent); background: var(--shortage-soft); }
 
   /* Import modal */
   .modal-overlay { position: fixed; inset: 0; background: color-mix(in srgb, #000 55%, transparent); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
@@ -404,6 +405,7 @@
     <button class="tab" data-tab="rentbuy" type="button">Rent vs. Buy</button>
     <button class="tab" data-tab="tnote" type="button">T-Note Lookup</button>
     <div class="tab-actions">
+      <button class="ghost-btn sm hidden" id="clearFields" type="button" title="Blank every field on all tabs">&#129529; Clear fields</button>
       <button class="ghost-btn sm" id="shareBtn" type="button" title="Copy a link that reopens these exact inputs">&#128279; Share</button>
       <button class="ghost-btn sm" id="exportCsv" type="button">&#8681; Export CSV</button>
       <button class="ghost-btn sm" id="fullReport" type="button" title="Print a combined report of every calculator">&#128203; Full report</button>
@@ -545,6 +547,9 @@
               <label class="field"><span class="lbl">Year</span>
                 <input type="number" id="loanStartYear" value="2026" step="1"></label>
             </div>
+            <label class="field"><span class="lbl">Monthly escrow (taxes + insurance)</span>
+              <div class="money-input"><input type="number" id="amEscrow" value="650" step="25"></div></label>
+            <p class="foot-note" id="amEscrowHint" style="margin-top:6px;"></p>
           </div>
           <div class="panel">
             <p class="eyebrow">Extra payments</p>
@@ -573,7 +578,7 @@
       <div>
         <div class="link-note">
           <span>&#128279;</span>
-          <span>Escrow from the Analysis tab: <b id="amEscrowRef">$0</b>/mo. Combined with principal &amp; interest below to show your full monthly <b>PITI</b>.</span>
+          <span>Monthly escrow: <b id="amEscrowRef">$0</b>/mo, added to principal &amp; interest for your full monthly <b>PITI</b>.</span>
         </div>
 
         <div class="tiles">
@@ -1523,7 +1528,7 @@
   // ---------- thousands separators on currency inputs ----------
   // <input type=number> can't render commas, so these fields are text+inputmode and formatted
   // live. All reads go through parseNum/gv, which strip the commas, so math is unaffected.
-  const CURRENCY_IDS = ["startBal","curPay","loanAmt","loanExtra","loanLump","payPrice","payDownAmt","payClosing","payIns","payPmi","afIncome","afDebts","afDown","afIns","rfBalance","rfClosing","cmpAmt","cmpFeeA","cmpFeeB","armAmt","rbPrice","rbDown","rbClosing","rbIns","rbRent"];
+  const CURRENCY_IDS = ["startBal","curPay","loanAmt","loanExtra","loanLump","amEscrow","payPrice","payDownAmt","payClosing","payIns","payPmi","afIncome","afDebts","afDown","afIns","rfBalance","rfClosing","cmpAmt","cmpFeeA","cmpFeeB","armAmt","rbPrice","rbDown","rbClosing","rbIns","rbRent"];
   function formatThousandsEl(el) {
     const raw = el.value;
     const caret = el.selectionStart == null ? raw.length : el.selectionStart;
@@ -1702,8 +1707,12 @@
     };
 
     drawLineChart("chart", rows.map(r => r.end), order.map(m => MONTHS[m]), cushionAmt);
-    document.getElementById("amEscrowRef").textContent = fmt(newPay);
-    if (!document.getElementById("view-amort").classList.contains("hidden")) computeAmort();
+    // Signed-in only: push the recommended escrow into the Amortization tab (data moves across
+    // tabs). Guests keep the tabs independent and set the amort escrow themselves.
+    if (authMode === "user") {
+      document.getElementById("amEscrow").value = Math.round(newPay);
+      if (!document.getElementById("view-amort").classList.contains("hidden")) computeAmort();
+    }
   }
 
   // ---------- escrow chart ----------
@@ -1760,7 +1769,9 @@
     const a = buildAmort();
     const startMo = parseInt(document.getElementById("loanStartMonth").value);
     const startYr = parseInt(document.getElementById("loanStartYear").value) || 2026;
-    const escrow = state.escrowMonthly;
+    // Amortization owns its escrow input. When signed in, the Escrow Analysis tab syncs its
+    // recommended figure into it; as a guest the tabs are independent (fill it separately).
+    const escrow = parseNum(document.getElementById("amEscrow").value);
 
     document.getElementById("amPI").textContent = fmt(a.basePmt);
     document.getElementById("amPITI").textContent = fmt(a.basePmt + escrow);
@@ -2476,6 +2487,13 @@
     document.getElementById("accountGuest").classList.toggle("hidden", user);
     document.getElementById("adminSection").classList.toggle("hidden", !(user && isAdmin));
     document.getElementById("scenarioBar").classList.toggle("hidden", !user);
+    // "Clear fields" is a signed-in convenience (guests just refill their independent tabs).
+    const clr = document.getElementById("clearFields"); if (clr) clr.classList.toggle("hidden", !user);
+    // Amortization escrow hint: signed-in auto-syncs from the Escrow tab; guests fill it themselves.
+    const hint = document.getElementById("amEscrowHint");
+    if (hint) hint.textContent = user
+      ? "Auto-filled from the Escrow Analysis tab; edit to override."
+      : "Enter the monthly escrow to include in your PITI. Tabs are independent — sign in to auto-fill this from the Escrow Analysis tab.";
   }
   function setUser(u) {
     myEmail = u.email; isAdmin = u.role === "admin"; authMode = "user";
@@ -2647,7 +2665,7 @@
   });
 
   // ---------- persistence: state snapshot + autosave ----------
-  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","escalate","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","loanPayoffMonth","loanPayoffYear","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","armAmt","armInitRate","armTerm","armFixed","armAdjFreq","armIndex","armMargin","armCapFirst","armCapPeriodic","armCapLife","rbPrice","rbDown","rbRate","rbTerm","rbClosing","rbTax","rbIns","rbHoa","rbMaint","rbAppr","rbSellCost","rbRent","rbRentGrowth","rbInvest","rbYears","tnDate","tnLookback","tnTenor"];
+  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","escalate","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","loanPayoffMonth","loanPayoffYear","amEscrow","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","armAmt","armInitRate","armTerm","armFixed","armAdjFreq","armIndex","armMargin","armCapFirst","armCapPeriodic","armCapLife","rbPrice","rbDown","rbRate","rbTerm","rbClosing","rbTax","rbIns","rbHoa","rbMaint","rbAppr","rbSellCost","rbRent","rbRentGrowth","rbInvest","rbYears","tnDate","tnLookback","tnTenor"];
   let restoring = false, saveTimer = null, defaultState = null, sharedState = null;
 
   // Encode/decode the full input state for shareable URLs (#s=<base64>).
@@ -2986,6 +3004,42 @@
     currentScnId = null; if (document.getElementById("scenarioSelect")) document.getElementById("scenarioSelect").value = "";
     applyState(JSON.parse(JSON.stringify(defaultState)));
     persistState();
+  });
+
+  // Blank every input across all tabs (distinct from "reset to defaults", which fills examples).
+  function blankAllFields() {
+    restoring = true;   // programmatic changes shouldn't each queue an autosave
+    PERSIST_IDS.forEach(id => {
+      const el = document.getElementById(id); if (!el) return;
+      if (el.type === "checkbox") el.checked = false;
+      else if (el.tagName === "SELECT") return;   // selects need a valid option — leave them
+      else el.value = "";
+    });
+    formatAllThousands();
+    disbursements = []; renderDisb();
+    history = null; renderHistory();
+    restoring = false;
+    currentScnId = null;
+    const sel = document.getElementById("scenarioSelect"); if (sel) sel.value = "";
+    recomputeVisible();
+    persistState();
+  }
+
+  // "Clear fields" needs a second, deliberate click to confirm (no accidental wipes).
+  let clearArmed = false, clearTimer = null;
+  const clearBtn = document.getElementById("clearFields");
+  function resetClearBtn() { clearArmed = false; clearBtn.classList.remove("danger-armed"); clearBtn.innerHTML = "&#129529; Clear fields"; }
+  clearBtn.addEventListener("click", () => {
+    if (!clearArmed) {
+      clearArmed = true;
+      clearBtn.classList.add("danger-armed");
+      clearBtn.innerHTML = "&#9888; Click again to clear all";
+      clearTimer = setTimeout(resetClearBtn, 3500);
+      return;
+    }
+    clearTimeout(clearTimer); resetClearBtn();
+    blankAllFields();
+    toast("All fields cleared.", "good");
   });
 
   document.getElementById("backupBtn").addEventListener("click", () => {
@@ -3657,7 +3711,7 @@
     const v = parseFloat(document.getElementById("cushion").value);
     document.getElementById("cushionVal").textContent = v + (v===1?" month":" months"); compute();
   });
-  ["loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt"].forEach(id => document.getElementById(id).addEventListener("input", computeAmort));
+  ["loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","amEscrow"].forEach(id => document.getElementById(id).addEventListener("input", computeAmort));
   document.getElementById("loanBiweekly").addEventListener("change", computeAmort);
 
   // "Pay off by date X -> required payment" solver: find the level payment that retires the
