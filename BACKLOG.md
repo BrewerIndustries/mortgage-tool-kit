@@ -1,8 +1,93 @@
-# Mortgage Tool Kit — Backlog
+# Financial Tool Kit — Backlog
 
-Prioritized, grouped work items from the critical review. Tiers: **P0** = highest
-value (unlock what's already built, close core gaps), **P1** = important, **P2** =
-polish / accessibility / extras. Check items off as they ship.
+Financial Tool Kit (formerly **Mortgage Tool Kit**) is expanding from a mortgage-only
+app into a hub of personal-finance tool **areas**. The home page is a radial **hub** —
+a central logo ($ placeholder) ringed by category "spokes." Mortgage is live; the other
+areas ship one at a time. Work through them in the order below.
+
+Tiers: **P0** = do next, **P1** = important, **P2** = polish / stretch. `[x]` = shipped.
+
+---
+
+## ✅ Phase 0 — Rebrand + hub shell (shipped)
+
+- [x] Rebrand user-facing name to **Financial Tool Kit** (title, header, auth card, print/report brand, backup label). Infra unchanged — still `mortgage-tool-kit` repo, `mtk.dabrewer.dev`, `mtk-api` Worker, `mtk-prod`/`mtk-dev` D1.
+- [x] Radial **home hub** with 6 category spokes + `$` placeholder logo (swap for real logo later).
+- [x] Hub → category → tool navigation; header brand + on-page back links route home.
+- [x] **Coming-soon** category pages that preview each area's planned tools.
+- [x] Forced **disclaimer splash** ("information only — not legal or financial advice") gating entry into any area; acknowledged once per session (`sessionStorage`).
+
+## Cross-cutting — foundation for every new area (P0, do alongside Auto)
+
+- [ ] **Generalize the shared model**: today the shared scenario is a mortgage "property/loan" object. Give each area its own scenario shape; namespace autosave + saved scenarios by area.
+- [ ] Extend the D1 **`scenarios`** table (add an `area` column, or per-area tables) so saved scenarios don't collide across areas.
+- [ ] Split **`calc.js`** into per-area modules (`calc/auto.js`, `calc/invest.js`, …) over shared primitives (amortization, PV/FV, IRR, tax brackets). Keep tested code == shipped code — tests import the same modules.
+- [ ] Per-area **CSV/JSON export**, print report, and share-link support (reuse the existing mortgage patterns).
+- [ ] Make the **disclaimer text area-aware** if we want stronger wording for tax/investing than for, say, budgeting.
+- [ ] Design the **real logo** + favicon (mark + wordmark, light/dark); replace the `$` placeholder in the hub center and masthead.
+- [ ] **Open decision — domain/infra rename.** Currently user-facing rebrand only. Full migration would mean `ftk.dabrewer.dev`, rename repo, `ftk-api` Worker, `ftk` D1, redirects from the old domain, and a dashboard re-id (`mtk` → `ftk`). Defer until at least one new area ships.
+
+## 🚗 Auto — first new area (P0)
+
+- [ ] **Auto loan payment** — price, down payment, trade-in, sales tax, fees, APR, term → monthly payment, total interest, amortization schedule
+- [ ] **Lease vs. buy** — money factor, residual, cap cost vs. financing the same car over a holding period
+- [ ] **Total cost of ownership** — depreciation curve, insurance, fuel/energy, maintenance, registration/tax over the years kept
+- [ ] **Auto affordability** — budget + down + rate → target price / payment
+- [ ] **Auto refinance** — current vs. new loan → monthly savings + break-even
+- [ ] **Early payoff** — extra payment → interest saved, payoff date
+- [ ] EV vs. gas running-cost comparison (stretch)
+
+## 📈 Investing (P1)
+
+- [ ] **Compound growth** — contributions, return, compounding freq, inflation-adjusted toggle + growth chart
+- [ ] **Return / CAGR** — annualized return between two values/dates
+- [ ] **Dollar-cost averaging** simulator through ups and downs
+- [ ] **Portfolio allocation** + rebalance (target vs. actual mix)
+- [ ] **Dividend / DRIP** reinvestment compounding
+- [ ] **Investing 101** guide drawer (risk, diversification, index funds, fees, tax-advantaged accounts) — reuse the existing Learn drawer
+- [ ] Optional live quote/return data source — decide bundled vs. API (stretch)
+
+## 💰 Budgeting & Savings (P1)
+
+- [ ] **Budget planner** — 50/30/20 + custom categories from take-home pay
+- [ ] **Savings goal** — target + date → monthly contribution. ⚠️ Overlaps the standalone **Savings Goals** app — decide link-out vs. embed before building.
+- [ ] **Emergency fund** sizer — 3–6 months of essential expenses + a funding plan
+- [ ] **Net-worth** tracker — assets − liabilities over time
+- [ ] **Paycheck / take-home** — gross → net (shared with Retirement & Taxes)
+
+## 💳 Credit & Debt (P1)
+
+- [ ] **Debt payoff** — snowball vs. avalanche across multiple debts (schedule, total interest, payoff date)
+- [ ] **Credit-card payoff** — balance, APR, payment → months + interest; "pay off in N months → required payment"
+- [ ] **Loan payoff** — personal/student-loan amortization + early-payoff savings (reuse amortization)
+- [ ] **Debt consolidation** comparison vs. current balances
+- [ ] **Credit-utilization** / score-factor explainer
+
+## 🏛️ Retirement & Taxes (P2)
+
+- [ ] **401(k) / IRA growth** — contributions, employer match, contribution limits
+- [ ] **Retirement readiness** — savings + SS/pension income vs. target spend
+- [ ] **Retirement drawdown** / safe-withdrawal projection
+- [ ] **Federal tax estimate** — brackets, filing status, standard/itemized. Needs a bracket data source + annual refresh (mirror the T-Note refresh pattern).
+- [ ] **RMD estimate** by age
+- [ ] Note: tax tools carry extra "not tax advice" weight — keep the disclaimer prominent.
+
+## Hub / UX polish (P2)
+
+- [ ] Real logo swap-in + favicon (see cross-cutting)
+- [ ] Keyboard nav around the hub (arrow keys between spokes) + full ARIA on the radial layout
+- [ ] Optional "what is this area?" tooltip on each spoke
+- [ ] Per-area accent color (e.g. Auto = blue, Investing = green) — ties into the existing accent system
+- [ ] Global search across all tools; "recently used" / favorites row on the hub
+
+---
+
+# Mortgage area — original backlog
+
+The items below are the mortgage toolkit's own review-driven backlog (its core is
+shipped). This is now the **Mortgage** area of Financial Tool Kit.
+
+Tiers: **P0** = highest value, **P1** = important, **P2** = polish / accessibility / extras.
 
 ---
 

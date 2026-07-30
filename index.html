@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mortgage Tool Kit</title>
+<title>Financial Tool Kit</title>
 <style>
   :root {
     --paper: #f3f5f3;
@@ -102,6 +102,72 @@
   .tool-card .td { font-size: 12.5px; color: var(--muted); line-height: 1.5; flex: 1; }
   .tool-card .go { margin-top: 7px; font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .01em; }
   .brand[role="button"] { cursor: pointer; }
+
+  /* ===== Home hub (radial) ===== */
+  .hub { padding: 6px 0 44px; }
+  .hub-intro { text-align: center; max-width: 560px; margin: 0 auto; }
+  .hub-intro h2 { font-family: var(--serif); font-weight: 600; font-size: 26px; margin: 6px 0 5px; letter-spacing: -.01em; }
+  .hub-intro p { color: var(--muted); font-size: 14px; margin: 0; line-height: 1.55; }
+  .hub-stage { position: relative; width: min(580px, 94vw, 68vh); aspect-ratio: 1 / 1; margin: min(2.5vh, 22px) auto 0; }
+  .hub-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 74%; aspect-ratio: 1; border-radius: 50%; border: 1px dashed var(--line-strong); opacity: .55; z-index: 0; pointer-events: none; }
+  .hub-logo { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 39%; aspect-ratio: 1; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center; z-index: 2;
+    background: radial-gradient(circle at 50% 36%, var(--card), var(--paper)); border: 1.5px solid var(--line-strong);
+    box-shadow: 0 12px 36px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.4); }
+  .hub-logo .mark { font-family: var(--serif); font-weight: 700; font-size: clamp(48px, 14vw, 92px); line-height: .85; color: var(--accent); }
+  .hub-logo .word { font-size: 10px; text-transform: uppercase; letter-spacing: .15em; color: var(--muted); font-weight: 700; padding: 0 8px; }
+  .hub-logo .ph { font-size: 8.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); font-weight: 600; }
+  .spoke { position: absolute; transform: translate(-50%,-50%); width: 128px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    background: none; border: none; cursor: pointer; font-family: var(--sans); padding: 0; z-index: 1; }
+  .spoke .disc { width: 66px; height: 66px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: var(--card); border: 1.5px solid var(--line); color: var(--accent); box-shadow: var(--shadow);
+    transition: border-color .14s, transform .14s, box-shadow .14s; }
+  .spoke .disc svg { width: 28px; height: 28px; }
+  .spoke .txt { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .spoke .nm { font-family: var(--serif); font-weight: 600; font-size: 14px; color: var(--ink); line-height: 1.2; }
+  .spoke .soon { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); font-weight: 700; }
+  .spoke:hover .disc, .spoke:focus-visible .disc { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
+  .spoke:focus-visible { outline: none; }
+  .spoke:focus-visible .disc { outline: 2px solid var(--accent); outline-offset: 3px; }
+  @media (max-width: 560px) {
+    .hub-stage { aspect-ratio: auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; padding-top: 156px; }
+    .hub-ring { display: none; }
+    .hub-logo { top: 0; left: 50%; transform: translateX(-50%); width: 132px; height: 132px; }
+    .spoke { position: static; transform: none; width: auto; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--card); box-shadow: var(--shadow); }
+    .spoke .disc { box-shadow: none; width: 48px; height: 48px; flex: none; }
+    .spoke .disc svg { width: 22px; height: 22px; }
+    .spoke .txt { align-items: flex-start; text-align: left; }
+  }
+
+  /* ===== Coming-soon category page ===== */
+  .soon-wrap { max-width: 660px; margin: 0 auto; }
+  .soon-back { background: none; border: none; color: var(--accent); font-family: var(--sans); font-weight: 700; font-size: 13px; cursor: pointer; padding: 6px 0; display: inline-flex; align-items: center; gap: 6px; }
+  .soon-back:hover { text-decoration: underline; }
+  .soon-hero { display: flex; align-items: center; gap: 16px; margin: 12px 0 4px; }
+  .soon-hero .disc { width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--card); border: 1.5px solid var(--line); color: var(--accent); flex: none; box-shadow: var(--shadow); }
+  .soon-hero .disc svg { width: 30px; height: 30px; }
+  .soon-hero h2 { font-family: var(--serif); font-weight: 600; font-size: 25px; margin: 0; letter-spacing: -.01em; }
+  .soon-hero .badge { display: inline-block; margin-top: 5px; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; font-weight: 700; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line-strong)); border-radius: 999px; padding: 2px 9px; }
+  .soon-lead { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 14px 0 22px; }
+  .soon-list-h { font-size: 11px; text-transform: uppercase; letter-spacing: .13em; color: var(--faint); font-weight: 700; margin: 0 0 12px; }
+  .soon-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 540px) { .soon-list { grid-template-columns: 1fr; } }
+  .soon-list li { display: flex; gap: 10px; align-items: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 11px; padding: 12px 13px; }
+  .soon-list .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-top: 6px; flex: none; opacity: .6; }
+  .soon-list .tk { font-family: var(--serif); font-weight: 600; font-size: 14px; color: var(--ink); display: block; }
+  .soon-list .td { font-size: 12px; color: var(--muted); line-height: 1.45; display: block; margin-top: 2px; }
+
+  /* ===== Disclaimer splash ===== */
+  .disc-modal { text-align: center; width: min(460px, 100%); }
+  .disc-modal .disc-ic { width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid var(--line-strong); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .disc-modal .disc-ic svg { width: 25px; height: 25px; }
+  .disc-modal h3 { font-family: var(--serif); font-weight: 600; font-size: 21px; margin: 0 0 10px; }
+  .disc-modal .body { color: var(--muted); font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; text-align: left; }
+  .disc-modal .ack { display: flex; gap: 10px; align-items: flex-start; text-align: left; font-size: 13px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 13px; margin-bottom: 16px; cursor: pointer; }
+  .disc-modal .ack input { width: auto; margin: 2px 0 0; flex: none; accent-color: var(--accent); }
+  .disc-actions { display: flex; gap: 10px; }
+  .disc-actions button { flex: 1; }
+  .disc-modal .fine { font-size: 11px; color: var(--faint); margin: 14px 0 0; }
 
   /* Segmented toggle */
   .seg { display: inline-flex; gap: 3px; padding: 3px; background: var(--paper); border: 1px solid var(--line-strong); border-radius: 9px; }
@@ -411,7 +477,7 @@
 
 <div class="wrap">
   <header class="masthead">
-    <div class="brand" id="brandHome" role="button" tabindex="0" title="Back to all tools"><h1>Mortgage Tool Kit</h1><span class="dev-badge hidden" id="devBadge">Dev</span></div>
+    <div class="brand" id="brandHome" role="button" tabindex="0" title="Home"><h1>Financial Tool Kit</h1><span class="dev-badge hidden" id="devBadge">Dev</span></div>
     <div style="display:flex; align-items:center; gap:10px;">
       <button class="theme-btn" id="themeBtn" type="button">Dark</button>
       <button class="theme-btn hidden" id="logoutHeaderBtn" type="button" title="Log out">Log out</button>
@@ -431,13 +497,48 @@
     </div>
   </div>
 
-  <!-- ================= HOME / LAUNCHER ================= -->
-  <div id="view-home" class="view">
+  <!-- ================= HOME HUB (radial) ================= -->
+  <div id="view-hub" class="view hub">
+    <div class="hub-intro">
+      <h2>Your money, all in one place</h2>
+      <p>Pick an area to explore. Every tool is free to use — sign in only to save scenarios.</p>
+    </div>
+    <div class="hub-stage" id="hubStage">
+      <div class="hub-ring" aria-hidden="true"></div>
+      <div class="hub-logo" aria-hidden="true">
+        <span class="mark">$</span>
+        <span class="word">Financial Tool Kit</span>
+        <span class="ph">logo placeholder</span>
+      </div>
+      <!-- spokes injected by JS -->
+    </div>
+  </div>
+
+  <!-- ================= MORTGAGE CATEGORY / LAUNCHER ================= -->
+  <div id="view-home" class="view hidden">
+    <button class="soon-back" id="homeToHub" type="button">&#8592; Financial Tool Kit</button>
     <div class="home-head">
-      <h2>Your mortgage toolkit</h2>
+      <h2>Mortgage tools</h2>
       <p id="homeSub">Pick a calculator to get started.</p>
     </div>
     <div class="home-grid" id="homeGrid"></div>
+  </div>
+
+  <!-- ================= COMING-SOON CATEGORY ================= -->
+  <div id="view-soon" class="view hidden">
+    <div class="soon-wrap">
+      <button class="soon-back" id="soonToHub" type="button">&#8592; Financial Tool Kit</button>
+      <div class="soon-hero">
+        <span class="disc" id="soonIcon" aria-hidden="true"></span>
+        <div>
+          <h2 id="soonTitle">Coming soon</h2>
+          <span class="badge">In the works</span>
+        </div>
+      </div>
+      <p class="soon-lead" id="soonLead"></p>
+      <p class="soon-list-h">Planned tools</p>
+      <ul class="soon-list" id="soonList"></ul>
+    </div>
   </div>
 
   <div class="scenario-bar hidden" id="scenarioBar">
@@ -1149,6 +1250,24 @@
   </div>
 </div>
 
+<!-- Disclaimer splash (forced acknowledgment on entering any area) -->
+<div class="modal-overlay hidden" id="disclaimerModal" style="z-index:200;">
+  <div class="modal disc-modal" role="dialog" aria-modal="true" aria-labelledby="discTitle" aria-describedby="discBody">
+    <span class="disc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+    <h3 id="discTitle">Information only — not advice</h3>
+    <div class="body" id="discBody">
+      <p style="margin:0 0 10px;">The Financial Tool Kit provides <strong>general educational calculators and information</strong>. Its outputs are estimates and may not reflect your actual terms, rates, taxes, or situation.</p>
+      <p style="margin:0;">Nothing here is <strong>legal, tax, financial, or investment advice</strong>, and using these tools does not create any advisory relationship. For decisions that matter, consult a qualified licensed professional.</p>
+    </div>
+    <label class="ack" for="discAck"><input type="checkbox" id="discAck"><span>I understand these tools are for information only and are not legal or financial advice.</span></label>
+    <div class="disc-actions">
+      <button class="primary-btn" id="discBack" type="button">Go back</button>
+      <button class="primary-btn accent" id="discContinue" type="button" disabled>Continue</button>
+    </div>
+    <p class="fine">You'll see this once per visit.</p>
+  </div>
+</div>
+
 <!-- Import modal -->
 <div class="modal-overlay hidden" id="importModal">
   <div class="modal" role="dialog" aria-modal="true" aria-label="Import historical activity">
@@ -1247,7 +1366,7 @@
     <div class="kb-group">
       <h3>Using this app</h3>
       <details class="kb-item"><summary>What this app does</summary><div class="kb-def">
-        <p>The Mortgage Tool Kit is a set of calculators: escrow analysis, an amortization schedule, a full payment (PITI) estimate, an affordability/DTI solver, a refinance break-even, a side-by-side loan comparison, and a historical Treasury-rate lookup. You can use every calculator without an account; signing in adds saved scenarios and cross-device sync.</p>
+        <p>The mortgage tools are a set of calculators: escrow analysis, an amortization schedule, a full payment (PITI) estimate, an affordability/DTI solver, a refinance break-even, a side-by-side loan comparison, and a historical Treasury-rate lookup. You can use every calculator without an account; signing in adds saved scenarios and cross-device sync.</p>
       </div></details>
       <details class="kb-item"><summary>Escrow Analysis tab</summary><div class="kb-def">
         <p>Projects your escrow account 12 months out from a starting balance and monthly deposit, netting out tax and insurance disbursements. It flags a shortage or surplus versus the RESPA cushion and suggests a new monthly payment. You can import a CSV of servicer history to auto-fill disbursements, and export a CSV or a printable Annual Escrow Account Disclosure Statement.</p>
@@ -1380,7 +1499,7 @@
 <!-- Auth gate (login) -->
 <div class="auth-gate hidden" id="authGate">
   <div class="auth-card">
-    <div class="brand-row"><h2>Mortgage Tool Kit</h2><span class="dev-badge hidden" id="devBadge2">Dev</span></div>
+    <div class="brand-row"><h2>Financial Tool Kit</h2><span class="dev-badge hidden" id="devBadge2">Dev</span></div>
     <p class="muted">Sign in to continue.</p>
     <form id="loginForm" autocomplete="on">
       <label for="loginEmail">Email</label>
@@ -3101,7 +3220,7 @@
         currentScnId = null; if (document.getElementById("scenarioSelect")) document.getElementById("scenarioSelect").value = "";
         applyState(state);
         persistState();
-      } catch (err) { alert("Could not read that file - it doesn't look like a Mortgage Tool Kit backup."); }
+      } catch (err) { alert("Could not read that file - it doesn't look like a Financial Tool Kit backup."); }
       e.target.value = "";   // allow re-importing the same file
     };
     reader.readAsText(file);
@@ -3305,7 +3424,7 @@
     const taxLine = p.taxMode === "pct" ? `${d(p.annualTax)}/yr (rate on taxable value)` : `${d(p.annualTax)}/yr`;
     const css = STATEMENT_CSS;
     const body = `<div class="doc">
-      <div class="head"><div class="brand">Mortgage Tool Kit</div></div>
+      <div class="head"><div class="brand">Financial Tool Kit</div></div>
       <h1>Mortgage Payment Summary</h1>
       <div class="big"><span>Total monthly payment</span><span class="v">${d(p.total)}</span></div>
       <h2>Home &amp; loan</h2>
@@ -3403,7 +3522,7 @@
 
     const now = new Date().toLocaleString();
     const body = `<div class="doc">
-      <div class="head"><div class="brand">Mortgage Tool Kit</div><div class="gen">Full report<br>${now}</div></div>
+      <div class="head"><div class="brand">Financial Tool Kit</div><div class="gen">Full report<br>${now}</div></div>
       <h1>Full Mortgage Report</h1>
       ${sec.join("")}
       <p class="disc">A combined snapshot of every calculator using your current inputs. Estimates for planning only; excludes lender-specific fees, prepaids, credits, and income-tax effects. Not tax, legal, or financial advice.</p>
@@ -3733,10 +3852,144 @@
   ].forEach(([id, inner, label]) => { const b = document.getElementById(id); if (b) b.innerHTML = miniIcon(inner) + label; });
   const computeFor = (id) => ({ escrow: compute, amort: computeAmort, payment: computePayment, afford: computeAfford, refi: computeRefi, compare: computeCompare, arm: computeArm, rentbuy: computeRentBuy, tnote: computeTnote }[id] || compute)();
 
+  // ---------- categories (home hub) ----------
+  // The hub is the true landing page; each "spoke" opens a category. Mortgage is the
+  // first live category (its tools are the existing launcher grid); the rest preview
+  // their planned calculators on a "coming soon" page until they're built.
+  const CATEGORIES = [
+    { id: "mortgage", name: "Mortgage", ready: true,
+      tagline: "Escrow, amortization, affordability, refinance & more." },
+    { id: "auto", name: "Auto", ready: false,
+      tagline: "Loans, leases, and the true cost of a car.",
+      lead: "Calculators for financing, leasing, and owning a vehicle — compare buying vs. leasing, size a monthly payment, and see the all-in cost of ownership.",
+      planned: [
+        ["Auto loan payment", "Price, down payment, trade-in, APR, term → monthly payment and total interest."],
+        ["Lease vs. buy", "Compare leasing against financing the same car over your holding period."],
+        ["Total cost of ownership", "Depreciation, insurance, fuel/energy, maintenance, and taxes over the years you keep it."],
+        ["Affordability", "How much car fits your budget and down payment."],
+        ["Auto refinance", "Current vs. new loan — monthly savings and break-even."],
+        ["Early payoff", "Extra payments → interest saved and a sooner payoff date."],
+      ] },
+    { id: "invest", name: "Investing", ready: false,
+      tagline: "Grow it: compound-growth and portfolio calculators, plus guides.",
+      lead: "A portal for investing basics and the math behind them — model compound growth, compare returns, and learn the core concepts before you invest.",
+      planned: [
+        ["Compound growth", "Contributions + return + time → future value, with a growth chart."],
+        ["Return / CAGR", "Annualized return between a starting and ending value."],
+        ["Dollar-cost averaging", "Model recurring buys through market ups and downs."],
+        ["Portfolio allocation", "Target vs. current mix and what to rebalance."],
+        ["Dividend / DRIP", "Reinvested dividends compounding over time."],
+        ["Investing 101 guides", "Plain-English explainers: risk, diversification, index funds, fees."],
+      ] },
+    { id: "budget", name: "Budgeting & Savings", ready: false,
+      tagline: "Plan a budget, build savings, track net worth.",
+      lead: "Tools to plan where your money goes and grow what you keep — budget frameworks, savings-goal timelines, and an emergency-fund sizer.",
+      planned: [
+        ["Budget planner", "50/30/20 and custom category budgets from your take-home pay."],
+        ["Savings goal", "Target amount + date → how much to set aside each month."],
+        ["Emergency fund", "Size 3–6 months of essential expenses and a plan to fund it."],
+        ["Net worth", "Assets minus liabilities, tracked over time."],
+        ["Paycheck / take-home", "Gross pay to net after taxes and deductions."],
+      ] },
+    { id: "debt", name: "Credit & Debt", ready: false,
+      tagline: "Pay it down: snowball, avalanche, and payoff planners.",
+      lead: "Strategies and calculators to get out of debt faster — compare payoff methods, see the true cost of carrying a balance, and weigh consolidation.",
+      planned: [
+        ["Debt payoff (snowball / avalanche)", "Order multiple debts and compare payoff time and total interest."],
+        ["Credit-card payoff", "Balance, APR, and payment → months to zero and interest paid."],
+        ["Loan payoff", "Personal / student-loan amortization and early-payoff savings."],
+        ["Debt consolidation", "Compare a consolidation loan against your current balances."],
+        ["Credit-utilization", "How balances affect utilization and score factors."],
+      ] },
+    { id: "retire", name: "Retirement & Taxes", ready: false,
+      tagline: "401(k)/IRA growth, retirement readiness, and tax estimates.",
+      lead: "Plan for the long game — project retirement savings, check whether you're on track, and estimate taxes and take-home pay.",
+      planned: [
+        ["401(k) / IRA growth", "Contributions, employer match, and returns to retirement."],
+        ["Retirement readiness", "Will your savings + income cover your target spending?"],
+        ["Retirement drawdown", "Model balances and withdrawals across decades."],
+        ["Federal tax estimate", "Rough federal income tax from income, filing status, and deductions."],
+        ["RMD estimate", "Required minimum distributions by age."],
+      ] },
+  ];
+  const CAT_ICON = {
+    mortgage: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+    auto:     '<path d="M5 17H3v-4l2-5h11l3 4h1a2 2 0 0 1 2 2v3h-2"/><path d="M9 17h6"/><circle cx="7.5" cy="17" r="1.6"/><circle cx="16.5" cy="17" r="1.6"/>',
+    invest:   '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+    budget:   '<path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>',
+    debt:     '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
+    retire:   '<line x1="3" y1="21" x2="21" y2="21"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 3 20 8 4 8"/>',
+  };
+  const catIcon = (id) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${CAT_ICON[id] || ""}</svg>`;
+  const catById = (id) => CATEGORIES.find(c => c.id === id);
+
+  function hideCategoryViews() {
+    ["view-hub", "view-home", "view-soon"].forEach(v => document.getElementById(v).classList.add("hidden"));
+  }
+  function resetChrome() {   // hide the in-tool chrome (used by every home/category view)
+    currentTool = null;
+    document.getElementById("toolbar").classList.add("hidden");
+    document.getElementById("scenarioBar").classList.add("hidden");
+    TOOLS.forEach(t => document.getElementById("view-" + t.id).classList.add("hidden"));
+    hideCategoryViews();
+  }
+  function showHub() {   // the radial landing page
+    resetChrome();
+    document.getElementById("view-hub").classList.remove("hidden");
+    window.scrollTo(0, 0);
+  }
+  function showHome() {   // Mortgage category = the existing tool launcher grid
+    resetChrome();
+    document.getElementById("view-home").classList.remove("hidden");
+    window.scrollTo(0, 0);
+  }
+  function showSoon(cat) {   // a not-yet-built category, previewing its planned tools
+    resetChrome();
+    document.getElementById("soonIcon").innerHTML = catIcon(cat.id);
+    document.getElementById("soonTitle").textContent = cat.name;
+    document.getElementById("soonLead").textContent = cat.lead || cat.tagline;
+    document.getElementById("soonList").innerHTML = (cat.planned || []).map(([n, d]) =>
+      `<li><span class="dot"></span><span><span class="tk">${esc(n)}</span><span class="td">${esc(d)}</span></span></li>`).join("");
+    document.getElementById("view-soon").classList.remove("hidden");
+    window.scrollTo(0, 0);
+  }
+  function openCategory(id) {
+    const cat = catById(id); if (!cat) return;
+    if (cat.ready) showHome(); else showSoon(cat);
+  }
+
+  // ---------- disclaimer splash (forced acknowledgment on entering any area) ----------
+  const DISC_KEY = "ftk_disclaimer_ack";
+  function disclaimerAck() { try { return sessionStorage.getItem(DISC_KEY) === "1"; } catch (e) { return false; } }
+  let discPending = null;
+  const discModal = document.getElementById("disclaimerModal");
+  const discAckBox = document.getElementById("discAck");
+  const discContinue = document.getElementById("discContinue");
+  const closeDisc = () => discModal.classList.add("hidden");
+  const cancelDisc = () => { discPending = null; closeDisc(); showHub(); };
+  function requireDisclaimer(next) {
+    if (disclaimerAck()) { next(); return; }
+    discPending = next;
+    discAckBox.checked = false;
+    discContinue.disabled = true;
+    discModal.classList.remove("hidden");
+    setTimeout(() => { try { discAckBox.focus(); } catch (e) {} }, 30);
+  }
+  discAckBox.addEventListener("change", () => { discContinue.disabled = !discAckBox.checked; });
+  discContinue.addEventListener("click", () => {
+    if (!discAckBox.checked) return;
+    try { sessionStorage.setItem(DISC_KEY, "1"); } catch (e) {}
+    closeDisc();
+    const n = discPending; discPending = null; if (n) n();
+  });
+  document.getElementById("discBack").addEventListener("click", cancelDisc);
+  discModal.addEventListener("click", (e) => { if (e.target === discModal) cancelDisc(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !discModal.classList.contains("hidden")) cancelDisc(); });
+
   function selectTool(id) {
     if (!TOOLS.some(t => t.id === id)) return;
     currentTool = id;
-    document.getElementById("view-home").classList.add("hidden");
+    hideCategoryViews();
     TOOLS.forEach(t => document.getElementById("view-" + t.id).classList.toggle("hidden", t.id !== id));
     document.getElementById("toolbar").classList.remove("hidden");
     document.getElementById("toolSwitch").value = id;
@@ -3746,16 +3999,22 @@
     computeFor(id);
     window.scrollTo(0, 0);
   }
-  function showHome() {
-    currentTool = null;
-    document.getElementById("toolbar").classList.add("hidden");
-    TOOLS.forEach(t => document.getElementById("view-" + t.id).classList.add("hidden"));
-    document.getElementById("scenarioBar").classList.add("hidden");
-    document.getElementById("view-home").classList.remove("hidden");
-    window.scrollTo(0, 0);
-  }
 
-  // Build the launcher grid + the in-tool switcher from TOOLS.
+  // Build the hub spokes (radial hexagon layout: [left%, top%] around the logo).
+  const HUB_SLOTS = [ [50,4], [89.8,27], [89.8,73], [50,96], [10.2,73], [10.2,27] ];
+  const hubStage = document.getElementById("hubStage");
+  CATEGORIES.forEach((c, i) => {
+    const [lx, ty] = HUB_SLOTS[i % HUB_SLOTS.length];
+    const b = document.createElement("button");
+    b.className = "spoke"; b.type = "button"; b.dataset.cat = c.id;
+    b.style.left = lx + "%"; b.style.top = ty + "%";
+    b.setAttribute("aria-label", c.name + (c.ready ? "" : " — coming soon"));
+    b.innerHTML = `<span class="disc">${catIcon(c.id)}</span><span class="txt"><span class="nm">${esc(c.name)}</span>${c.ready ? "" : '<span class="soon">Coming soon</span>'}</span>`;
+    b.addEventListener("click", () => requireDisclaimer(() => openCategory(c.id)));
+    hubStage.appendChild(b);
+  });
+
+  // Build the Mortgage launcher grid + the in-tool switcher from TOOLS.
   document.getElementById("homeGrid").innerHTML = TOOLS.map(t =>
     `<button class="tool-card" data-tool="${t.id}" type="button">
       <span class="ic" aria-hidden="true">${toolIcon(t.id)}</span>
@@ -3767,10 +4026,12 @@
   const toolSwitch = document.getElementById("toolSwitch");
   toolSwitch.innerHTML = TOOLS.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
   toolSwitch.addEventListener("change", () => selectTool(toolSwitch.value));
-  document.getElementById("homeBtn").addEventListener("click", showHome);
+  document.getElementById("homeBtn").addEventListener("click", showHome);   // "← All tools" → Mortgage grid
+  document.getElementById("homeToHub").addEventListener("click", showHub);
+  document.getElementById("soonToHub").addEventListener("click", showHub);
   const brandHome = document.getElementById("brandHome");
-  brandHome.addEventListener("click", showHome);
-  brandHome.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showHome(); } });
+  brandHome.addEventListener("click", showHub);
+  brandHome.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showHub(); } });
   function setAmortMode(m) {
     amortMode = m;
     const yBtn = document.getElementById("viewYearly"), mBtn = document.getElementById("viewMonthly");

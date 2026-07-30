@@ -1,10 +1,27 @@
-# Mortgage Tool Kit
+# Financial Tool Kit
 
-A ledger-styled mortgage toolkit — a static Pages frontend plus a small Cloudflare
-Worker for auth. The landing page is a **launcher**: a card grid of every tool.
-Opening one shows a slim toolbar (**← All tools**, a tool switcher, and the export
-actions); the title/logo returns home. Signed-in users get a **Log out** button by
-the settings gear. The tools:
+A ledger-styled personal-finance toolkit — a static Pages frontend plus a small
+Cloudflare Worker for auth. **Formerly Mortgage Tool Kit**; it's expanding into a
+hub of tool **areas** (Mortgage is live; Auto, Investing, Budgeting & Savings,
+Credit & Debt, and Retirement & Taxes are on the roadmap — see `BACKLOG.md`).
+
+The landing page is a radial **hub**: a central logo (a `$` placeholder for now)
+ringed by category "spokes." Entering any area first shows a forced **disclaimer
+splash** ("information only — not legal or financial advice"), acknowledged once
+per visit. The **Mortgage** spoke opens the toolkit's launcher — a card grid of
+every mortgage tool; opening one shows a slim toolbar (**← All tools**, a tool
+switcher, and the export actions). The header title returns to the hub; on-page
+**← Financial Tool Kit** links back out of an area. Signed-in users get a **Log
+out** button by the settings gear.
+
+> **Infra note:** the rebrand is user-facing only. The repo is still
+> `mortgage-tool-kit`, hosted at `mtk.dabrewer.dev`, backed by the `mtk-api`
+> Worker and `mtk-prod`/`mtk-dev` D1. A domain/infra rename to `ftk` is an open
+> decision in `BACKLOG.md`.
+
+## Mortgage area
+
+The Mortgage area's tools:
 
 - **Escrow Analysis** — projects an escrow account 12 months out, sizes the RESPA
   cushion (0–2 months), and flags a **shortage**, **surplus**, or **deficiency**

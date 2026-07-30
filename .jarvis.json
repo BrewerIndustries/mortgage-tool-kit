@@ -1,7 +1,7 @@
 {
   "id": "mtk",
-  "name": "Mortgage Tool Kit",
-  "description": "A ledger-styled mortgage toolkit: annual escrow analysis (RESPA cushion sizing, shortage/surplus, 12-month projection), historical-activity CSV import, current-vs-recommended payment comparison, and a full PITI amortization schedule. Exports CSV and a printable escrow statement.",
+  "name": "Financial Tool Kit",
+  "description": "A ledger-styled personal-finance toolkit (formerly Mortgage Tool Kit). Radial hub of tool areas: Mortgage is live (escrow analysis, amortization, PITI payment, affordability/DTI, refinance, compare, ARM, rent-vs-buy, T-Note lookup); Auto, Investing, Budgeting & Savings, Credit & Debt, and Retirement & Taxes are on the roadmap. Every area shows a forced 'information only, not advice' disclaimer.",
   "category": "standalone",
   "tech": ["Vanilla JS", "HTML5 Canvas", "static site", "GitHub Pages"],
   "status": { "prod": "live", "dev": "live" },
