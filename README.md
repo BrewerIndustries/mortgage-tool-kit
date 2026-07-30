@@ -1,9 +1,15 @@
 # Financial Tool Kit
 
 A ledger-styled personal-finance toolkit — a static Pages frontend plus a small
-Cloudflare Worker for auth. **Formerly Mortgage Tool Kit**; it's expanding into a
-hub of tool **areas** (Mortgage is live; Auto, Investing, Budgeting & Savings,
-Credit & Debt, and Retirement & Taxes are on the roadmap — see `BACKLOG.md`).
+Cloudflare Worker for auth. **Formerly Mortgage Tool Kit.** It's now a hub of six
+tool **areas**: **Mortgage** (the original 9 tools) plus **Auto**, **Investing**,
+**Budgeting & Savings**, **Credit & Debt**, and **Retirement & Taxes** — each with
+its own first round of calculators (see `BACKLOG.md` for what's built and what's next).
+
+The five newer areas run on a small **declarative calculator framework**: each
+calculator is defined as a list of inputs + a `compute()` function (in the `CALCS`
+registry in `index.html`), and a shared renderer builds the form and results. Adding
+a calculator is data, not new markup. The money math reuses `window.MTK` (`calc.js`).
 
 The landing page is a radial **hub**: a central logo (a `$` placeholder for now)
 ringed by category "spokes." Entering any area first shows a forced **disclaimer

@@ -17,6 +17,24 @@ Tiers: **P0** = do next, **P1** = important, **P2** = polish / stretch. `[x]` = 
 - [x] **Coming-soon** category pages that preview each area's planned tools.
 - [x] Forced **disclaimer splash** ("information only — not legal or financial advice") gating entry into any area; acknowledged once per session (`sessionStorage`).
 
+## ✅ Phase 1 — all five new areas shipped, v1 (2026-07-30, on dev)
+
+Built a **declarative calculator framework** (a `CALCS` registry + a shared form/results
+renderer in `index.html`), then implemented every area's first-round calculators on it.
+Dark theme is now the default; the brand is centered; the hub intro was removed; accent
+swatches show their names on hover.
+
+- [x] **Auto** — loan payment, lease vs. buy, total cost of ownership, affordability, refinance, early payoff
+- [x] **Investing** — compound growth, return/CAGR, dollar-cost averaging, investment goal, dividend/DRIP, portfolio allocation
+- [x] **Budgeting & Savings** — 50/30/20 planner, savings goal, emergency fund, net worth, paycheck/take-home
+- [x] **Credit & Debt** — debt payoff (snowball/avalanche sim), credit-card payoff, loan payoff, consolidation, utilization
+- [x] **Retirement & Taxes** — 401(k)/IRA growth, retirement readiness, drawdown, 2024 federal tax, RMD
+
+Remaining for these areas (P1/P2): charts on the growth/projection tools, per-calc icons
+(they currently share the category icon), amortization/schedule detail views, share-links +
+CSV export per calc, saved scenarios per area, and the guides/Investing-101 drawer. The
+per-area detail below is the record of intended scope.
+
 ## Cross-cutting — foundation for every new area (P0, do alongside Auto)
 
 - [ ] **Generalize the shared model**: today the shared scenario is a mortgage "property/loan" object. Give each area its own scenario shape; namespace autosave + saved scenarios by area.

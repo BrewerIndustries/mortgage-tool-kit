@@ -1,7 +1,7 @@
 {
   "id": "mtk",
   "name": "Financial Tool Kit",
-  "description": "A ledger-styled personal-finance toolkit (formerly Mortgage Tool Kit). Radial hub of tool areas: Mortgage is live (escrow analysis, amortization, PITI payment, affordability/DTI, refinance, compare, ARM, rent-vs-buy, T-Note lookup); Auto, Investing, Budgeting & Savings, Credit & Debt, and Retirement & Taxes are on the roadmap. Every area shows a forced 'information only, not advice' disclaimer.",
+  "description": "A ledger-styled personal-finance toolkit (formerly Mortgage Tool Kit). Radial hub of six tool areas, each with its own calculators: Mortgage (escrow, amortization, PITI, affordability, refinance, compare, ARM, rent-vs-buy, T-Note), Auto (loan, lease-vs-buy, TCO, refi, payoff), Investing (compound growth, CAGR, DCA, dividends, allocation), Budgeting & Savings (50/30/20, savings goal, emergency fund, net worth, paycheck), Credit & Debt (snowball/avalanche payoff, card/loan payoff, consolidation, utilization), and Retirement & Taxes (401k/IRA growth, readiness, drawdown, federal tax, RMD). Every area shows a forced 'information only, not advice' disclaimer.",
   "category": "standalone",
   "tech": ["Vanilla JS", "HTML5 Canvas", "static site", "GitHub Pages"],
   "status": { "prod": "live", "dev": "live" },

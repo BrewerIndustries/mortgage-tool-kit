@@ -1,6 +1,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Financial Tool Kit</title>
+<script>
+  // Default appearance = dark (the original dark-green look) unless the user picked otherwise.
+  // Runs before first paint to avoid a flash of the light theme.
+  try { var _tm = localStorage.getItem("mtk-theme") || "dark"; if (_tm !== "auto") document.documentElement.setAttribute("data-theme", _tm); }
+  catch (e) { document.documentElement.setAttribute("data-theme", "dark"); }
+</script>
 <style>
   :root {
     --paper: #f3f5f3;
@@ -53,13 +59,20 @@
   .hidden { display: none !important; }
 
   header.masthead {
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 16px; flex-wrap: wrap; padding-bottom: 14px;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    gap: 16px; padding-bottom: 14px;
   }
-  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .mast-controls { justify-self: end; display: flex; align-items: center; gap: 10px; }
+  .brand { justify-self: center; display: inline-flex; align-items: center; gap: 12px; text-align: center; }
   .brand h1 { font-family: var(--serif); font-weight: 600; font-size: 27px; margin: 0; letter-spacing: -.01em; }
   .brand .tag { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--accent); font-weight: 700; }
   .masthead .sub { color: var(--muted); font-size: 13px; max-width: 40ch; text-align: right; }
+  @media (max-width: 560px) {
+    header.masthead { grid-template-columns: 1fr auto; }
+    header.masthead > .mast-spacer { display: none; }
+    .brand { justify-self: start; }
+    .brand h1 { font-size: 22px; }
+  }
   .theme-btn { background: none; border: 1px solid var(--line-strong); color: var(--muted); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: var(--sans); }
   .theme-btn:hover { color: var(--ink); border-color: var(--ink); }
 
@@ -168,6 +181,33 @@
   .disc-actions { display: flex; gap: 10px; }
   .disc-actions button { flex: 1; }
   .disc-modal .fine { font-size: 11px; color: var(--faint); margin: 14px 0 0; }
+
+  /* ===== Generic calculator ===== */
+  .gc-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 14px; margin-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .gc-head { margin: 6px 0 18px; }
+  .gc-head h2 { font-family: var(--serif); font-weight: 600; font-size: 24px; margin: 0 0 3px; letter-spacing: -.01em; }
+  .gc-head p { color: var(--muted); font-size: 13.5px; margin: 0; line-height: 1.5; }
+  .gc-wrap { display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
+  .gc-wrap > * { min-width: 0; }
+  @media (max-width: 900px) { .gc-wrap { grid-template-columns: 1fr; } }
+  .gc-help { display: block; font-size: 11px; color: var(--faint); margin-top: 4px; line-height: 1.4; }
+  .gc-results { display: flex; flex-direction: column; gap: 12px; }
+  .gc-hero { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; box-shadow: var(--shadow); }
+  .gc-hero .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .13em; color: var(--faint); font-weight: 700; margin: 0 0 7px; }
+  .gc-hero .val { font-family: var(--mono); font-size: 34px; font-weight: 600; color: var(--accent); line-height: 1; letter-spacing: -.01em; }
+  .gc-hero .sub { font-size: 12.5px; color: var(--muted); margin-top: 9px; line-height: 1.5; }
+  .gc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 520px) { .gc-grid { grid-template-columns: 1fr; } }
+  .gc-stat { background: var(--card); border: 1px solid var(--line); border-radius: 11px; padding: 14px 15px; }
+  .gc-stat .lbl { font-size: 10.5px; text-transform: uppercase; letter-spacing: .11em; color: var(--faint); font-weight: 700; margin: 0 0 6px; }
+  .gc-stat .val { font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--ink); line-height: 1.1; }
+  .gc-stat .sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .gc-stat.good .val { color: var(--surplus); }
+  .gc-stat.bad .val { color: var(--danger); }
+  .gc-stat.warn .val { color: #c98a1e; }
+  .gc-note { font-size: 12.5px; color: var(--muted); line-height: 1.55; background: var(--accent-soft); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .gc-note strong { color: var(--ink); }
+  .gc-disclaimer { font-size: 11px; color: var(--faint); text-align: center; margin: 22px 0 0; }
 
   /* Segmented toggle */
   .seg { display: inline-flex; gap: 3px; padding: 3px; background: var(--paper); border: 1px solid var(--line-strong); border-radius: 9px; }
@@ -391,8 +431,11 @@
   .set-label { font-size: 13.5px; }
   .set-label small { display: block; color: var(--faint); font-size: 11.5px; margin-top: 1px; }
   .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
-  .swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid var(--line-strong); outline: 2px solid transparent; outline-offset: 2px; }
+  .swatch { position: relative; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid var(--line-strong); outline: 2px solid transparent; outline-offset: 2px; }
   .swatch.active { outline-color: var(--ink); border-color: var(--card); }
+  .swatch::after { content: attr(data-name); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--ink); color: var(--paper); padding: 5px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; font-family: var(--sans); box-shadow: 0 6px 22px rgba(0,0,0,.35); opacity: 0; visibility: hidden; transition: opacity .12s; pointer-events: none; z-index: 70; }
+  .swatch:hover::after, .swatch:focus-visible::after { opacity: 1; visibility: visible; }
+  @media (prefers-reduced-motion: reduce) { .swatch::after { transition: none; } }
   .seg.small { padding: 2px; }
   .seg.small .seg-btn { padding: 5px 11px; font-size: 12px; }
   .link-btn { background: none; border: none; color: var(--accent); font-weight: 600; font-size: 13px; cursor: pointer; padding: 0; font-family: var(--sans); }
@@ -477,8 +520,9 @@
 
 <div class="wrap">
   <header class="masthead">
+    <div class="mast-spacer" aria-hidden="true"></div>
     <div class="brand" id="brandHome" role="button" tabindex="0" title="Home"><h1>Financial Tool Kit</h1><span class="dev-badge hidden" id="devBadge">Dev</span></div>
-    <div style="display:flex; align-items:center; gap:10px;">
+    <div class="mast-controls">
       <button class="theme-btn" id="themeBtn" type="button">Dark</button>
       <button class="theme-btn hidden" id="logoutHeaderBtn" type="button" title="Log out">Log out</button>
       <button class="icon-btn" id="settingsBtn" type="button" title="Settings" aria-label="Settings">&#9881;</button>
@@ -499,10 +543,6 @@
 
   <!-- ================= HOME HUB (radial) ================= -->
   <div id="view-hub" class="view hub">
-    <div class="hub-intro">
-      <h2>Your money, all in one place</h2>
-      <p>Pick an area to explore. Every tool is free to use — sign in only to save scenarios.</p>
-    </div>
     <div class="hub-stage" id="hubStage">
       <div class="hub-ring" aria-hidden="true"></div>
       <div class="hub-logo" aria-hidden="true">
@@ -539,6 +579,33 @@
       <p class="soon-list-h">Planned tools</p>
       <ul class="soon-list" id="soonList"></ul>
     </div>
+  </div>
+
+  <!-- ================= CATEGORY GRID (built-out areas) ================= -->
+  <div id="view-catgrid" class="view hidden">
+    <button class="soon-back" id="cgToHub" type="button">&#8592; Financial Tool Kit</button>
+    <div class="home-head">
+      <h2 id="cgTitle"></h2>
+      <p id="cgDesc"></p>
+    </div>
+    <div class="home-grid" id="cgGrid"></div>
+  </div>
+
+  <!-- ================= GENERIC CALCULATOR ================= -->
+  <div id="view-generic" class="view hidden">
+    <div class="gc-bar">
+      <button class="ghost-btn sm" id="gcBack" type="button">&#8592; <span id="gcBackLbl">Back</span></button>
+      <select id="gcSwitch" class="tool-switch" aria-label="Switch calculator"></select>
+    </div>
+    <div class="gc-head">
+      <h2 id="gcTitle"></h2>
+      <p id="gcDesc"></p>
+    </div>
+    <div class="gc-wrap">
+      <div class="card"><div class="panel"><p class="eyebrow">Inputs</p><div id="gcInputs"></div></div></div>
+      <div class="gc-results" id="gcResults"></div>
+    </div>
+    <p class="gc-disclaimer">Estimates for general information only — not legal, tax, or financial advice.</p>
   </div>
 
   <div class="scenario-bar hidden" id="scenarioBar">
@@ -3129,6 +3196,7 @@
       const sw = document.createElement("button");
       sw.type = "button"; sw.className = "swatch" + (key === accentKey ? " active" : "");
       sw.title = def.name;
+      sw.dataset.name = def.name;
       sw.setAttribute("aria-label", "Accent color: " + def.name);
       sw.setAttribute("aria-pressed", key === accentKey ? "true" : "false");
       sw.style.background = def[currentDark() ? "dark" : "light"].a;
@@ -3141,7 +3209,7 @@
   }
 
   // ---------- theme mode (auto / light / dark) ----------
-  function themeMode() { return localStorage.getItem("mtk-theme") || "auto"; }
+  function themeMode() { return localStorage.getItem("mtk-theme") || "dark"; }
   function applyThemeMode(mode) {
     localStorage.setItem("mtk-theme", mode);
     if (mode === "auto") document.documentElement.removeAttribute("data-theme");
@@ -3859,7 +3927,7 @@
   const CATEGORIES = [
     { id: "mortgage", name: "Mortgage", ready: true,
       tagline: "Escrow, amortization, affordability, refinance & more." },
-    { id: "auto", name: "Auto", ready: false,
+    { id: "auto", name: "Auto", ready: true,
       tagline: "Loans, leases, and the true cost of a car.",
       lead: "Calculators for financing, leasing, and owning a vehicle — compare buying vs. leasing, size a monthly payment, and see the all-in cost of ownership.",
       planned: [
@@ -3870,7 +3938,7 @@
         ["Auto refinance", "Current vs. new loan — monthly savings and break-even."],
         ["Early payoff", "Extra payments → interest saved and a sooner payoff date."],
       ] },
-    { id: "invest", name: "Investing", ready: false,
+    { id: "invest", name: "Investing", ready: true,
       tagline: "Grow it: compound-growth and portfolio calculators, plus guides.",
       lead: "A portal for investing basics and the math behind them — model compound growth, compare returns, and learn the core concepts before you invest.",
       planned: [
@@ -3881,7 +3949,7 @@
         ["Dividend / DRIP", "Reinvested dividends compounding over time."],
         ["Investing 101 guides", "Plain-English explainers: risk, diversification, index funds, fees."],
       ] },
-    { id: "budget", name: "Budgeting & Savings", ready: false,
+    { id: "budget", name: "Budgeting & Savings", ready: true,
       tagline: "Plan a budget, build savings, track net worth.",
       lead: "Tools to plan where your money goes and grow what you keep — budget frameworks, savings-goal timelines, and an emergency-fund sizer.",
       planned: [
@@ -3891,7 +3959,7 @@
         ["Net worth", "Assets minus liabilities, tracked over time."],
         ["Paycheck / take-home", "Gross pay to net after taxes and deductions."],
       ] },
-    { id: "debt", name: "Credit & Debt", ready: false,
+    { id: "debt", name: "Credit & Debt", ready: true,
       tagline: "Pay it down: snowball, avalanche, and payoff planners.",
       lead: "Strategies and calculators to get out of debt faster — compare payoff methods, see the true cost of carrying a balance, and weigh consolidation.",
       planned: [
@@ -3901,7 +3969,7 @@
         ["Debt consolidation", "Compare a consolidation loan against your current balances."],
         ["Credit-utilization", "How balances affect utilization and score factors."],
       ] },
-    { id: "retire", name: "Retirement & Taxes", ready: false,
+    { id: "retire", name: "Retirement & Taxes", ready: true,
       tagline: "401(k)/IRA growth, retirement readiness, and tax estimates.",
       lead: "Plan for the long game — project retirement savings, check whether you're on track, and estimate taxes and take-home pay.",
       planned: [
@@ -3924,7 +3992,7 @@
   const catById = (id) => CATEGORIES.find(c => c.id === id);
 
   function hideCategoryViews() {
-    ["view-hub", "view-home", "view-soon"].forEach(v => document.getElementById(v).classList.add("hidden"));
+    ["view-hub", "view-home", "view-soon", "view-catgrid", "view-generic"].forEach(v => document.getElementById(v).classList.add("hidden"));
   }
   function resetChrome() {   // hide the in-tool chrome (used by every home/category view)
     currentTool = null;
@@ -3955,7 +4023,10 @@
   }
   function openCategory(id) {
     const cat = catById(id); if (!cat) return;
-    if (cat.ready) showHome(); else showSoon(cat);
+    if (id === "mortgage") return showHome();          // mortgage = the existing tool grid
+    const calcs = CALCS.filter(c => c.cat === id);
+    if (calcs.length) return renderCatGrid(cat, calcs); // built-out area → its calculator grid
+    return showSoon(cat);                               // fallback: still-empty area
   }
 
   // ---------- disclaimer splash (forced acknowledgment on entering any area) ----------
@@ -4032,6 +4103,691 @@
   const brandHome = document.getElementById("brandHome");
   brandHome.addEventListener("click", showHub);
   brandHome.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showHub(); } });
+
+  // ================= Generic calculator framework (non-mortgage areas) =================
+  // Each calculator is declared as { id, cat, name, desc, inputs:[…], compute(v)->{rows,note} }.
+  // A shared renderer builds the input form and the results, so adding a calculator is data,
+  // not new markup. All money math reuses window.MTK where possible.
+  let currentCalc = null;
+
+  // -- formatters --
+  const _mf  = (n) => !isFinite(n) ? "—" : (n < 0 ? "-" : "") + "$" + Math.abs(Math.round(n)).toLocaleString();
+  const _mf2 = (n) => !isFinite(n) ? "—" : (n < 0 ? "-" : "") + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const _pf  = (n, d = 2) => !isFinite(n) ? "—" : n.toFixed(d) + "%";
+  const _nf  = (n) => !isFinite(n) ? "—" : Math.round(n).toLocaleString();
+  const _xf  = (n, d = 2) => !isFinite(n) ? "—" : n.toFixed(d) + "×";
+  const _dur = (m) => { if (!isFinite(m) || m <= 0) return "—"; m = Math.round(m); const y = Math.floor(m / 12), mo = m % 12; return (y ? y + " yr" : "") + (y && mo ? " " : "") + (mo ? mo + " mo" : (y ? "" : "0 mo")); };
+
+  // -- money math helpers --
+  const _pmt = (P, apr, n) => (window.MTK ? window.MTK.monthlyPI(P, apr, n) : (function () { const i = apr / 1200; return i ? P * i / (1 - Math.pow(1 + i, -n)) : P / n; })());
+  const _pvAnnuity = (pay, apr, n) => { const i = apr / 1200; return i ? pay * (1 - Math.pow(1 + i, -n)) / i : pay * n; };
+  const _fv = (initial, monthly, annualPct, years) => { const i = annualPct / 1200, n = Math.round(years * 12); return !i ? initial + monthly * n : initial * Math.pow(1 + i, n) + monthly * ((Math.pow(1 + i, n) - 1) / i); };
+  const _payoffMonths = (bal, apr, pay) => { const i = apr / 1200; if (!i) return pay > 0 ? bal / pay : Infinity; if (pay <= bal * i) return Infinity; return Math.log(pay / (pay - bal * i)) / Math.log(1 + i); };
+  const _grow = (v, ratePct, years) => v * Math.pow(1 + ratePct / 100, years);
+
+  // -- federal tax (2024) --
+  const _TAX2024 = {
+    single:  { std: 14600, b: [[0, .10], [11600, .12], [47150, .22], [100525, .24], [191950, .32], [243725, .35], [609350, .37]] },
+    married: { std: 29200, b: [[0, .10], [23200, .12], [94300, .22], [201050, .24], [383900, .32], [487450, .35], [731200, .37]] },
+    hoh:     { std: 21900, b: [[0, .10], [16550, .12], [63100, .22], [100500, .24], [191950, .32], [243700, .35], [609350, .37]] },
+  };
+  function _taxOn(taxable, br) { let t = 0; for (let i = 0; i < br.length; i++) { const lo = br[i][0], rate = br[i][1], hi = i + 1 < br.length ? br[i + 1][0] : Infinity; if (taxable > lo) t += (Math.min(taxable, hi) - lo) * rate; else break; } return t; }
+  function _marginal(taxable, br) { let r = br[0][1]; for (const [lo, rate] of br) if (taxable > lo) r = rate; return r; }
+  // IRS Uniform Lifetime Table (2022+) distribution periods
+  const _RMD = { 72: 27.4, 73: 26.5, 74: 25.5, 75: 24.6, 76: 23.7, 77: 22.9, 78: 22.0, 79: 21.1, 80: 20.2, 81: 19.4, 82: 18.5, 83: 17.7, 84: 16.8, 85: 16.0, 86: 15.2, 87: 14.4, 88: 13.7, 89: 12.9, 90: 12.2, 91: 11.5, 92: 10.8, 93: 10.1, 94: 9.5, 95: 8.9, 96: 8.4, 97: 7.8, 98: 7.3, 99: 6.8, 100: 6.4 };
+
+  // -- input form rendering --
+  function _fieldHtml(f) {
+    const id = "gi_" + f.k;
+    if (f.type === "select") {
+      const cur = f.def != null ? f.def : (f.options[0] && f.options[0][0]);
+      return `<label class="field"><span class="lbl">${esc(f.label)}</span><select id="${id}">${f.options.map(([v, l]) => `<option value="${esc(String(v))}"${String(v) === String(cur) ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>${f.help ? `<span class="gc-help">${esc(f.help)}</span>` : ""}</label>`;
+    }
+    const attrs = `${f.step != null ? ` step="${f.step}"` : ""}${f.min != null ? ` min="${f.min}"` : ""}${f.max != null ? ` max="${f.max}"` : ""}`;
+    const input = `<input type="number" id="${id}" value="${f.def}"${attrs}>`;
+    let wrapped;
+    if (f.type === "money") wrapped = `<div class="money-input">${input}</div>`;
+    else if (f.type === "pct" || f.suf) wrapped = `<div class="suffix-input">${input}<span class="sfx">${esc(f.type === "pct" ? "%" : f.suf)}</span></div>`;
+    else wrapped = input;
+    return `<label class="field"><span class="lbl">${esc(f.label)}</span>${wrapped}${f.help ? `<span class="gc-help">${esc(f.help)}</span>` : ""}</label>`;
+  }
+  function _readVals(calc) {
+    const v = {};
+    calc.inputs.forEach(f => {
+      const el = document.getElementById("gi_" + f.k);
+      if (!el) { v[f.k] = f.def; return; }
+      v[f.k] = f.type === "select" ? el.value : (parseFloat(String(el.value).replace(/,/g, "")) || 0);
+    });
+    return v;
+  }
+  function _renderResults(calc) {
+    const v = _readVals(calc);
+    let out; try { out = calc.compute(v) || {}; } catch (e) { out = { rows: [{ label: "Check your inputs", val: "—" }] }; }
+    const rows = out.rows || [], hero = rows[0], rest = rows.slice(1);
+    document.getElementById("gcResults").innerHTML =
+      (hero ? `<div class="gc-hero"><p class="lbl">${esc(hero.label)}</p><div class="val">${hero.val}</div>${hero.sub ? `<div class="sub">${esc(hero.sub)}</div>` : ""}</div>` : "") +
+      (rest.length ? `<div class="gc-grid">` + rest.map(r => `<div class="gc-stat${r.tone ? " " + r.tone : ""}"><p class="lbl">${esc(r.label)}</p><div class="val">${r.val}</div>${r.sub ? `<div class="sub">${esc(r.sub)}</div>` : ""}</div>`).join("") + `</div>` : "") +
+      (out.note ? `<div class="gc-note">${out.note}</div>` : "");
+  }
+  function openCalc(calc) {
+    resetChrome();
+    currentCalc = calc;
+    document.getElementById("gcTitle").textContent = calc.name;
+    document.getElementById("gcDesc").textContent = calc.desc || "";
+    document.getElementById("gcInputs").innerHTML = calc.inputs.map(_fieldHtml).join("");
+    const cat = catById(calc.cat);
+    document.getElementById("gcBackLbl").textContent = cat ? cat.name : "Back";
+    document.getElementById("gcBack").dataset.cat = calc.cat;
+    const sw = document.getElementById("gcSwitch");
+    const sibs = CALCS.filter(c => c.cat === calc.cat);
+    sw.innerHTML = sibs.map(c => `<option value="${c.id}"${c.id === calc.id ? " selected" : ""}>${esc(c.name)}</option>`).join("");
+    calc.inputs.forEach(f => {
+      const el = document.getElementById("gi_" + f.k);
+      if (el) { el.addEventListener("input", () => _renderResults(calc)); el.addEventListener("change", () => _renderResults(calc)); }
+    });
+    _renderResults(calc);
+    document.getElementById("view-generic").classList.remove("hidden");
+    window.scrollTo(0, 0);
+  }
+  function renderCatGrid(cat, calcs) {
+    resetChrome();
+    document.getElementById("cgTitle").textContent = cat.name + " tools";
+    document.getElementById("cgDesc").textContent = cat.lead || cat.tagline || "";
+    document.getElementById("cgGrid").innerHTML = calcs.map(c =>
+      `<button class="tool-card" data-calc="${c.id}" type="button">
+        <span class="ic" aria-hidden="true">${catIcon(cat.id)}</span>
+        <span class="tt">${esc(c.name)}</span>
+        <span class="td">${esc(c.desc)}</span>
+        <span class="go">Open &rarr;</span>
+      </button>`).join("");
+    document.querySelectorAll("#cgGrid .tool-card").forEach(b => b.addEventListener("click", () => { const c = CALCS.find(x => x.id === b.dataset.calc); if (c) openCalc(c); }));
+    document.getElementById("view-catgrid").classList.remove("hidden");
+    window.scrollTo(0, 0);
+  }
+  document.getElementById("cgToHub").addEventListener("click", showHub);
+  document.getElementById("gcBack").addEventListener("click", (e) => { const id = e.currentTarget.dataset.cat; const cat = catById(id); if (cat) renderCatGrid(cat, CALCS.filter(c => c.cat === id)); });
+  document.getElementById("gcSwitch").addEventListener("change", (e) => { const c = CALCS.find(x => x.id === e.target.value); if (c) openCalc(c); });
+
+  // ================= Calculator definitions =================
+  const CALCS = [
+    // ---------------- AUTO ----------------
+    { id: "auto-loan", cat: "auto", name: "Auto loan payment", desc: "Price, down payment, trade-in, tax, and APR → monthly payment and total interest.",
+      inputs: [
+        { k: "price", label: "Vehicle price", type: "money", def: 32000, step: 500 },
+        { k: "down", label: "Down payment", type: "money", def: 3000, step: 250 },
+        { k: "trade", label: "Trade-in value", type: "money", def: 0, step: 250 },
+        { k: "tax", label: "Sales tax", type: "pct", def: 6, step: 0.1, help: "Applied to price minus trade-in in most states." },
+        { k: "fees", label: "Title/registration fees", type: "money", def: 500, step: 50 },
+        { k: "apr", label: "APR", type: "pct", def: 6.5, step: 0.1 },
+        { k: "term", label: "Term (months)", type: "num", def: 60, step: 6 },
+      ],
+      compute(v) {
+        const taxable = Math.max(0, v.price - v.trade), tax = taxable * v.tax / 100;
+        const financed = Math.max(0, v.price - v.down - v.trade + tax + v.fees);
+        const pay = _pmt(financed, v.apr, v.term), total = pay * v.term, interest = total - financed;
+        return { rows: [
+          { label: "Monthly payment", val: _mf2(pay) },
+          { label: "Amount financed", val: _mf(financed) },
+          { label: "Total interest", val: _mf(interest) },
+          { label: "Sales tax", val: _mf(tax) },
+          { label: "Total of payments", val: _mf(total) },
+          { label: "Total cost (incl. down)", val: _mf(total + v.down + v.trade) },
+        ] };
+      } },
+    { id: "auto-lease", cat: "auto", name: "Lease vs. buy", desc: "Compare a lease against financing the same car over the lease term.",
+      inputs: [
+        { k: "price", label: "Negotiated price", type: "money", def: 35000, step: 500 },
+        { k: "down", label: "Down / cap-cost reduction", type: "money", def: 2000, step: 250 },
+        { k: "term", label: "Lease term (months)", type: "num", def: 36, step: 6 },
+        { k: "residual", label: "Residual value", type: "pct", def: 57, step: 1, help: "% of price the car is worth at lease end." },
+        { k: "mf", label: "Money factor", type: "num", def: 0.0022, step: 0.0001, help: "APR ≈ money factor × 2400." },
+        { k: "tax", label: "Sales tax", type: "pct", def: 6, step: 0.1 },
+        { k: "buyApr", label: "Loan APR (to buy)", type: "pct", def: 6.5, step: 0.1 },
+        { k: "buyTerm", label: "Loan term (months)", type: "num", def: 60, step: 6 },
+      ],
+      compute(v) {
+        const cap = v.price - v.down, res = v.price * v.residual / 100;
+        const dep = (cap - res) / v.term, fin = (cap + res) * v.mf;
+        const baseLease = dep + fin, leaseMo = baseLease * (1 + v.tax / 100);
+        const leaseTotal = v.down + leaseMo * v.term;
+        // Buy: pay loan over the same lease term, then value = residual, minus remaining balance = equity
+        const tax = v.price * v.tax / 100, financed = v.price - v.down + tax;
+        const buyMo = _pmt(financed, v.buyApr, v.buyTerm);
+        const i = v.buyApr / 1200;
+        const balAfter = i ? financed * Math.pow(1 + i, v.term) - buyMo * (Math.pow(1 + i, v.term) - 1) / i : financed - buyMo * v.term;
+        const equity = res - Math.max(0, balAfter);
+        const buyNet = v.down + buyMo * v.term - equity;
+        const cheaper = buyNet < leaseTotal ? "Buying" : "Leasing";
+        return { rows: [
+          { label: "Lease payment / mo", val: _mf2(leaseMo) },
+          { label: "Buy payment / mo", val: _mf2(buyMo) },
+          { label: "Lease cost (" + v.term + " mo)", val: _mf(leaseTotal) },
+          { label: "Buy net cost (" + v.term + " mo)", val: _mf(buyNet), sub: "after ≈" + _mf(equity) + " equity" },
+          { label: "Cheaper over the term", val: cheaper, tone: "good" },
+        ], note: `Buying leaves you owning a car worth ≈ <strong>${_mf(res)}</strong> at month ${v.term}; leasing returns it. APR implied by the money factor ≈ <strong>${_pf(v.mf * 2400)}</strong>.` };
+      } },
+    { id: "auto-tco", cat: "auto", name: "Total cost of ownership", desc: "Depreciation plus insurance, fuel/energy, maintenance, and fees over the years you keep it.",
+      inputs: [
+        { k: "price", label: "Purchase price", type: "money", def: 32000, step: 500 },
+        { k: "years", label: "Years you'll keep it", type: "num", def: 5, step: 1 },
+        { k: "dep", label: "Depreciation / yr", type: "pct", def: 15, step: 1, help: "Value lost per year (compounding)." },
+        { k: "ins", label: "Insurance / yr", type: "money", def: 1400, step: 50 },
+        { k: "fuel", label: "Fuel or energy / yr", type: "money", def: 1600, step: 50 },
+        { k: "maint", label: "Maintenance & repairs / yr", type: "money", def: 900, step: 50 },
+        { k: "fees", label: "Registration & taxes / yr", type: "money", def: 400, step: 25 },
+      ],
+      compute(v) {
+        const resale = _grow(v.price, -v.dep, v.years), depreciation = v.price - resale;
+        const running = (v.ins + v.fuel + v.maint + v.fees) * v.years;
+        const total = depreciation + running;
+        return { rows: [
+          { label: "Total cost of ownership", val: _mf(total), sub: "over " + v.years + " years" },
+          { label: "Depreciation", val: _mf(depreciation) },
+          { label: "Running costs", val: _mf(running) },
+          { label: "Est. resale value", val: _mf(resale) },
+          { label: "Cost / year", val: _mf(total / v.years) },
+          { label: "Cost / month", val: _mf(total / (v.years * 12)) },
+        ] };
+      } },
+    { id: "auto-afford", cat: "auto", name: "Auto affordability", desc: "A target monthly payment → the vehicle price you can afford.",
+      inputs: [
+        { k: "budget", label: "Monthly payment budget", type: "money", def: 500, step: 25 },
+        { k: "down", label: "Down payment", type: "money", def: 3000, step: 250 },
+        { k: "trade", label: "Trade-in value", type: "money", def: 0, step: 250 },
+        { k: "apr", label: "APR", type: "pct", def: 6.5, step: 0.1 },
+        { k: "term", label: "Term (months)", type: "num", def: 60, step: 6 },
+        { k: "tax", label: "Sales tax", type: "pct", def: 6, step: 0.1 },
+        { k: "fees", label: "Fees", type: "money", def: 500, step: 50 },
+      ],
+      compute(v) {
+        const financed = _pvAnnuity(v.budget, v.apr, v.term);
+        const t = v.tax / 100;
+        const price = (financed + v.down + v.trade * (1 + t) - v.fees) / (1 + t);
+        return { rows: [
+          { label: "Max vehicle price", val: _mf(Math.max(0, price)) },
+          { label: "Max amount financed", val: _mf(financed) },
+          { label: "Monthly payment", val: _mf2(v.budget) },
+          { label: "Est. sales tax", val: _mf(Math.max(0, price - v.trade) * t) },
+        ] };
+      } },
+    { id: "auto-refi", cat: "auto", name: "Auto refinance", desc: "Current vs. new loan → monthly savings and lifetime cost.",
+      inputs: [
+        { k: "bal", label: "Current balance", type: "money", def: 18000, step: 250 },
+        { k: "apr", label: "Current APR", type: "pct", def: 9, step: 0.1 },
+        { k: "left", label: "Months remaining", type: "num", def: 48, step: 6 },
+        { k: "newApr", label: "New APR", type: "pct", def: 6, step: 0.1 },
+        { k: "newTerm", label: "New term (months)", type: "num", def: 48, step: 6 },
+        { k: "fees", label: "Refi fees", type: "money", def: 0, step: 25 },
+      ],
+      compute(v) {
+        const curPay = _pmt(v.bal, v.apr, v.left);
+        const newPay = _pmt(v.bal + v.fees, v.newApr, v.newTerm);
+        const save = curPay - newPay;
+        const lifeCur = curPay * v.left, lifeNew = newPay * v.newTerm;
+        const be = save > 0 ? v.fees / save : Infinity;
+        return { rows: [
+          { label: "Monthly savings", val: _mf2(save), tone: save > 0 ? "good" : "bad" },
+          { label: "New payment", val: _mf2(newPay) },
+          { label: "Current payment", val: _mf2(curPay) },
+          { label: "Lifetime cost difference", val: _mf(lifeCur - lifeNew), tone: lifeCur - lifeNew > 0 ? "good" : "bad" },
+          { label: "Break-even", val: v.fees > 0 ? _dur(be) : "immediate" },
+        ] };
+      } },
+    { id: "auto-payoff", cat: "auto", name: "Early payoff", desc: "Extra monthly payments → interest saved and a sooner payoff.",
+      inputs: [
+        { k: "bal", label: "Loan balance", type: "money", def: 18000, step: 250 },
+        { k: "apr", label: "APR", type: "pct", def: 6, step: 0.1 },
+        { k: "pay", label: "Current monthly payment", type: "money", def: 400, step: 10 },
+        { k: "extra", label: "Extra per month", type: "money", def: 100, step: 10 },
+      ],
+      compute(v) {
+        const base = _payoffMonths(v.bal, v.apr, v.pay), baseInt = isFinite(base) ? v.pay * base - v.bal : Infinity;
+        const withE = _payoffMonths(v.bal, v.apr, v.pay + v.extra), withInt = isFinite(withE) ? (v.pay + v.extra) * withE - v.bal : Infinity;
+        return { rows: [
+          { label: "Time saved", val: _dur(base - withE), tone: "good" },
+          { label: "Interest saved", val: _mf(baseInt - withInt), tone: "good" },
+          { label: "New payoff time", val: _dur(withE) },
+          { label: "Payoff time as-is", val: _dur(base) },
+          { label: "Interest (with extra)", val: _mf(withInt) },
+        ], note: base === Infinity ? "<strong>Payment too low</strong> — it doesn't cover the monthly interest. Increase the payment." : "" };
+      } },
+
+    // ---------------- INVESTING ----------------
+    { id: "invest-compound", cat: "invest", name: "Compound growth", desc: "Starting balance plus monthly contributions, compounded over time.",
+      inputs: [
+        { k: "initial", label: "Starting balance", type: "money", def: 10000, step: 500 },
+        { k: "monthly", label: "Monthly contribution", type: "money", def: 500, step: 50 },
+        { k: "rate", label: "Annual return", type: "pct", def: 7, step: 0.1 },
+        { k: "years", label: "Years", type: "num", def: 30, step: 1 },
+      ],
+      compute(v) {
+        const fv = _fv(v.initial, v.monthly, v.rate, v.years);
+        const contrib = v.initial + v.monthly * v.years * 12, growth = fv - contrib;
+        return { rows: [
+          { label: "Future value", val: _mf(fv) },
+          { label: "Total contributions", val: _mf(contrib) },
+          { label: "Investment growth", val: _mf(growth), tone: "good" },
+          { label: "Growth multiple", val: _xf(fv / (contrib || 1)) },
+        ], note: `Contributions of <strong>${_mf(contrib)}</strong> grow to <strong>${_mf(fv)}</strong> — about <strong>${_pf(contrib ? growth / contrib * 100 : 0, 0)}</strong> in gains.` };
+      } },
+    { id: "invest-cagr", cat: "invest", name: "Return / CAGR", desc: "Annualized (compound) growth rate between a start and end value.",
+      inputs: [
+        { k: "start", label: "Starting value", type: "money", def: 10000, step: 500 },
+        { k: "end", label: "Ending value", type: "money", def: 25000, step: 500 },
+        { k: "years", label: "Years", type: "num", def: 10, step: 0.5 },
+      ],
+      compute(v) {
+        const mult = v.start > 0 ? v.end / v.start : NaN;
+        const cagr = isFinite(mult) && v.years > 0 ? (Math.pow(mult, 1 / v.years) - 1) * 100 : NaN;
+        return { rows: [
+          { label: "CAGR (annualized)", val: _pf(cagr), tone: cagr >= 0 ? "good" : "bad" },
+          { label: "Total return", val: _pf((mult - 1) * 100) },
+          { label: "Growth multiple", val: _xf(mult) },
+          { label: "Total gain", val: _mf(v.end - v.start) },
+        ] };
+      } },
+    { id: "invest-dca", cat: "invest", name: "Dollar-cost averaging", desc: "Invest a fixed amount every month and let it compound.",
+      inputs: [
+        { k: "monthly", label: "Invested per month", type: "money", def: 500, step: 50 },
+        { k: "years", label: "Years", type: "num", def: 20, step: 1 },
+        { k: "rate", label: "Annual return", type: "pct", def: 7, step: 0.1 },
+      ],
+      compute(v) {
+        const fv = _fv(0, v.monthly, v.rate, v.years), invested = v.monthly * v.years * 12;
+        return { rows: [
+          { label: "Ending value", val: _mf(fv) },
+          { label: "Total invested", val: _mf(invested) },
+          { label: "Gain", val: _mf(fv - invested), tone: "good" },
+          { label: "Growth multiple", val: _xf(fv / (invested || 1)) },
+        ] };
+      } },
+    { id: "invest-goal", cat: "invest", name: "Investment goal", desc: "How much to invest each month to hit a target.",
+      inputs: [
+        { k: "goal", label: "Target amount", type: "money", def: 100000, step: 1000 },
+        { k: "initial", label: "Starting balance", type: "money", def: 0, step: 500 },
+        { k: "years", label: "Years", type: "num", def: 10, step: 1 },
+        { k: "rate", label: "Annual return", type: "pct", def: 7, step: 0.1 },
+      ],
+      compute(v) {
+        const i = v.rate / 1200, n = Math.round(v.years * 12);
+        const fvInit = v.initial * Math.pow(1 + i, n);
+        const need = Math.max(0, v.goal - fvInit);
+        const monthly = i ? need * i / (Math.pow(1 + i, n) - 1) : need / n;
+        const invested = v.initial + monthly * n;
+        return { rows: [
+          { label: "Invest per month", val: _mf2(monthly) },
+          { label: "From starting balance", val: _mf(fvInit) },
+          { label: "Total you invest", val: _mf(invested) },
+          { label: "Growth", val: _mf(v.goal - invested), tone: "good" },
+        ] };
+      } },
+    { id: "invest-dividend", cat: "invest", name: "Dividend / DRIP", desc: "Reinvested dividends vs. taking them as cash, over time.",
+      inputs: [
+        { k: "amount", label: "Investment", type: "money", def: 10000, step: 500 },
+        { k: "yield", label: "Dividend yield", type: "pct", def: 3, step: 0.1 },
+        { k: "appr", label: "Price appreciation / yr", type: "pct", def: 5, step: 0.1 },
+        { k: "years", label: "Years", type: "num", def: 20, step: 1 },
+      ],
+      compute(v) {
+        const drip = _grow(v.amount, v.appr + v.yield, v.years);           // dividends reinvested
+        const priceOnly = _grow(v.amount, v.appr, v.years);
+        // dividends taken as cash: paid on the appreciating balance, summed yearly
+        let cash = 0, bal = v.amount;
+        for (let y = 0; y < v.years; y++) { cash += bal * v.yield / 100; bal *= (1 + v.appr / 100); }
+        return { rows: [
+          { label: "Value with DRIP", val: _mf(drip), tone: "good" },
+          { label: "Value, dividends as cash", val: _mf(priceOnly), sub: "+ " + _mf(cash) + " collected" },
+          { label: "DRIP advantage", val: _mf(drip - (priceOnly + cash)) },
+          { label: "Final-year dividend", val: _mf(bal * v.yield / 100) },
+        ], note: "DRIP assumes dividends buy more shares at the appreciating price — a simplification that ignores taxes." };
+      } },
+    { id: "invest-allocation", cat: "invest", name: "Portfolio allocation", desc: "Target mix vs. your current holdings → what to rebalance.",
+      inputs: [
+        { k: "stocks", label: "Current stocks ($)", type: "money", def: 60000, step: 1000 },
+        { k: "bonds", label: "Current bonds ($)", type: "money", def: 25000, step: 1000 },
+        { k: "cash", label: "Current cash ($)", type: "money", def: 15000, step: 1000 },
+        { k: "tStocks", label: "Target stocks", type: "pct", def: 70, step: 1 },
+        { k: "tBonds", label: "Target bonds", type: "pct", def: 20, step: 1 },
+        { k: "tCash", label: "Target cash", type: "pct", def: 10, step: 1 },
+      ],
+      compute(v) {
+        const total = v.stocks + v.bonds + v.cash;
+        const tgt = { s: total * v.tStocks / 100, b: total * v.tBonds / 100, c: total * v.tCash / 100 };
+        const d = { s: tgt.s - v.stocks, b: tgt.b - v.bonds, c: tgt.c - v.cash };
+        const act = (x) => (x >= 0 ? "Buy " : "Sell ") + _mf(Math.abs(x));
+        const pctSum = v.tStocks + v.tBonds + v.tCash;
+        return { rows: [
+          { label: "Portfolio total", val: _mf(total) },
+          { label: "Stocks", val: act(d.s), sub: _pf(total ? v.stocks / total * 100 : 0, 0) + " → " + _pf(v.tStocks, 0) },
+          { label: "Bonds", val: act(d.b), sub: _pf(total ? v.bonds / total * 100 : 0, 0) + " → " + _pf(v.tBonds, 0) },
+          { label: "Cash", val: act(d.c), sub: _pf(total ? v.cash / total * 100 : 0, 0) + " → " + _pf(v.tCash, 0) },
+        ], note: pctSum !== 100 ? `<strong>Targets add to ${_pf(pctSum, 0)}</strong> — adjust them to total 100%.` : "" };
+      } },
+
+    // ---------------- BUDGETING & SAVINGS ----------------
+    { id: "budget-planner", cat: "budget", name: "Budget planner (50/30/20)", desc: "Split your take-home pay into needs, wants, and savings.",
+      inputs: [
+        { k: "income", label: "Monthly take-home pay", type: "money", def: 4500, step: 100 },
+        { k: "needs", label: "Needs", type: "pct", def: 50, step: 1, help: "Housing, food, utilities, minimum debt payments." },
+        { k: "wants", label: "Wants", type: "pct", def: 30, step: 1 },
+        { k: "savings", label: "Savings & extra debt", type: "pct", def: 20, step: 1 },
+      ],
+      compute(v) {
+        const sum = v.needs + v.wants + v.savings;
+        return { rows: [
+          { label: "Savings & debt paydown", val: _mf(v.income * v.savings / 100), sub: _pf(v.savings, 0) + " / mo" },
+          { label: "Needs", val: _mf(v.income * v.needs / 100), sub: _pf(v.needs, 0) },
+          { label: "Wants", val: _mf(v.income * v.wants / 100), sub: _pf(v.wants, 0) },
+          { label: "Annual savings", val: _mf(v.income * v.savings / 100 * 12) },
+        ], note: sum !== 100 ? `<strong>Your split adds to ${_pf(sum, 0)}</strong> — adjust to total 100%.` : "The classic 50/30/20 rule is a starting point — tune the splits to your life." };
+      } },
+    { id: "budget-savings-goal", cat: "budget", name: "Savings goal", desc: "How long to reach a savings target at a monthly contribution.",
+      inputs: [
+        { k: "goal", label: "Savings goal", type: "money", def: 15000, step: 500 },
+        { k: "current", label: "Already saved", type: "money", def: 2000, step: 250 },
+        { k: "monthly", label: "Monthly contribution", type: "money", def: 400, step: 25 },
+        { k: "apy", label: "Interest (APY)", type: "pct", def: 4, step: 0.1 },
+      ],
+      compute(v) {
+        const i = v.apy / 1200, need = Math.max(0, v.goal - v.current);
+        let months;
+        if (v.monthly <= 0 && i <= 0) months = Infinity;
+        else if (!i) months = need / v.monthly;
+        else { const num = Math.log((v.goal * i + v.monthly) / (v.current * i + v.monthly)); months = num / Math.log(1 + i); }
+        const contributed = v.current + v.monthly * (isFinite(months) ? months : 0);
+        return { rows: [
+          { label: "Time to goal", val: _dur(months) },
+          { label: "You contribute", val: _mf(v.monthly * (isFinite(months) ? months : 0)) },
+          { label: "Interest earned", val: _mf(v.goal - contributed) },
+          { label: "Still to save", val: _mf(need) },
+        ] };
+      } },
+    { id: "budget-emergency", cat: "budget", name: "Emergency fund", desc: "Size 3–6 months of essential expenses and a plan to get there.",
+      inputs: [
+        { k: "expenses", label: "Monthly essential expenses", type: "money", def: 3200, step: 100 },
+        { k: "months", label: "Months of coverage", type: "num", def: 6, step: 1 },
+        { k: "current", label: "Current savings", type: "money", def: 2500, step: 250 },
+        { k: "monthly", label: "Monthly contribution", type: "money", def: 400, step: 25 },
+      ],
+      compute(v) {
+        const target = v.expenses * v.months, gap = Math.max(0, target - v.current);
+        const months = v.monthly > 0 ? gap / v.monthly : Infinity;
+        return { rows: [
+          { label: "Target fund", val: _mf(target), sub: v.months + " months of expenses" },
+          { label: "Current savings", val: _mf(v.current), sub: _pf(target ? v.current / target * 100 : 0, 0) + " funded" },
+          { label: "Still needed", val: _mf(gap), tone: gap > 0 ? "warn" : "good" },
+          { label: "Time to fully fund", val: _dur(months) },
+        ] };
+      } },
+    { id: "budget-networth", cat: "budget", name: "Net worth", desc: "Everything you own minus everything you owe.",
+      inputs: [
+        { k: "cash", label: "Cash & savings", type: "money", def: 15000, step: 500 },
+        { k: "invest", label: "Investments & retirement", type: "money", def: 80000, step: 1000 },
+        { k: "home", label: "Home & property", type: "money", def: 350000, step: 5000 },
+        { k: "other", label: "Vehicles & other assets", type: "money", def: 20000, step: 1000 },
+        { k: "mortgage", label: "Mortgage balance", type: "money", def: 260000, step: 5000 },
+        { k: "loans", label: "Loans (auto, student)", type: "money", def: 22000, step: 1000 },
+        { k: "cards", label: "Credit-card debt", type: "money", def: 4000, step: 250 },
+      ],
+      compute(v) {
+        const assets = v.cash + v.invest + v.home + v.other, debts = v.mortgage + v.loans + v.cards;
+        const nw = assets - debts;
+        return { rows: [
+          { label: "Net worth", val: _mf(nw), tone: nw >= 0 ? "good" : "bad" },
+          { label: "Total assets", val: _mf(assets) },
+          { label: "Total liabilities", val: _mf(debts) },
+          { label: "Liquid (cash + invest)", val: _mf(v.cash + v.invest) },
+        ] };
+      } },
+    { id: "budget-paycheck", cat: "budget", name: "Paycheck / take-home", desc: "Estimate net pay after federal tax, FICA, state tax, and pre-tax deductions.",
+      inputs: [
+        { k: "gross", label: "Annual gross pay", type: "money", def: 70000, step: 1000 },
+        { k: "status", label: "Filing status", type: "select", def: "single", options: [["single", "Single"], ["married", "Married filing jointly"], ["hoh", "Head of household"]] },
+        { k: "pretax", label: "Pre-tax deductions / yr", type: "money", def: 6000, step: 500, help: "401(k), HSA, health premiums." },
+        { k: "state", label: "State tax rate", type: "pct", def: 5, step: 0.1 },
+      ],
+      compute(v) {
+        const t = _TAX2024[v.status] || _TAX2024.single;
+        const taxable = Math.max(0, v.gross - v.pretax - t.std);
+        const fed = _taxOn(taxable, t.b);
+        const ss = Math.min(v.gross, 168600) * 0.062, medi = v.gross * 0.0145, fica = ss + medi;
+        const state = Math.max(0, v.gross - v.pretax) * v.state / 100;
+        const net = v.gross - fed - fica - state - v.pretax;
+        return { rows: [
+          { label: "Monthly take-home", val: _mf(net / 12) },
+          { label: "Annual net pay", val: _mf(net) },
+          { label: "Federal income tax", val: _mf(fed) },
+          { label: "FICA (SS + Medicare)", val: _mf(fica) },
+          { label: "State tax", val: _mf(state) },
+          { label: "Effective tax rate", val: _pf(v.gross ? (fed + fica + state) / v.gross * 100 : 0) },
+        ], note: "Rough estimate using 2024 federal brackets and a flat state rate; ignores credits, local tax, and additional Medicare." };
+      } },
+
+    // ---------------- CREDIT & DEBT ----------------
+    { id: "debt-payoff", cat: "debt", name: "Debt payoff (snowball / avalanche)", desc: "Order up to three debts and see how fast an extra payment clears them.",
+      inputs: [
+        { k: "b1", label: "Debt 1 balance", type: "money", def: 6000, step: 100 },
+        { k: "r1", label: "Debt 1 APR", type: "pct", def: 22, step: 0.1 },
+        { k: "m1", label: "Debt 1 min payment", type: "money", def: 150, step: 10 },
+        { k: "b2", label: "Debt 2 balance", type: "money", def: 12000, step: 100 },
+        { k: "r2", label: "Debt 2 APR", type: "pct", def: 7, step: 0.1 },
+        { k: "m2", label: "Debt 2 min payment", type: "money", def: 250, step: 10 },
+        { k: "b3", label: "Debt 3 balance", type: "money", def: 3000, step: 100 },
+        { k: "r3", label: "Debt 3 APR", type: "pct", def: 15, step: 0.1 },
+        { k: "m3", label: "Debt 3 min payment", type: "money", def: 80, step: 10 },
+        { k: "extra", label: "Extra per month", type: "money", def: 200, step: 25 },
+        { k: "strategy", label: "Strategy", type: "select", def: "avalanche", options: [["avalanche", "Avalanche (highest APR first)"], ["snowball", "Snowball (smallest balance first)"]] },
+      ],
+      compute(v) {
+        const mk = (b, r, m) => ({ bal: b, apr: r, min: m });
+        const build = () => [mk(v.b1, v.r1, v.m1), mk(v.b2, v.r2, v.m2), mk(v.b3, v.r3, v.m3)].filter(d => d.bal > 0);
+        function simulate(extra, strat) {
+          const debts = build(); let months = 0, interest = 0, firstCleared = 0;
+          const order = () => debts.map((d, i) => i).filter(i => debts[i].bal > 0.005)
+            .sort((a, b) => strat === "avalanche" ? debts[b].apr - debts[a].apr : debts[a].bal - debts[b].bal);
+          while (debts.some(d => d.bal > 0.005) && months < 1200) {
+            months++;
+            let pool = extra;
+            debts.forEach(d => { if (d.bal > 0.005) { const int = d.bal * d.apr / 1200; interest += int; d.bal += int; } });
+            debts.forEach(d => { if (d.bal > 0.005) { const p = Math.min(d.min, d.bal); d.bal -= p; pool += d.min - p; } });
+            const ord = order();
+            for (const idx of ord) { if (pool <= 0) break; const p = Math.min(pool, debts[idx].bal); debts[idx].bal -= p; pool -= p; }
+            if (!firstCleared && debts.some(d => d.bal <= 0.005)) firstCleared = months;
+          }
+          return { months, interest, firstCleared };
+        }
+        const totalMin = v.m1 + v.m2 + v.m3;
+        const plan = simulate(v.extra, v.strategy);
+        const minOnly = simulate(0, v.strategy);
+        return { rows: [
+          { label: "Debt-free in", val: _dur(plan.months), tone: "good" },
+          { label: "Total interest", val: _mf(plan.interest) },
+          { label: "Interest vs. minimums only", val: _mf(minOnly.interest - plan.interest), sub: "saved", tone: "good" },
+          { label: "Time vs. minimums only", val: _dur(minOnly.months - plan.months), sub: "sooner" },
+          { label: "First debt cleared", val: _dur(plan.firstCleared) },
+          { label: "Monthly outlay", val: _mf(totalMin + v.extra) },
+        ], note: `Paying <strong>${_mf(totalMin + v.extra)}/mo</strong> (${_mf(totalMin)} minimums + ${_mf(v.extra)} extra) with the <strong>${v.strategy}</strong> method. Freed-up minimums roll onto the next debt.` };
+      } },
+    { id: "debt-card", cat: "debt", name: "Credit-card payoff", desc: "How long a balance takes to clear, and the interest it costs.",
+      inputs: [
+        { k: "bal", label: "Balance", type: "money", def: 5000, step: 100 },
+        { k: "apr", label: "APR", type: "pct", def: 22, step: 0.1 },
+        { k: "pay", label: "Monthly payment", type: "money", def: 200, step: 10 },
+      ],
+      compute(v) {
+        const months = _payoffMonths(v.bal, v.apr, v.pay);
+        const interest = isFinite(months) ? v.pay * months - v.bal : Infinity;
+        const minInt = v.bal * v.apr / 1200;
+        return { rows: [
+          { label: "Time to pay off", val: _dur(months), tone: isFinite(months) ? "" : "bad" },
+          { label: "Total interest", val: _mf(interest) },
+          { label: "Total paid", val: _mf(isFinite(months) ? v.pay * months : Infinity) },
+          { label: "First month's interest", val: _mf(minInt) },
+        ], note: !isFinite(months) ? `<strong>Your payment barely covers interest</strong> (${_mf(minInt)}/mo) — the balance will never clear. Pay more than that each month.` : "" };
+      } },
+    { id: "debt-loan", cat: "debt", name: "Loan payoff", desc: "Personal or student-loan payment, with optional extra payments.",
+      inputs: [
+        { k: "bal", label: "Loan balance", type: "money", def: 20000, step: 250 },
+        { k: "apr", label: "APR", type: "pct", def: 7, step: 0.1 },
+        { k: "term", label: "Term (months)", type: "num", def: 120, step: 6 },
+        { k: "extra", label: "Extra per month", type: "money", def: 100, step: 10 },
+      ],
+      compute(v) {
+        const pay = _pmt(v.bal, v.apr, v.term), baseInt = pay * v.term - v.bal;
+        const withMonths = _payoffMonths(v.bal, v.apr, pay + v.extra);
+        const withInt = isFinite(withMonths) ? (pay + v.extra) * withMonths - v.bal : Infinity;
+        return { rows: [
+          { label: "Monthly payment", val: _mf2(pay) },
+          { label: "Payoff with extra", val: _dur(withMonths), sub: "vs. " + _dur(v.term) },
+          { label: "Interest saved", val: _mf(baseInt - withInt), tone: "good" },
+          { label: "Total interest (base)", val: _mf(baseInt) },
+        ] };
+      } },
+    { id: "debt-consolidation", cat: "debt", name: "Debt consolidation", desc: "Compare a consolidation loan against your current balances.",
+      inputs: [
+        { k: "bal", label: "Total balance", type: "money", def: 15000, step: 250 },
+        { k: "curApr", label: "Current avg APR", type: "pct", def: 21, step: 0.1 },
+        { k: "curPay", label: "Current total payment / mo", type: "money", def: 500, step: 10 },
+        { k: "newApr", label: "New loan APR", type: "pct", def: 11, step: 0.1 },
+        { k: "newTerm", label: "New term (months)", type: "num", def: 48, step: 6 },
+        { k: "fees", label: "Origination fees", type: "money", def: 0, step: 50 },
+      ],
+      compute(v) {
+        const curMonths = _payoffMonths(v.bal, v.curApr, v.curPay);
+        const curInt = isFinite(curMonths) ? v.curPay * curMonths - v.bal : Infinity;
+        const newPay = _pmt(v.bal + v.fees, v.newApr, v.newTerm), newInt = newPay * v.newTerm - (v.bal + v.fees) + v.fees;
+        return { rows: [
+          { label: "New monthly payment", val: _mf2(newPay), sub: (newPay < v.curPay ? "-" : "+") + _mf(Math.abs(newPay - v.curPay)) + " vs. now" },
+          { label: "Interest saved", val: _mf(curInt - newInt), tone: curInt - newInt > 0 ? "good" : "bad" },
+          { label: "New payoff time", val: _dur(v.newTerm), sub: "vs. " + _dur(curMonths) },
+          { label: "New total interest", val: _mf(newInt) },
+        ], note: !isFinite(curMonths) ? "Your current payment doesn't cover interest, so current-plan comparisons are approximate." : "" };
+      } },
+    { id: "debt-utilization", cat: "debt", name: "Credit utilization", desc: "Balances vs. limits — a big factor in your credit score.",
+      inputs: [
+        { k: "bal", label: "Total balances", type: "money", def: 3500, step: 100 },
+        { k: "limit", label: "Total credit limits", type: "money", def: 12000, step: 500 },
+      ],
+      compute(v) {
+        const util = v.limit > 0 ? v.bal / v.limit * 100 : Infinity;
+        const to30 = Math.max(0, v.bal - v.limit * 0.30), to10 = Math.max(0, v.bal - v.limit * 0.10);
+        const tone = util <= 10 ? "good" : util <= 30 ? "warn" : "bad";
+        return { rows: [
+          { label: "Utilization", val: _pf(util), tone },
+          { label: "Pay to reach 30%", val: _mf(to30) },
+          { label: "Pay to reach 10%", val: _mf(to10) },
+          { label: "Available credit", val: _mf(Math.max(0, v.limit - v.bal)) },
+        ], note: "Keeping utilization under <strong>30%</strong> (ideally under 10%) generally helps your score. Below 30% is the common guidance." };
+      } },
+
+    // ---------------- RETIREMENT & TAXES ----------------
+    { id: "retire-401k", cat: "retire", name: "401(k) / IRA growth", desc: "Contributions plus employer match, compounded to retirement.",
+      inputs: [
+        { k: "balance", label: "Current balance", type: "money", def: 25000, step: 1000 },
+        { k: "salary", label: "Annual salary", type: "money", def: 70000, step: 1000 },
+        { k: "pct", label: "Your contribution", type: "pct", def: 10, step: 0.5 },
+        { k: "match", label: "Employer match", type: "pct", def: 50, step: 5, help: "% of your contribution the employer adds." },
+        { k: "matchCap", label: "Match up to", type: "pct", def: 6, step: 0.5, help: "…this % of your salary." },
+        { k: "rate", label: "Annual return", type: "pct", def: 7, step: 0.1 },
+        { k: "growth", label: "Salary growth / yr", type: "pct", def: 2, step: 0.1 },
+        { k: "years", label: "Years to retirement", type: "num", def: 30, step: 1 },
+      ],
+      compute(v) {
+        let bal = v.balance, salary = v.salary, yourTotal = 0, matchTotal = 0;
+        for (let y = 0; y < v.years; y++) {
+          const yours = salary * v.pct / 100;
+          const matched = salary * Math.min(v.pct, v.matchCap) / 100 * (v.match / 100);
+          yourTotal += yours; matchTotal += matched;
+          bal = (bal + yours + matched) * (1 + v.rate / 100);
+          salary *= (1 + v.growth / 100);
+        }
+        return { rows: [
+          { label: "Balance at retirement", val: _mf(bal) },
+          { label: "Your contributions", val: _mf(yourTotal) },
+          { label: "Employer match", val: _mf(matchTotal), tone: "good" },
+          { label: "Investment growth", val: _mf(bal - v.balance - yourTotal - matchTotal), tone: "good" },
+        ], note: `The employer match adds <strong>${_mf(matchTotal)}</strong> of free money over ${v.years} years.` };
+      } },
+    { id: "retire-readiness", cat: "retire", name: "Retirement readiness", desc: "Are you on track for the retirement you want?",
+      inputs: [
+        { k: "age", label: "Current age", type: "num", def: 35, step: 1 },
+        { k: "retire", label: "Retirement age", type: "num", def: 65, step: 1 },
+        { k: "savings", label: "Current savings", type: "money", def: 100000, step: 5000 },
+        { k: "monthly", label: "Monthly contribution", type: "money", def: 1000, step: 100 },
+        { k: "rate", label: "Return before retirement", type: "pct", def: 6, step: 0.1 },
+        { k: "spend", label: "Annual spending in retirement", type: "money", def: 60000, step: 2500 },
+        { k: "income", label: "Other income / yr (SS, pension)", type: "money", def: 24000, step: 1000 },
+        { k: "wrate", label: "Safe withdrawal rate", type: "pct", def: 4, step: 0.1 },
+      ],
+      compute(v) {
+        const years = Math.max(0, v.retire - v.age);
+        const nest = _fv(v.savings, v.monthly, v.rate, years);
+        const needFromSavings = Math.max(0, v.spend - v.income);
+        const needed = v.wrate > 0 ? needFromSavings / (v.wrate / 100) : Infinity;
+        const gap = nest - needed;
+        return { rows: [
+          { label: "Projected nest egg", val: _mf(nest), sub: "at age " + v.retire },
+          { label: "Nest egg needed", val: _mf(needed) },
+          { label: gap >= 0 ? "Surplus" : "Shortfall", val: _mf(Math.abs(gap)), tone: gap >= 0 ? "good" : "bad" },
+          { label: "Income your savings support", val: _mf(nest * v.wrate / 100 + v.income) + "/yr" },
+        ], note: `Uses the <strong>${_pf(v.wrate, 0)}</strong> withdrawal rule: a nest egg supports about ${_pf(v.wrate, 0)} of itself per year. Other income covers ${_mf(v.income)}/yr.` };
+      } },
+    { id: "retire-drawdown", cat: "retire", name: "Retirement drawdown", desc: "How long savings last at a given withdrawal, adjusted for inflation.",
+      inputs: [
+        { k: "nest", label: "Nest egg", type: "money", def: 1000000, step: 25000 },
+        { k: "withdraw", label: "Annual withdrawal (today's $)", type: "money", def: 50000, step: 2500 },
+        { k: "rate", label: "Investment return", type: "pct", def: 5, step: 0.1 },
+        { k: "inflation", label: "Inflation", type: "pct", def: 3, step: 0.1 },
+      ],
+      compute(v) {
+        let bal = v.nest, w = v.withdraw, years = 0;
+        while (bal > 0 && years < 100) { bal = bal * (1 + v.rate / 100) - w; if (bal <= 0) break; w *= (1 + v.inflation / 100); years++; }
+        const lasts = years >= 100 ? Infinity : years + 1;
+        const safe = v.nest * 0.04;
+        return { rows: [
+          { label: "Money lasts", val: lasts === Infinity ? "30+ years" : lasts + " years", tone: lasts === Infinity || lasts >= 30 ? "good" : "warn" },
+          { label: "4%-rule withdrawal", val: _mf(safe) + "/yr" },
+          { label: "Your withdrawal rate", val: _pf(v.nest ? v.withdraw / v.nest * 100 : 0) },
+          { label: "First-year monthly", val: _mf(v.withdraw / 12) },
+        ], note: lasts === Infinity ? "At this rate the portfolio grows faster than you spend — it likely lasts indefinitely." : "" };
+      } },
+    { id: "tax-federal", cat: "retire", name: "Federal income tax", desc: "Estimate 2024 federal income tax, effective and marginal rates.",
+      inputs: [
+        { k: "income", label: "Annual income", type: "money", def: 85000, step: 1000 },
+        { k: "status", label: "Filing status", type: "select", def: "single", options: [["single", "Single"], ["married", "Married filing jointly"], ["hoh", "Head of household"]] },
+        { k: "deduction", label: "Deductions", type: "money", def: 0, step: 500, help: "Leave 0 to use the standard deduction." },
+      ],
+      compute(v) {
+        const t = _TAX2024[v.status] || _TAX2024.single;
+        const ded = v.deduction > 0 ? v.deduction : t.std;
+        const taxable = Math.max(0, v.income - ded);
+        const tax = _taxOn(taxable, t.b), marg = _marginal(taxable, t.b);
+        return { rows: [
+          { label: "Federal income tax", val: _mf(tax) },
+          { label: "Taxable income", val: _mf(taxable), sub: "after " + _mf(ded) + " deduction" },
+          { label: "Effective rate", val: _pf(v.income ? tax / v.income * 100 : 0) },
+          { label: "Marginal rate", val: _pf(marg * 100, 0) },
+          { label: "After-tax income", val: _mf(v.income - tax) },
+        ], note: "2024 brackets. Federal income tax only — excludes FICA, state/local tax, and credits." };
+      } },
+    { id: "retire-rmd", cat: "retire", name: "RMD estimate", desc: "Required minimum distribution from a pre-tax retirement account.",
+      inputs: [
+        { k: "balance", label: "Account balance (Dec 31)", type: "money", def: 500000, step: 10000 },
+        { k: "age", label: "Your age this year", type: "num", def: 73, step: 1 },
+      ],
+      compute(v) {
+        const age = Math.round(v.age);
+        const period = _RMD[age] || (age > 100 ? 6.0 : null);
+        if (age < 73) return { rows: [{ label: "No RMD required yet", val: "age " + age }], note: "Required minimum distributions currently begin at <strong>age 73</strong>." };
+        const rmd = period ? v.balance / period : NaN;
+        return { rows: [
+          { label: "This year's RMD", val: _mf(rmd) },
+          { label: "Monthly equivalent", val: _mf(rmd / 12) },
+          { label: "Distribution period", val: (period || "—") + " yrs" },
+          { label: "% of balance", val: _pf(period ? 100 / period : 0) },
+        ], note: "IRS Uniform Lifetime Table. Consult a tax professional for your exact figure and deadlines." };
+      } },
+  ];
   function setAmortMode(m) {
     amortMode = m;
     const yBtn = document.getElementById("viewYearly"), mBtn = document.getElementById("viewMonthly");
