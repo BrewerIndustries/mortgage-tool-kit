@@ -110,7 +110,80 @@ function previousBusinessDay(isoDate) {
   return iso(dt);
 }
 
-const MTK = { monthlyPI, amortize, payoffPayment, affordability, refinance, federalHolidays, previousBusinessDay };
+// ===== Shared primitives for the non-mortgage areas (Auto, Investing, Budget, Debt,
+// Retirement & Taxes). Kept here so the app and the unit tests run the exact same math. =====
+
+// Future value of a starting balance plus a fixed monthly contribution, compounded monthly.
+function futureValue(initial, monthly, annualPct, years) {
+  const i = annualPct / 1200, n = Math.max(0, Math.round(years * 12));
+  return !i ? initial + monthly * n : initial * Math.pow(1 + i, n) + monthly * ((Math.pow(1 + i, n) - 1) / i);
+}
+
+// Present value of a monthly annuity (max loan a given payment supports). Inverse of monthlyPI.
+function presentValueAnnuity(payment, annualPct, months) {
+  const i = annualPct / 1200, n = Math.max(0, months);
+  return i ? payment * (1 - Math.pow(1 + i, -n)) / i : payment * n;
+}
+
+// Months to pay off a balance at a fixed payment. Infinity if the payment can't cover interest.
+function payoffMonths(balance, annualPct, payment) {
+  const i = annualPct / 1200;
+  if (balance <= 0) return 0;
+  if (!i) return payment > 0 ? balance / payment : Infinity;
+  if (payment <= balance * i) return Infinity;
+  return Math.log(payment / (payment - balance * i)) / Math.log(1 + i);
+}
+
+// Compound a single value at an annual rate for a number of years (rate may be negative).
+function grow(value, annualPct, years) { return value * Math.pow(1 + annualPct / 100, years); }
+
+// 2024 federal income-tax brackets + standard deductions, by filing status.
+const TAX_2024 = {
+  single:  { std: 14600, b: [[0, .10], [11600, .12], [47150, .22], [100525, .24], [191950, .32], [243725, .35], [609350, .37]] },
+  married: { std: 29200, b: [[0, .10], [23200, .12], [94300, .22], [201050, .24], [383900, .32], [487450, .35], [731200, .37]] },
+  hoh:     { std: 21900, b: [[0, .10], [16550, .12], [63100, .22], [100500, .24], [191950, .32], [243700, .35], [609350, .37]] },
+};
+// Tax on a taxable income given a marginal bracket table [[lowerBound, rate], ...].
+function federalTax(taxable, brackets) {
+  let t = 0;
+  for (let i = 0; i < brackets.length; i++) {
+    const lo = brackets[i][0], rate = brackets[i][1], hi = i + 1 < brackets.length ? brackets[i + 1][0] : Infinity;
+    if (taxable > lo) t += (Math.min(taxable, hi) - lo) * rate; else break;
+  }
+  return t;
+}
+// Marginal rate (the bracket the top dollar falls in).
+function marginalRate(taxable, brackets) { let r = brackets[0][1]; for (const [lo, rate] of brackets) if (taxable > lo) r = rate; return r; }
+
+// IRS Uniform Lifetime Table (2022+): age -> distribution period (years).
+const RMD_TABLE = { 72: 27.4, 73: 26.5, 74: 25.5, 75: 24.6, 76: 23.7, 77: 22.9, 78: 22.0, 79: 21.1, 80: 20.2, 81: 19.4, 82: 18.5, 83: 17.7, 84: 16.8, 85: 16.0, 86: 15.2, 87: 14.4, 88: 13.7, 89: 12.9, 90: 12.2, 91: 11.5, 92: 10.8, 93: 10.1, 94: 9.5, 95: 8.9, 96: 8.4, 97: 7.8, 98: 7.3, 99: 6.8, 100: 6.4 };
+
+// Multi-debt payoff simulation (snowball = smallest balance first, avalanche = highest APR
+// first). Minimums are paid on every debt; `extra` plus any freed-up minimums roll onto the
+// current target. Returns { months, interest, firstCleared, series } (series = total balance
+// at each month, starting with the initial total). Does not mutate the input array.
+function debtPayoff(debtsIn, extra, strategy) {
+  const debts = (debtsIn || []).filter(d => d.bal > 0).map(d => ({ bal: d.bal, apr: d.apr, min: d.min }));
+  let months = 0, interest = 0, firstCleared = 0;
+  const series = [debts.reduce((s, d) => s + d.bal, 0)];
+  const order = () => debts.map((d, i) => i).filter(i => debts[i].bal > 0.005)
+    .sort((a, b) => strategy === 'avalanche' ? debts[b].apr - debts[a].apr : debts[a].bal - debts[b].bal);
+  while (debts.some(d => d.bal > 0.005) && months < 1200) {
+    months++;
+    let pool = extra;
+    debts.forEach(d => { if (d.bal > 0.005) { const int = d.bal * d.apr / 1200; interest += int; d.bal += int; } });
+    debts.forEach(d => { if (d.bal > 0.005) { const p = Math.min(d.min, d.bal); d.bal -= p; pool += d.min - p; } });
+    for (const idx of order()) { if (pool <= 0) break; const p = Math.min(pool, debts[idx].bal); debts[idx].bal -= p; pool -= p; }
+    if (!firstCleared && debts.some(d => d.bal <= 0.005)) firstCleared = months;
+    series.push(debts.reduce((s, d) => s + Math.max(0, d.bal), 0));
+  }
+  return { months, interest, firstCleared, series };
+}
+
+const MTK = {
+  monthlyPI, amortize, payoffPayment, affordability, refinance, federalHolidays, previousBusinessDay,
+  futureValue, presentValueAnnuity, payoffMonths, grow, federalTax, marginalRate, debtPayoff, TAX_2024, RMD_TABLE,
+};
 
 // Browser: expose as window.MTK (loaded via <script src="calc.js">).
 if (typeof window !== 'undefined') window.MTK = MTK;

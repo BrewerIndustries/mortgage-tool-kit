@@ -38,10 +38,18 @@ debt-payoff); a **knowledge base** of 17 in-app articles (3–4 per area) with a
 style reader, a "Learn" section on every area grid, related-article links, and a
 "Learn: …" link from each calculator to its most relevant article; a global footer.
 
-Remaining for these areas (P1/P2): amortization/schedule detail views, share-links +
-CSV export per calc, saved scenarios per area, extract the `CALCS` compute fns into
-`calc.mjs` + unit tests (currently inline), and refresh tax/limit figures annually. The
-per-area detail below is the record of intended scope.
+**Follow-up hardening shipped (2026-07-30, dev):**
+- [x] Extracted the new pure math into **`calc.js`** (`futureValue`, `presentValueAnnuity`,
+  `payoffMonths`, `grow`, `federalTax`/`marginalRate` + `TAX_2024`, `debtPayoff`, `RMD_TABLE`);
+  the inline calc helpers now delegate to `window.MTK`, so shipped == tested. **+15 unit tests**
+  in `test/calc.test.mjs` (32 total, all green in CI).
+- [x] **Thousands separators** on every generic money input (reuses `attachThousands`).
+- [x] **Share** (copy a `#c=<id>~<base64>` deep-link that reopens the calc with its inputs,
+  behind the disclaimer gate) and **Export CSV** (inputs + results) per calculator.
+
+Remaining for these areas (P1/P2): amortization/schedule detail views, **saved scenarios per
+area** (needs a D1 `scenarios.area` column + per-area model), and refresh tax/limit figures
+annually. The per-area detail below is the record of intended scope.
 
 ## Cross-cutting — foundation for every new area (P0, do alongside Auto)
 

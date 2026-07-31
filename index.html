@@ -189,6 +189,8 @@
 
   /* ===== Generic calculator ===== */
   .gc-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 14px; margin-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .gc-bar-actions { margin-left: auto; display: flex; gap: 8px; }
+  @media (max-width: 560px) { .gc-bar-actions { margin-left: 0; } }
   .gc-head { margin: 6px 0 18px; }
   .gc-head h2 { font-family: var(--serif); font-weight: 600; font-size: 24px; margin: 0 0 3px; letter-spacing: -.01em; }
   .gc-head p { color: var(--muted); font-size: 13.5px; margin: 0; line-height: 1.5; }
@@ -656,6 +658,10 @@
     <div class="gc-bar">
       <button class="ghost-btn sm" id="gcBack" type="button">&#8592; <span id="gcBackLbl">Back</span></button>
       <select id="gcSwitch" class="tool-switch" aria-label="Switch calculator"></select>
+      <div class="gc-bar-actions">
+        <button class="ghost-btn sm" id="gcShare" type="button" title="Copy a link that reopens this calculation">Share</button>
+        <button class="ghost-btn sm" id="gcCsv" type="button" title="Download this calculation as a CSV">Export CSV</button>
+      </div>
     </div>
     <div class="gc-head">
       <h2 id="gcTitle"></h2>
@@ -4192,23 +4198,19 @@
   const _xf  = (n, d = 2) => !isFinite(n) ? "—" : n.toFixed(d) + "×";
   const _dur = (m) => { if (!isFinite(m) || m <= 0) return "—"; m = Math.round(m); const y = Math.floor(m / 12), mo = m % 12; return (y ? y + " yr" : "") + (y && mo ? " " : "") + (mo ? mo + " mo" : (y ? "" : "0 mo")); };
 
-  // -- money math helpers --
-  const _pmt = (P, apr, n) => (window.MTK ? window.MTK.monthlyPI(P, apr, n) : (function () { const i = apr / 1200; return i ? P * i / (1 - Math.pow(1 + i, -n)) : P / n; })());
-  const _pvAnnuity = (pay, apr, n) => { const i = apr / 1200; return i ? pay * (1 - Math.pow(1 + i, -n)) / i : pay * n; };
-  const _fv = (initial, monthly, annualPct, years) => { const i = annualPct / 1200, n = Math.round(years * 12); return !i ? initial + monthly * n : initial * Math.pow(1 + i, n) + monthly * ((Math.pow(1 + i, n) - 1) / i); };
-  const _payoffMonths = (bal, apr, pay) => { const i = apr / 1200; if (!i) return pay > 0 ? bal / pay : Infinity; if (pay <= bal * i) return Infinity; return Math.log(pay / (pay - bal * i)) / Math.log(1 + i); };
-  const _grow = (v, ratePct, years) => v * Math.pow(1 + ratePct / 100, years);
+  // -- money math helpers (delegate to calc.js / window.MTK so the shipped code is the tested code) --
+  const _M = window.MTK;
+  const _pmt = (P, apr, n) => _M.monthlyPI(P, apr, n);
+  const _pvAnnuity = (pay, apr, n) => _M.presentValueAnnuity(pay, apr, n);
+  const _fv = (initial, monthly, annualPct, years) => _M.futureValue(initial, monthly, annualPct, years);
+  const _payoffMonths = (bal, apr, pay) => _M.payoffMonths(bal, apr, pay);
+  const _grow = (v, ratePct, years) => _M.grow(v, ratePct, years);
 
-  // -- federal tax (2024) --
-  const _TAX2024 = {
-    single:  { std: 14600, b: [[0, .10], [11600, .12], [47150, .22], [100525, .24], [191950, .32], [243725, .35], [609350, .37]] },
-    married: { std: 29200, b: [[0, .10], [23200, .12], [94300, .22], [201050, .24], [383900, .32], [487450, .35], [731200, .37]] },
-    hoh:     { std: 21900, b: [[0, .10], [16550, .12], [63100, .22], [100500, .24], [191950, .32], [243700, .35], [609350, .37]] },
-  };
-  function _taxOn(taxable, br) { let t = 0; for (let i = 0; i < br.length; i++) { const lo = br[i][0], rate = br[i][1], hi = i + 1 < br.length ? br[i + 1][0] : Infinity; if (taxable > lo) t += (Math.min(taxable, hi) - lo) * rate; else break; } return t; }
-  function _marginal(taxable, br) { let r = br[0][1]; for (const [lo, rate] of br) if (taxable > lo) r = rate; return r; }
-  // IRS Uniform Lifetime Table (2022+) distribution periods
-  const _RMD = { 72: 27.4, 73: 26.5, 74: 25.5, 75: 24.6, 76: 23.7, 77: 22.9, 78: 22.0, 79: 21.1, 80: 20.2, 81: 19.4, 82: 18.5, 83: 17.7, 84: 16.8, 85: 16.0, 86: 15.2, 87: 14.4, 88: 13.7, 89: 12.9, 90: 12.2, 91: 11.5, 92: 10.8, 93: 10.1, 94: 9.5, 95: 8.9, 96: 8.4, 97: 7.8, 98: 7.3, 99: 6.8, 100: 6.4 };
+  // -- federal tax + RMD (from calc.js) --
+  const _TAX2024 = _M.TAX_2024;
+  const _taxOn = (taxable, br) => _M.federalTax(taxable, br);
+  const _marginal = (taxable, br) => _M.marginalRate(taxable, br);
+  const _RMD = _M.RMD_TABLE;
 
   // -- input form rendering --
   const _tip = (h) => h ? ` <span class="tip" data-tip="${esc(h)}" tabindex="0" role="img" aria-label="${esc(h)}">?</span>` : "";
@@ -4327,12 +4329,17 @@
     });
     if (series.length > 1) { ctx.textAlign = "left"; let lx = padL + 4; series.forEach(s => { ctx.fillStyle = rc(s.color); ctx.fillRect(lx, padT + 2, 9, 9); ctx.fillStyle = muted; ctx.fillText(s.label, lx + 13, padT + 7); lx += ctx.measureText(s.label).width + 34; }); }
   }
-  function openCalc(calc) {
+  function openCalc(calc, preset) {
     resetChrome();
     currentCalc = calc;
     document.getElementById("gcTitle").textContent = calc.name;
     document.getElementById("gcDesc").textContent = calc.desc || "";
     document.getElementById("gcInputs").innerHTML = calc.inputs.map(_fieldHtml).join("");
+    calc.inputs.forEach(f => { if (f.type === "money") attachThousands("gi_" + f.k); });   // 1,234 formatting
+    if (preset) calc.inputs.forEach(f => {                                                  // apply values from a shared link
+      const el = document.getElementById("gi_" + f.k); if (!el || preset[f.k] == null) return;
+      el.value = f.type === "money" ? Number(preset[f.k]).toLocaleString() : preset[f.k];
+    });
     const cat = catById(calc.cat);
     document.getElementById("gcBackLbl").textContent = cat ? cat.name : "Back";
     document.getElementById("gcBack").dataset.cat = calc.cat;
@@ -4405,6 +4412,44 @@
   document.getElementById("cgToHub").addEventListener("click", showHub);
   document.getElementById("gcBack").addEventListener("click", (e) => { const id = e.currentTarget.dataset.cat; const cat = catById(id); if (cat) renderCatGrid(cat, CALCS.filter(c => c.cat === id)); });
   document.getElementById("gcSwitch").addEventListener("change", (e) => { const c = CALCS.find(x => x.id === e.target.value); if (c) openCalc(c); });
+
+  // ---- Share + CSV export for the generic calculators ----
+  const _csvCell = (s) => { s = String(s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  function _download(name, text, type) {
+    const blob = new Blob([text], { type: type || "text/plain" }), url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  document.getElementById("gcCsv").addEventListener("click", () => {
+    if (!currentCalc) return;
+    const v = _readVals(currentCalc);
+    let out; try { out = currentCalc.compute(v) || {}; } catch (e) { out = {}; }
+    const lines = [["Financial Tool Kit", currentCalc.name], [], ["Input", "Value"]];
+    currentCalc.inputs.forEach(f => lines.push([f.label, f.type === "select" ? v[f.k] : String(v[f.k])]));
+    lines.push([], ["Result", "Value"]);
+    (out.rows || []).forEach(r => lines.push([r.label, String(r.val).replace(/<[^>]*>/g, "")]));
+    const csv = lines.map(row => row.map(_csvCell).join(",")).join("\n");
+    _download("ftk-" + currentCalc.id + ".csv", csv, "text/csv");
+  });
+  document.getElementById("gcShare").addEventListener("click", (e) => {
+    if (!currentCalc) return;
+    const v = _readVals(currentCalc);
+    let enc = ""; try { enc = btoa(unescape(encodeURIComponent(JSON.stringify(v)))); } catch (err) {}
+    const url = location.origin + location.pathname + "#c=" + currentCalc.id + "~" + encodeURIComponent(enc);
+    const btn = e.currentTarget, done = () => { btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = "Share"; }, 1400); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, () => { prompt("Copy this link:", url); });
+    else prompt("Copy this link:", url);
+  });
+  // Open a shared "#c=<id>~<base64>" calculator link on load (behind the disclaimer gate).
+  function openSharedCalc() {
+    const m = (location.hash || "").match(/[#&]c=([^~]+)~([^&]*)/);
+    if (!m) return false;
+    const calc = CALCS.find(x => x.id === m[1]); if (!calc) return false;
+    let preset = null; try { preset = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[2]))))); } catch (e) {}
+    try { history.replaceState(null, "", location.pathname); } catch (e) {}
+    requireDisclaimer(() => openCalc(calc, preset || undefined));
+    return true;
+  }
 
   // ================= Calculator definitions =================
   const CALCS = [
@@ -4777,26 +4822,10 @@
         { k: "strategy", label: "Strategy", type: "select", def: "avalanche", options: [["avalanche", "Avalanche (highest APR first)"], ["snowball", "Snowball (smallest balance first)"]] },
       ],
       compute(v) {
-        const mk = (b, r, m) => ({ bal: b, apr: r, min: m });
-        const build = () => [mk(v.b1, v.r1, v.m1), mk(v.b2, v.r2, v.m2), mk(v.b3, v.r3, v.m3)].filter(d => d.bal > 0);
-        function simulate(extra, strat) {
-          const debts = build(); let months = 0, interest = 0, firstCleared = 0;
-          const order = () => debts.map((d, i) => i).filter(i => debts[i].bal > 0.005)
-            .sort((a, b) => strat === "avalanche" ? debts[b].apr - debts[a].apr : debts[a].bal - debts[b].bal);
-          while (debts.some(d => d.bal > 0.005) && months < 1200) {
-            months++;
-            let pool = extra;
-            debts.forEach(d => { if (d.bal > 0.005) { const int = d.bal * d.apr / 1200; interest += int; d.bal += int; } });
-            debts.forEach(d => { if (d.bal > 0.005) { const p = Math.min(d.min, d.bal); d.bal -= p; pool += d.min - p; } });
-            const ord = order();
-            for (const idx of ord) { if (pool <= 0) break; const p = Math.min(pool, debts[idx].bal); debts[idx].bal -= p; pool -= p; }
-            if (!firstCleared && debts.some(d => d.bal <= 0.005)) firstCleared = months;
-          }
-          return { months, interest, firstCleared };
-        }
+        const build = () => [{ bal: v.b1, apr: v.r1, min: v.m1 }, { bal: v.b2, apr: v.r2, min: v.m2 }, { bal: v.b3, apr: v.r3, min: v.m3 }];
         const totalMin = v.m1 + v.m2 + v.m3;
-        const plan = simulate(v.extra, v.strategy);
-        const minOnly = simulate(0, v.strategy);
+        const plan = _M.debtPayoff(build(), v.extra, v.strategy);
+        const minOnly = _M.debtPayoff(build(), 0, v.strategy);
         return { rows: [
           { label: "Debt-free in", val: _dur(plan.months), tone: "good" },
           { label: "Total interest", val: _mf(plan.interest) },
@@ -5150,7 +5179,7 @@
     "auto-tco": (v) => { const resale = _grow(v.price, -v.dep, v.years); return { type: "bar", title: "Where the money goes", bars: [{ label: "Deprec.", value: v.price - resale }, { label: "Insur.", value: v.ins * v.years }, { label: "Fuel", value: v.fuel * v.years }, { label: "Maint.", value: v.maint * v.years }, { label: "Fees", value: v.fees * v.years }] }; },
     "budget-planner": (v) => ({ type: "bar", title: "Monthly split", bars: [{ label: "Needs", value: v.income * v.needs / 100 }, { label: "Wants", value: v.income * v.wants / 100 }, { label: "Savings", value: v.income * v.savings / 100, color: "--accent" }] }),
     "retire-readiness": (v) => { const years = Math.max(0, v.retire - v.age); const nest = _fv(v.savings, v.monthly, v.rate, years); const needed = v.wrate > 0 ? Math.max(0, v.spend - v.income) / (v.wrate / 100) : 0; return { type: "bar", title: "Projected vs. needed", bars: [{ label: "Projected", value: nest, color: "--accent" }, { label: "Needed", value: needed, color: _AX2 }] }; },
-    "debt-payoff": (v) => { const debts = [[v.b1, v.r1, v.m1], [v.b2, v.r2, v.m2], [v.b3, v.r3, v.m3]].filter(d => d[0] > 0).map(d => ({ bal: d[0], apr: d[1], min: d[2] })); const series = [debts.reduce((s, d) => s + d.bal, 0)]; let months = 0; while (debts.some(d => d.bal > 0.005) && months < 600) { months++; let pool = v.extra; debts.forEach(d => { if (d.bal > 0.005) d.bal += d.bal * d.apr / 1200; }); debts.forEach(d => { if (d.bal > 0.005) { const p = Math.min(d.min, d.bal); d.bal -= p; pool += d.min - p; } }); const ord = debts.map((d, i) => i).filter(i => debts[i].bal > 0.005).sort((a, b) => v.strategy === "avalanche" ? debts[b].apr - debts[a].apr : debts[a].bal - debts[b].bal); for (const i of ord) { if (pool <= 0) break; const p = Math.min(pool, debts[i].bal); debts[i].bal -= p; pool -= p; } if (months % 1 === 0) series.push(debts.reduce((s, d) => s + Math.max(0, d.bal), 0)); } const step = Math.max(1, Math.round(series.length / 24)); const s2 = series.filter((_, i) => i % step === 0 || i === series.length - 1); return { type: "line", title: "Total balance over time", labels: s2.map((_, i) => (i * step) + "m"), series: [{ label: "Balance", color: "--accent", data: s2, fill: true }] }; },
+    "debt-payoff": (v) => { const series = _M.debtPayoff([{ bal: v.b1, apr: v.r1, min: v.m1 }, { bal: v.b2, apr: v.r2, min: v.m2 }, { bal: v.b3, apr: v.r3, min: v.m3 }], v.extra, v.strategy).series; const step = Math.max(1, Math.round(series.length / 24)); const s2 = series.filter((_, i) => i % step === 0 || i === series.length - 1); return { type: "line", title: "Total balance over time", labels: s2.map((_, i) => (i * step) + "m"), series: [{ label: "Balance", color: "--accent", data: s2, fill: true }] }; },
   };
 
   function setAmortMode(m) {
@@ -5501,4 +5530,5 @@
   checkAuth();      // gate the app until signed in
   handleVerifyHash();   // toast if we just came back from an email verify link
   handleResetHash();    // show the set-new-password panel if arriving from a reset link
+  openSharedCalc();     // deep-link into a shared calculator (#c=<id>~<base64>)
 </script>

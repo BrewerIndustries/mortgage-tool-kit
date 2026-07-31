@@ -10,8 +10,13 @@ The five newer areas run on a small **declarative calculator framework**: each
 calculator is defined as a list of inputs + a `compute()` function (in the `CALCS`
 registry in `index.html`), and a shared renderer builds the form and results. Adding
 a calculator is data, not new markup. The money math reuses `window.MTK` (`calc.js`).
-Every field carries a `?` **tooltip**, projection tools draw a **live canvas chart**,
-and each calculator links to a relevant **knowledge article**.
+Every field carries a `?` **tooltip** and formats with **thousands separators**,
+projection tools draw a **live canvas chart**, and each calculator links to a relevant
+**knowledge article**, can **Export CSV**, and can **Share** a deep-link (`#c=<id>~<base64>`)
+that reopens it with the same inputs. The pure math for these areas lives in **`calc.js`**
+(`futureValue`, `presentValueAnnuity`, `payoffMonths`, `federalTax`, `debtPayoff`, `TAX_2024`,
+`RMD_TABLE`, …) alongside the mortgage functions, so the app and the **`test/` unit suite**
+run the exact same code (`node --test test/*.mjs`, 32 tests, wired into CI).
 
 There is no top title bar — a floating **control dock** (bottom-right) holds Home,
 theme, and settings. A built-in **knowledge base** of ~17 educational articles (in the
