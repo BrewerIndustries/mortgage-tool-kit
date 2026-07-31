@@ -189,7 +189,8 @@
 
   /* ===== Generic calculator ===== */
   .gc-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 14px; margin-bottom: 6px; border-bottom: 1px solid var(--line); }
-  .gc-bar-actions { margin-left: auto; display: flex; gap: 8px; }
+  .gc-bar-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .gc-scn { display: inline-flex; gap: 8px; align-items: center; }
   @media (max-width: 560px) { .gc-bar-actions { margin-left: 0; } }
   .gc-head { margin: 6px 0 18px; }
   .gc-head h2 { font-family: var(--serif); font-weight: 600; font-size: 24px; margin: 0 0 3px; letter-spacing: -.01em; }
@@ -659,6 +660,11 @@
       <button class="ghost-btn sm" id="gcBack" type="button">&#8592; <span id="gcBackLbl">Back</span></button>
       <select id="gcSwitch" class="tool-switch" aria-label="Switch calculator"></select>
       <div class="gc-bar-actions">
+        <span class="gc-scn hidden" id="gcScn">
+          <select id="gcScnSelect" class="tool-switch" aria-label="Saved scenarios"><option value="">Saved…</option></select>
+          <button class="ghost-btn sm" id="gcScnSave" type="button" title="Save these inputs to your account">Save</button>
+          <button class="ghost-btn sm hidden" id="gcScnDelete" type="button" title="Delete the selected scenario">Delete</button>
+        </span>
         <button class="ghost-btn sm" id="gcShare" type="button" title="Copy a link that reopens this calculation">Share</button>
         <button class="ghost-btn sm" id="gcCsv" type="button" title="Download this calculation as a CSV">Export CSV</button>
       </div>
@@ -4336,10 +4342,7 @@
     document.getElementById("gcDesc").textContent = calc.desc || "";
     document.getElementById("gcInputs").innerHTML = calc.inputs.map(_fieldHtml).join("");
     calc.inputs.forEach(f => { if (f.type === "money") attachThousands("gi_" + f.k); });   // 1,234 formatting
-    if (preset) calc.inputs.forEach(f => {                                                  // apply values from a shared link
-      const el = document.getElementById("gi_" + f.k); if (!el || preset[f.k] == null) return;
-      el.value = f.type === "money" ? Number(preset[f.k]).toLocaleString() : preset[f.k];
-    });
+    if (preset) _applyPreset(calc, preset);                                                // values from a shared link
     const cat = catById(calc.cat);
     document.getElementById("gcBackLbl").textContent = cat ? cat.name : "Back";
     document.getElementById("gcBack").dataset.cat = calc.cat;
@@ -4352,8 +4355,59 @@
     });
     document.getElementById("view-generic").classList.remove("hidden");
     _renderResults(calc);   // render after unhide so the chart canvas measures its real width
+    _gcScnRefresh(calc);    // signed-in: load this calculator's saved scenarios
     window.scrollTo(0, 0);
   }
+
+  // ---- Saved scenarios per calculator (signed-in only; namespaced by area+calc in D1) ----
+  function _applyPreset(calc, preset) {
+    calc.inputs.forEach(f => {
+      const el = document.getElementById("gi_" + f.k); if (!el || preset[f.k] == null) return;
+      el.value = f.type === "money" ? Number(preset[f.k]).toLocaleString() : preset[f.k];
+    });
+  }
+  let _gcScns = [];
+  async function _gcScnRefresh(calc) {
+    const wrap = document.getElementById("gcScn");
+    if (authMode !== "user") { wrap.classList.add("hidden"); return; }
+    wrap.classList.remove("hidden");
+    document.getElementById("gcScnDelete").classList.add("hidden");
+    const sel = document.getElementById("gcScnSelect");
+    sel.innerHTML = '<option value="">Saved…</option>';
+    try {
+      const r = await api("/scenarios?calc=" + encodeURIComponent(calc.id));
+      _gcScns = r.scenarios || [];
+      _gcScns.forEach(s => { const o = document.createElement("option"); o.value = s.id; o.textContent = s.name; sel.appendChild(o); });
+    } catch (e) { _gcScns = []; }
+  }
+  document.getElementById("gcScnSave").addEventListener("click", async () => {
+    if (!currentCalc || authMode !== "user") return;
+    const name = (prompt("Name this scenario:", currentCalc.name) || "").trim();
+    if (!name) return;
+    const btn = document.getElementById("gcScnSave"), old = btn.textContent; btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      const r = await api("/scenarios", { method: "POST", body: JSON.stringify({ name, area: currentCalc.cat, calc: currentCalc.id, data: JSON.stringify(_readVals(currentCalc)) }) });
+      await _gcScnRefresh(currentCalc);
+      const sel = document.getElementById("gcScnSelect"); if (r.scenario) { sel.value = r.scenario.id; document.getElementById("gcScnDelete").classList.remove("hidden"); }
+    } catch (e) { alert(e.message || "Could not save."); }
+    finally { btn.disabled = false; btn.textContent = old; }
+  });
+  document.getElementById("gcScnSelect").addEventListener("change", async (e) => {
+    const id = e.target.value, del = document.getElementById("gcScnDelete");
+    del.classList.toggle("hidden", !id);
+    if (!id || !currentCalc) return;
+    try {
+      const r = await api("/scenarios/" + id);
+      let data = r.scenario && r.scenario.data; if (typeof data === "string") { try { data = JSON.parse(data); } catch (err) { data = null; } }
+      if (data) { _applyPreset(currentCalc, data); _renderResults(currentCalc); }
+    } catch (err) {}
+  });
+  document.getElementById("gcScnDelete").addEventListener("click", async () => {
+    const sel = document.getElementById("gcScnSelect"), id = sel.value; if (!id) return;
+    if (!confirm("Delete this saved scenario?")) return;
+    try { await api("/scenarios/" + id, { method: "DELETE" }); await _gcScnRefresh(currentCalc); } catch (e) {}
+  });
+
   function renderCatGrid(cat, calcs) {
     resetChrome();
     document.getElementById("cgTitle").textContent = cat.name + " tools";

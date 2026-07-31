@@ -47,9 +47,14 @@ style reader, a "Learn" section on every area grid, related-article links, and a
 - [x] **Share** (copy a `#c=<id>~<base64>` deep-link that reopens the calc with its inputs,
   behind the disclaimer gate) and **Export CSV** (inputs + results) per calculator.
 
-Remaining for these areas (P1/P2): amortization/schedule detail views, **saved scenarios per
-area** (needs a D1 `scenarios.area` column + per-area model), and refresh tax/limit figures
-annually. The per-area detail below is the record of intended scope.
+- [x] **Saved scenarios per area** — migration `0008_scenario_areas.sql` adds `area` + `calc`
+  columns to `scenarios` (existing mortgage rows default to `area='mortgage'`, `calc=NULL`).
+  The Worker's `/scenarios` list takes `?calc=<id>` (per-calculator) and defaults to
+  `calc IS NULL` (mortgage snapshot, back-compat). Each generic calculator gets a signed-in
+  Save / picker / Delete control that stores and reloads that calc's inputs.
+
+Remaining for these areas (P1/P2): amortization/schedule detail views, and refresh tax/limit
+figures annually. The per-area detail below is the record of intended scope.
 
 ## Cross-cutting — foundation for every new area (P0, do alongside Auto)
 

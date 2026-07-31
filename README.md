@@ -98,8 +98,10 @@ The Mortgage area's tools:
   (in the tab actions, with a two-step confirm) blanks every input across all tabs.
 - **Accounts (optional sign-in)** — the calculators are usable without an account
   via **Continue without an account** (guest mode, autosaved to the browser only).
-  Signing in adds **saved scenarios** (name + reload a full property snapshot),
-  cross-device autosave, and server-stored theme/accent. Real login/logout +
+  Signing in adds **saved scenarios** — a full mortgage snapshot **and** per-calculator
+  scenarios in every other area (the `scenarios` table is namespaced by `area` + `calc`;
+  `/scenarios?calc=<id>` lists a calculator's saved inputs, no-arg lists the mortgage
+  snapshot) — plus cross-device autosave, and server-stored theme/accent. Real login/logout +
   self-service password change, backed by a Cloudflare Worker + D1 (see `api/`).
   **Admins** get a Users section in Settings to add/remove accounts (role-gated),
   plus an **audit log** of admin actions and a **mail-queue health** readout that
