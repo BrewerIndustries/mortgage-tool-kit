@@ -4343,8 +4343,8 @@
       const el = document.getElementById("gi_" + f.k);
       if (el) { el.addEventListener("input", () => _renderResults(calc)); el.addEventListener("change", () => _renderResults(calc)); }
     });
-    _renderResults(calc);
     document.getElementById("view-generic").classList.remove("hidden");
+    _renderResults(calc);   // render after unhide so the chart canvas measures its real width
     window.scrollTo(0, 0);
   }
   function renderCatGrid(cat, calcs) {
