@@ -1,6 +1,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Financial Tool Kit</title>
+<meta name="description" content="Free educational calculators and guides for mortgage, auto, investing, budgeting, debt, and retirement decisions. Estimates only — not financial advice.">
+<meta name="theme-color" content="#0e1512" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3f5f3" media="(prefers-color-scheme: light)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%230e1512'/%3E%3Ctext%20x='50'%20y='73'%20font-family='Georgia,serif'%20font-size='72'%20font-weight='700'%20text-anchor='middle'%20fill='%234bbf8e'%3E$%3C/text%3E%3C/svg%3E">
 <script>
   // Default appearance = dark (the original dark-green look) unless the user picked otherwise.
   // Runs before first paint to avoid a flash of the light theme.
@@ -4144,6 +4148,15 @@
     b.innerHTML = `<span class="disc">${catIcon(c.id)}</span><span class="txt"><span class="nm">${esc(c.name)}</span>${c.ready ? "" : '<span class="soon">Coming soon</span>'}</span>`;
     b.addEventListener("click", () => requireDisclaimer(() => openCategory(c.id)));
     hubStage.appendChild(b);
+  });
+  hubStage.addEventListener("keydown", (e) => {
+    const spokes = Array.from(hubStage.querySelectorAll(".spoke"));
+    const idx = spokes.indexOf(document.activeElement);
+    if (idx < 0) return;
+    let next = -1;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (idx + 1) % spokes.length;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (idx - 1 + spokes.length) % spokes.length;
+    if (next >= 0) { e.preventDefault(); spokes[next].focus(); }
   });
 
   // Build the Mortgage launcher grid + the in-tool switcher from TOOLS.
