@@ -10,6 +10,14 @@ The five newer areas run on a small **declarative calculator framework**: each
 calculator is defined as a list of inputs + a `compute()` function (in the `CALCS`
 registry in `index.html`), and a shared renderer builds the form and results. Adding
 a calculator is data, not new markup. The money math reuses `window.MTK` (`calc.js`).
+Every field carries a `?` **tooltip**, projection tools draw a **live canvas chart**,
+and each calculator links to a relevant **knowledge article**.
+
+There is no top title bar — a floating **control dock** (bottom-right) holds Home,
+theme, and settings. A built-in **knowledge base** of ~17 educational articles (in the
+`kbData` JSON block, rendered by a magazine-style reader) appears as a "Learn" section
+on each area's grid. To regenerate/extend it, edit `scratchpad/kb.raw.json`-style
+sources and inject decoded HTML into the `#kbData` script tag.
 
 The landing page is a radial **hub**: a central logo (a `$` placeholder for now)
 ringed by category "spokes." Entering any area first shows a forced **disclaimer

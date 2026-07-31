@@ -30,9 +30,17 @@ swatches show their names on hover.
 - [x] **Credit & Debt** — debt payoff (snowball/avalanche sim), credit-card payoff, loan payoff, consolidation, utilization
 - [x] **Retirement & Taxes** — 401(k)/IRA growth, retirement readiness, drawdown, 2024 federal tax, RMD
 
-Remaining for these areas (P1/P2): charts on the growth/projection tools, per-calc icons
-(they currently share the category icon), amortization/schedule detail views, share-links +
-CSV export per calc, saved scenarios per area, and the guides/Investing-101 drawer. The
+**Polish pass shipped (2026-07-30, dev):** removed the top title bar for a floating
+bottom-right control dock (Home / theme / settings); `?` info tooltips on **every**
+calculator field; distinct **per-calc icons**; **live canvas charts** on the growth/
+projection tools (compound, DCA, goal, 401k, drawdown, TCO, budget split, readiness,
+debt-payoff); a **knowledge base** of 17 in-app articles (3–4 per area) with a magazine-
+style reader, a "Learn" section on every area grid, related-article links, and a
+"Learn: …" link from each calculator to its most relevant article; a global footer.
+
+Remaining for these areas (P1/P2): amortization/schedule detail views, share-links +
+CSV export per calc, saved scenarios per area, extract the `CALCS` compute fns into
+`calc.mjs` + unit tests (currently inline), and refresh tax/limit figures annually. The
 per-area detail below is the record of intended scope.
 
 ## Cross-cutting — foundation for every new area (P0, do alongside Auto)
