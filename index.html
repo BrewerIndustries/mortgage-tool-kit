@@ -157,6 +157,14 @@
     .spoke .txt { align-items: flex-start; text-align: left; }
   }
 
+  /* Hub -> area transition: dive into the center, then the calculators zoom out into place */
+  @keyframes ftkZoomIn { from { transform: scale(1); opacity: 1; } to { transform: scale(2.6); opacity: 0; } }
+  @keyframes ftkZoomOut { 0% { transform: scale(1.14); opacity: 0; } 60% { opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+  .view.zoom-in { animation: ftkZoomIn 250ms cubic-bezier(.5,0,.75,0) forwards; transform-origin: center 46%; will-change: transform, opacity; }
+  .view.zoom-out { animation: ftkZoomOut 320ms cubic-bezier(.16,.84,.44,1) both; transform-origin: center 40%; will-change: transform, opacity; }
+  .wrap.zooming { overflow: hidden; }
+  @media (prefers-reduced-motion: reduce) { .view.zoom-in, .view.zoom-out { animation: none; } }
+
   /* ===== Coming-soon category page ===== */
   .soon-wrap { max-width: 660px; margin: 0 auto; }
   .soon-back { background: none; border: none; color: var(--accent); font-family: var(--sans); font-weight: 700; font-size: 13px; cursor: pointer; padding: 6px 0; display: inline-flex; align-items: center; gap: 6px; }
@@ -4100,10 +4108,29 @@
   }
   function openCategory(id) {
     const cat = catById(id); if (!cat) return;
-    if (id === "mortgage") return showHome();          // mortgage = the existing tool grid
-    const calcs = CALCS.filter(c => c.cat === id);
-    if (calcs.length) return renderCatGrid(cat, calcs); // built-out area → its calculator grid
-    return showSoon(cat);                               // fallback: still-empty area
+    const doShow = () => {
+      if (id === "mortgage") return showHome();          // mortgage = the existing tool grid
+      const calcs = CALCS.filter(c => c.cat === id);
+      if (calcs.length) return renderCatGrid(cat, calcs); // built-out area → its calculator grid
+      return showSoon(cat);                               // fallback: still-empty area
+    };
+    zoomTransition(doShow);
+  }
+  // Dive into the hub center, swap, then zoom the calculators out into place.
+  function zoomTransition(doShow) {
+    const hub = document.getElementById("view-hub"), wrap = document.querySelector(".wrap");
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || hub.classList.contains("hidden")) { doShow(); return; }   // only animate from the hub
+    wrap.classList.add("zooming");
+    hub.classList.add("zoom-in");
+    setTimeout(() => {
+      doShow();                          // hides the hub (display:none) — no snap-back flash
+      hub.classList.remove("zoom-in");
+      const target = document.querySelector("#view-home:not(.hidden), #view-catgrid:not(.hidden), #view-soon:not(.hidden)");
+      const done = () => { if (target) target.classList.remove("zoom-out"); wrap.classList.remove("zooming"); };
+      if (target) { target.classList.add("zoom-out"); target.addEventListener("animationend", done, { once: true }); setTimeout(done, 520); }
+      else done();
+    }, 235);
   }
 
   // ---------- disclaimer splash (forced acknowledgment on entering any area) ----------
