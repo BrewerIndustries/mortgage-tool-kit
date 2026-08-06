@@ -1,7 +1,7 @@
 # Financial Tool Kit — project rules for Claude
 
 The full operating guide is in **@ONBOARDING.md** (architecture, run/test, code patterns,
-the DB-migration workflow, team). Read it before making changes.
+the DB-migration workflow). Read it before making changes.
 
 **Never break these:**
 
