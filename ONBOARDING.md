@@ -282,4 +282,21 @@ Before you call something finished:
    above, add/keep tests green, verify in the browser, and open a PR into `dev`.
 5. When in doubt, ask — especially anything touching `main`, D1 migrations, or the disclaimer.
 
+---
+
+## 11. Team & communication
+
+- **Dan** — project lead. Approves every production (`dev → main`) PR, owns the Cloudflare / D1
+  infra and repo admin, and has the final say on scope, the disclaimer wording, and the `mtk`
+  naming. **When in doubt, ask Dan.**
+- **Where we talk:** _(fill in — e.g. Slack/Discord channel, email)._
+- **Reviews:** open PRs **into `dev`**; a senior reviews before merge. Production is a **separate
+  `dev → main` PR that Dan approves** — never merge that one yourself. Keep PRs small and focused,
+  with a short "what/why/how I tested" description.
+- **Cadence / standups:** _(fill in — e.g. async daily update, weekly sync)._
+- **Ask first, don't go solo on:** `main`, D1 migrations, the not-advice disclaimers, the `mtk`
+  infra names, or adding any build tooling / frontend dependency.
+- **Response time & urgent issues:** _(fill in — when to expect a review, and how to flag
+  something time-sensitive)._
+
 Welcome aboard.
