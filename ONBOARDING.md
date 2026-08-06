@@ -50,7 +50,83 @@ has tooltips, most projection tools draw a live chart, and each links to a knowl
 
 ---
 
-## 3. Run it locally
+## 3. Get Claude Code connected to the repo
+
+Do this once, before anything else.
+
+**Prerequisites**
+- A **GitHub account with access** to `BrewerIndustries/mortgage-tool-kit` — ask Dan to add you
+  as a collaborator.
+- **git**, **python3** (for the local static server), and **Node.js 20+** (for the unit tests and
+  the Worker tooling).
+- A **Claude account** — a Claude Pro/Max subscription, or an Anthropic Console API key.
+
+**1. Install Claude Code** (native installer — Claude itself needs no Node):
+
+```bash
+# macOS / Linux / WSL:
+curl -fsSL https://claude.ai/install.sh | bash
+# Windows PowerShell:
+#   irm https://claude.ai/install.ps1 | iex
+```
+
+Alternatives: `brew install --cask claude-code`, WinGet, or `npm install -g @anthropic-ai/claude-code`
+(the npm route needs Node 22+). Verify:
+
+```bash
+claude --version    # e.g. "2.x.x (Claude Code)"
+```
+
+**2. Clone the repo and switch to `dev`:**
+
+```bash
+git clone https://github.com/BrewerIndustries/mortgage-tool-kit.git
+cd mortgage-tool-kit
+git checkout dev
+```
+
+**3. Start Claude Code from inside the repo and log in:**
+
+```bash
+claude
+```
+
+Claude Code operates on the directory you launch it from, so **always start it from the repo root.**
+First run opens a browser to authenticate — sign in with your **Claude Pro/Max** account (or set
+`ANTHROPIC_API_KEY` to use a Console key and skip the browser). Approve the tool-permission prompts
+(Bash / Git / Read / Write) the first time they appear.
+
+**4. Load these house rules into Claude.** Claude auto-loads a `CLAUDE.md` from the repo root every
+session. This repo ships **`ONBOARDING.md`** (this file). To have Claude pick it up automatically,
+either add a one-line `CLAUDE.md` at the repo root that points here (e.g. `See ONBOARDING.md for
+project rules.`) or copy this file's content into `CLAUDE.md`. Otherwise just tell Claude
+**"read ONBOARDING.md"** at the start of a session. Confirm what's loaded with:
+
+```bash
+/context     # lists the memory/CLAUDE.md files in effect
+```
+
+(Machine-only personal notes go in `CLAUDE.local.md`, which is git-ignored.)
+
+**5. Sanity check** — start a session and ask it something:
+
+```bash
+claude
+# at the prompt:
+/status      # shows your login, org, and active model (default: Claude Opus 4.8)
+/help        # list commands
+what does this project do, and what should I NOT touch?
+```
+
+Use `/config` → **Model** to change the model if you need to.
+
+**GitHub `@claude` on PRs (optional, admin-only):** mentioning `@claude` in a PR or issue requires
+the Claude GitHub App installed on the repo (`/install-github-app`, run by a repo **admin**). You
+probably won't have admin — **ask Dan** if you want that enabled.
+
+---
+
+## 4. Run it locally
 
 It's a static file — no install needed for the frontend:
 
@@ -76,7 +152,7 @@ cd api && npm install && npx wrangler dev
 
 ---
 
-## 4. The golden rule: branches & deploys
+## 5. The golden rule: branches & deploys
 
 - **`dev` is the integration branch.** It auto-deploys to **https://mtk.dabrewer.dev/dev/**.
 - **`main` is production** — **https://mtk.dabrewer.dev/**. It moves **only via a Pull Request
@@ -95,7 +171,7 @@ So: a DB migration ships just by merging an `api/` change to the right branch. G
 
 ---
 
-## 5. How the frontend is built (patterns you must know)
+## 6. How the frontend is built (patterns you must know)
 
 There are **two** calculator systems. Match the one you're extending.
 
@@ -148,7 +224,7 @@ Helpers you'll reuse: formatters `_mf` / `_mf2` / `_pf` / `_nf` / `_dur`; money 
 
 ---
 
-## 6. The charset footgun (read this twice)
+## 7. The charset footgun (read this twice)
 
 **Source files must stay ASCII-only.** The static host serves the page as latin-1, so raw UTF-8
 characters (curly quotes, →, ≈, é, …) turn into mojibake. Use:
@@ -159,7 +235,7 @@ If you paste text and see `â€™` or `Ã©` in the browser, this is why.
 
 ---
 
-## 7. Backend & database (`api/`)
+## 8. Backend & database (`api/`)
 
 - **Stack:** Cloudflare Worker (Hono) + D1 (SQLite). PBKDF2 passwords, HMAC session ids,
   `SameSite=Lax` httpOnly cookie. **No open signup** — users are seeded
@@ -181,7 +257,7 @@ If you paste text and see `â€™` or `Ã©` in the browser, this is why.
 
 ---
 
-## 8. Definition of done
+## 9. Definition of done
 
 Before you call something finished:
 
@@ -196,9 +272,10 @@ Before you call something finished:
 
 ---
 
-## 9. First day
+## 10. First day
 
-1. `git checkout dev`, serve locally (`python3 -m http.server 8791`), click through every hub area.
+1. Do Section 3 (Claude Code + repo, on `dev`), then serve locally
+   (`python3 -m http.server 8791`) and click through every hub area.
 2. `node --test test/*.mjs` — watch them pass so you know the baseline is green.
 3. Skim `README.md`, then `BACKLOG.md`.
 4. Pick a small **P1/P2** item from `BACKLOG.md`. Branch off `dev`, build it following the patterns
