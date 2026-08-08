@@ -51,8 +51,10 @@ function payoffPayment(principal, annualRatePct, targetMonths) {
   return monthlyPI(principal, annualRatePct, targetMonths);
 }
 
-// Max affordable home price given DTI limits. Returns { maxHousing, price, loan, backBinds }.
-function affordability({ annualIncome, monthlyDebts, frontDTI, backDTI, down, ratePct, termYears, taxRatePct, insAnnual, hoaMonthly, pmiRatePct = 0.6 }) {
+// Max affordable home price given DTI limits. Property tax is either a rate (`taxRatePct`,
+// which scales with the solved price) or a fixed annual dollar amount (`taxAnnual`, used as-is
+// when provided). Returns { maxHousing, price, loan, backBinds }.
+function affordability({ annualIncome, monthlyDebts, frontDTI, backDTI, down, ratePct, termYears, taxRatePct = 0, taxAnnual = null, insAnnual, hoaMonthly, pmiRatePct = 0.6 }) {
   const grossMo = annualIncome / 12;
   const maxHousing = Math.max(0, Math.min((frontDTI / 100) * grossMo, (backDTI / 100) * grossMo - monthlyDebts));
   const backBinds = ((backDTI / 100) * grossMo - monthlyDebts) < ((frontDTI / 100) * grossMo);
@@ -60,7 +62,8 @@ function affordability({ annualIncome, monthlyDebts, frontDTI, backDTI, down, ra
   let lo = down, hi = down + 5_000_000;
   for (let i = 0; i < 50; i++) {
     const P = (lo + hi) / 2, loan = Math.max(0, P - down);
-    const piti = monthlyPI(loan, ratePct, n) + (P * taxRatePct / 100) / 12 + insAnnual / 12 + hoaMonthly +
+    const monthlyTax = (taxAnnual != null ? taxAnnual : P * taxRatePct / 100) / 12;
+    const piti = monthlyPI(loan, ratePct, n) + monthlyTax + insAnnual / 12 + hoaMonthly +
       ((P > 0 && loan / P > 0.8) ? (loan * pmiRatePct / 100) / 12 : 0);
     if (piti > maxHousing) hi = P; else lo = P;
   }

@@ -1035,14 +1035,21 @@
             <div class="two">
               <label class="field"><span class="lbl">Term</span>
                 <div class="suffix-input"><input type="number" id="afTerm" value="30" step="1"><span class="sfx">yrs</span></div></label>
-              <label class="field"><span class="lbl">Property tax</span>
-                <div class="suffix-input"><input type="number" id="afTaxPct" value="1.1" step="0.05"><span class="sfx">%</span></div></label>
+              <div class="field">
+                <div class="lbl lbl-row"><span>Property tax</span>
+                  <span class="seg tiny" id="afTaxModeSeg"><button type="button" class="seg-btn" data-m="amt">$</button><button type="button" class="seg-btn active" data-m="pct">%</button></span></div>
+                <div class="money-input hidden" id="afTaxAmtWrap"><input type="number" id="afTax" value="5000" step="100"></div>
+                <div class="suffix-input" id="afTaxPctWrap"><input type="number" id="afTaxPct" value="1.1" step="0.05"><span class="sfx">%</span></div>
+              </div>
             </div>
             <div class="two">
               <label class="field"><span class="lbl">Insurance / yr</span>
                 <div class="money-input"><input type="number" id="afIns" value="1800" step="100"></div></label>
-              <label class="field"><span class="lbl">HOA / mo</span>
-                <div class="money-input"><input type="number" id="afHoa" value="0" step="10"></div></label>
+              <div class="field">
+                <div class="lbl lbl-row"><span>HOA</span>
+                  <span class="seg tiny" id="afHoaFreqSeg"><button type="button" class="seg-btn active" data-f="mo">/mo</button><button type="button" class="seg-btn" data-f="yr">/yr</button></span></div>
+                <div class="money-input"><input type="number" id="afHoa" value="0" step="10"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1277,14 +1284,21 @@
           <div class="panel">
             <p class="eyebrow">Ownership costs</p>
             <div class="two">
-              <label class="field"><span class="lbl">Property tax /yr</span>
-                <div class="suffix-input"><input type="number" id="rbTax" value="1.1" step="0.05"><span class="sfx">%</span></div></label>
+              <div class="field">
+                <div class="lbl lbl-row"><span>Property tax /yr</span>
+                  <span class="seg tiny" id="rbTaxModeSeg"><button type="button" class="seg-btn" data-m="amt">$</button><button type="button" class="seg-btn active" data-m="pct">%</button></span></div>
+                <div class="money-input hidden" id="rbTaxAmtWrap"><input type="number" id="rbTaxAmt" value="5000" step="100"></div>
+                <div class="suffix-input" id="rbTaxPctWrap"><input type="number" id="rbTax" value="1.1" step="0.05"><span class="sfx">%</span></div>
+              </div>
               <label class="field"><span class="lbl">Insurance /yr</span>
                 <div class="money-input"><input type="number" id="rbIns" value="1800" step="100"></div></label>
             </div>
             <div class="two">
-              <label class="field"><span class="lbl">HOA /mo</span>
-                <div class="money-input"><input type="number" id="rbHoa" value="0" step="25"></div></label>
+              <div class="field">
+                <div class="lbl lbl-row"><span>HOA</span>
+                  <span class="seg tiny" id="rbHoaFreqSeg"><button type="button" class="seg-btn active" data-f="mo">/mo</button><button type="button" class="seg-btn" data-f="yr">/yr</button></span></div>
+                <div class="money-input"><input type="number" id="rbHoa" value="0" step="25"></div>
+              </div>
               <label class="field"><span class="lbl">Maintenance /yr</span>
                 <div class="suffix-input"><input type="number" id="rbMaint" value="1" step="0.25"><span class="sfx">%</span></div></label>
             </div>
@@ -1827,7 +1841,7 @@
   // ---------- thousands separators on currency inputs ----------
   // <input type=number> can't render commas, so these fields are text+inputmode and formatted
   // live. All reads go through parseNum/gv, which strip the commas, so math is unaffected.
-  const CURRENCY_IDS = ["startBal","curPay","loanAmt","loanExtra","loanLump","amEscrow","payPrice","payDownAmt","payClosing","payIns","payPmi","afIncome","afDebts","afDown","afIns","rfBalance","rfClosing","cmpAmt","cmpFeeA","cmpFeeB","armAmt","rbPrice","rbDown","rbClosing","rbIns","rbRent"];
+  const CURRENCY_IDS = ["startBal","curPay","loanAmt","loanExtra","loanLump","amEscrow","payPrice","payDownAmt","payClosing","payIns","payPmi","afIncome","afDebts","afDown","afTax","afIns","rfBalance","rfClosing","cmpAmt","cmpFeeA","cmpFeeB","armAmt","rbPrice","rbDown","rbClosing","rbTaxAmt","rbIns","rbRent"];
   function formatThousandsEl(el) {
     const raw = el.value;
     const caret = el.selectionStart == null ? raw.length : el.selectionStart;
@@ -2973,7 +2987,7 @@
   document.getElementById("logoutHeaderBtn").addEventListener("click", doLogout);
 
   // ---------- persistence: state snapshot + autosave ----------
-  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","escalate","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","loanPayoffMonth","loanPayoffYear","amEscrow","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","armAmt","armInitRate","armTerm","armFixed","armAdjFreq","armIndex","armMargin","armCapFirst","armCapPeriodic","armCapLife","rbPrice","rbDown","rbRate","rbTerm","rbClosing","rbTax","rbIns","rbHoa","rbMaint","rbAppr","rbSellCost","rbRent","rbRentGrowth","rbInvest","rbYears","tnDate","tnLookback","tnTenor"];
+  const PERSIST_IDS = ["startBal","curPay","startMonth","cushion","escalate","loanAmt","loanRate","loanTerm","loanExtra","loanStartMonth","loanStartYear","loanLump","loanLumpAt","loanBiweekly","loanPayoffMonth","loanPayoffYear","amEscrow","payPrice","payDownAmt","payDownPct","payRate","payTerm","payTax","payTaxPct","payHomestead","payIns","payHoa","payPmi","payClosing","payRoll","afIncome","afDebts","afFront","afBack","afDown","afRate","afTerm","afTaxPct","afTax","afIns","afHoa","rfBalance","rfCurRate","rfCurTerm","rfNewRate","rfNewTerm","rfClosing","rfRoll","cmpAmt","cmpRateA","cmpTermA","cmpPtsA","cmpFeeA","cmpRateB","cmpTermB","cmpPtsB","cmpFeeB","armAmt","armInitRate","armTerm","armFixed","armAdjFreq","armIndex","armMargin","armCapFirst","armCapPeriodic","armCapLife","rbPrice","rbDown","rbRate","rbTerm","rbClosing","rbTax","rbTaxAmt","rbIns","rbHoa","rbMaint","rbAppr","rbSellCost","rbRent","rbRentGrowth","rbInvest","rbYears","tnDate","tnLookback","tnTenor"];
   let restoring = false, saveTimer = null, defaultState = null, sharedState = null;
 
   // Encode/decode the full input state for shareable URLs (#s=<base64>).
@@ -2990,6 +3004,10 @@
     return { v: 1, inputs, disbursements: disbursements.map(d => ({ ...d })),
       taxMode: (document.querySelector("#taxModeSeg .seg-btn.active") || {}).dataset?.m || "amt",
       hoaFreq: (document.querySelector("#hoaFreqSeg .seg-btn.active") || {}).dataset?.f || "mo",
+      afTaxMode: (document.querySelector("#afTaxModeSeg .seg-btn.active") || {}).dataset?.m || "pct",
+      afHoaFreq: (document.querySelector("#afHoaFreqSeg .seg-btn.active") || {}).dataset?.f || "mo",
+      rbTaxMode: (document.querySelector("#rbTaxModeSeg .seg-btn.active") || {}).dataset?.m || "pct",
+      rbHoaFreq: (document.querySelector("#rbHoaFreqSeg .seg-btn.active") || {}).dataset?.f || "mo",
       amortMode, pmiUserSet };
   }
   function applyState(s) {
@@ -3007,6 +3025,10 @@
     document.getElementById("cushionVal").textContent = cv + (cv === 1 ? " month" : " months");
     if (s.taxMode) { const b = document.querySelector('#taxModeSeg .seg-btn[data-m="' + s.taxMode + '"]'); if (b) b.click(); }
     if (s.hoaFreq) { const b = document.querySelector('#hoaFreqSeg .seg-btn[data-f="' + s.hoaFreq + '"]'); if (b) b.click(); }
+    if (s.afTaxMode) { const b = document.querySelector('#afTaxModeSeg .seg-btn[data-m="' + s.afTaxMode + '"]'); if (b) b.click(); }
+    if (s.afHoaFreq) { const b = document.querySelector('#afHoaFreqSeg .seg-btn[data-f="' + s.afHoaFreq + '"]'); if (b) b.click(); }
+    if (s.rbTaxMode) { const b = document.querySelector('#rbTaxModeSeg .seg-btn[data-m="' + s.rbTaxMode + '"]'); if (b) b.click(); }
+    if (s.rbHoaFreq) { const b = document.querySelector('#rbHoaFreqSeg .seg-btn[data-f="' + s.rbHoaFreq + '"]'); if (b) b.click(); }
     if (s.amortMode) setAmortMode(s.amortMode);
     compute(); computeAmort(); computePayment(); computeAfford(); computeRefi(); computeCompare(); computeTnote();
     if (currentTool) computeFor(currentTool);   // ensure the active tool (incl. ARM / Rent-vs-Buy) reflects the load
@@ -3711,13 +3733,20 @@
     const income = gv("afIncome"), debts = gv("afDebts");
     const front = gv("afFront"), back = gv("afBack");
     const down = gv("afDown"), rate = gv("afRate"), term = gv("afTerm");
-    const taxPct = gv("afTaxPct"), ins = gv("afIns"), hoa = gv("afHoa");
-    // Shared affordability solver — the SAME code the unit tests cover.
-    const r = MTK.affordability({ annualIncome: income, monthlyDebts: debts, frontDTI: front, backDTI: back,
-      down, ratePct: rate, termYears: term, taxRatePct: taxPct, insAnnual: ins, hoaMonthly: hoa, pmiRatePct: PMI_RATE_PCT });
+    const ins = gv("afIns");
+    const afTaxMode = document.querySelector("#afTaxModeSeg .seg-btn.active").dataset.m;   // "pct" | "amt"
+    const afHoaFreq = document.querySelector("#afHoaFreqSeg .seg-btn.active").dataset.f;   // "mo" | "yr"
+    const hoa = afHoaFreq === "yr" ? gv("afHoa") / 12 : gv("afHoa");                       // monthly
+    // Shared affordability solver — the SAME code the unit tests cover. Property tax is a rate
+    // (scales with the solved price) or a fixed annual dollar amount.
+    const affArgs = { annualIncome: income, monthlyDebts: debts, frontDTI: front, backDTI: back,
+      down, ratePct: rate, termYears: term, insAnnual: ins, hoaMonthly: hoa, pmiRatePct: PMI_RATE_PCT };
+    if (afTaxMode === "pct") affArgs.taxRatePct = gv("afTaxPct"); else affArgs.taxAnnual = gv("afTax");
+    const r = MTK.affordability(affArgs);
     const maxHousing = r.maxHousing, backBinds = r.backBinds, price = r.price, loan = r.loan;
     const n = Math.max(1, Math.round(term * 12));
-    const tax = price * taxPct / 100 / 12, pmi = (price > 0 && loan / price > 0.8) ? loan * PMI_RATE_PCT / 100 / 12 : 0;
+    const tax = (afTaxMode === "pct" ? price * gv("afTaxPct") / 100 : gv("afTax")) / 12;
+    const pmi = (price > 0 && loan / price > 0.8) ? loan * PMI_RATE_PCT / 100 / 12 : 0;
     const pi = pmtOf(loan, rate, n), total = pi + tax + ins / 12 + hoa + pmi;
 
     document.getElementById("afPrice").textContent = fmt(price);
@@ -3825,7 +3854,20 @@
     cmpResult = { amt, A, B, cheaper, diff };
   }
 
-  ["afIncome", "afDebts", "afFront", "afBack", "afDown", "afRate", "afTerm", "afTaxPct", "afIns", "afHoa"].forEach(id => document.getElementById(id).addEventListener("input", computeAfford));
+  ["afIncome", "afDebts", "afFront", "afBack", "afDown", "afRate", "afTerm", "afTaxPct", "afTax", "afIns", "afHoa"].forEach(id => document.getElementById(id).addEventListener("input", computeAfford));
+  // Affordability property-tax $/% + HOA mo/yr toggles
+  document.querySelectorAll("#afTaxModeSeg .seg-btn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#afTaxModeSeg .seg-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    const pct = b.dataset.m === "pct";
+    document.getElementById("afTaxAmtWrap").classList.toggle("hidden", pct);
+    document.getElementById("afTaxPctWrap").classList.toggle("hidden", !pct);
+    computeAfford(); scheduleSave();
+  }));
+  document.querySelectorAll("#afHoaFreqSeg .seg-btn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#afHoaFreqSeg .seg-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active"); computeAfford(); scheduleSave();
+  }));
   ["rfBalance", "rfCurRate", "rfCurTerm", "rfNewRate", "rfNewTerm", "rfClosing"].forEach(id => document.getElementById(id).addEventListener("input", computeRefi));
   document.getElementById("rfRoll").addEventListener("change", computeRefi);
   ["cmpAmt", "cmpRateA", "cmpTermA", "cmpPtsA", "cmpFeeA", "cmpRateB", "cmpTermB", "cmpPtsB", "cmpFeeB"].forEach(id => document.getElementById(id).addEventListener("input", computeCompare));
@@ -3916,7 +3958,11 @@
   let rbResult = null;
   function computeRentBuy() {
     const price = gv("rbPrice"), down = gv("rbDown"), rate = gv("rbRate"), term = gv("rbTerm"), closing = gv("rbClosing");
-    const taxPct = gv("rbTax"), ins = gv("rbIns"), hoa = gv("rbHoa"), maintPct = gv("rbMaint");
+    const ins = gv("rbIns"), maintPct = gv("rbMaint");
+    const rbTaxMode = document.querySelector("#rbTaxModeSeg .seg-btn.active").dataset.m;   // "pct" | "amt"
+    const taxPct = gv("rbTax"), taxAmt = gv("rbTaxAmt");
+    const rbHoaFreq = document.querySelector("#rbHoaFreqSeg .seg-btn.active").dataset.f;   // "mo" | "yr"
+    const hoaAnnual = rbHoaFreq === "yr" ? gv("rbHoa") : gv("rbHoa") * 12;
     const apprPct = gv("rbAppr") / 100, sellPct = gv("rbSellCost") / 100;
     const rent0 = gv("rbRent"), rentGrow = gv("rbRentGrowth") / 100, invest = gv("rbInvest") / 100;
     const years = Math.max(1, Math.round(gv("rbYears")));
@@ -3924,15 +3970,24 @@
     const pi = MTK.monthlyPI(loan, rate, term * 12);
     const sched = MTK.amortize(loan, rate, term, { schedule: true }).schedule;
     const balAfter = (yrs) => { const idx = Math.min(sched.length, yrs * 12) - 1; return idx < 0 ? loan : (sched[idx] ? sched[idx].bal : 0); };
+    // Annual cost of owning in year y. P&I stops once the loan is paid off; property tax is a rate
+    // on the appreciating value (or a fixed dollar amount); maintenance scales with the home's value.
+    const ownAnnual = (y, homeValue) => {
+      const piAnnual = y <= term ? pi * 12 : 0;
+      const tax = rbTaxMode === "pct" ? homeValue * taxPct / 100 : taxAmt;
+      return piAnnual + tax + ins + hoaAnnual + homeValue * maintPct / 100;
+    };
 
-    // Renter portfolio: seeded with the buyer's upfront cash, invested; each year it also absorbs
-    // the amount by which owning costs more than renting (or is drawn down when renting costs more).
+    // Renter portfolio: seeded with the buyer's upfront cash (down + closing), invested; each year
+    // it also absorbs the amount by which owning costs more than renting (or is drawn down when
+    // renting costs more).
     let renterNW = down + closing;
     const rows = [];
-    let breakevenYear = null;
+    let breakevenYear = null, year1Owning = 0;
     for (let y = 1; y <= years; y++) {
       const homeValue = price * Math.pow(1 + apprPct, y);
-      const buyAnnual = pi * 12 + price * taxPct / 100 + ins + hoa * 12 + homeValue * maintPct / 100;
+      const buyAnnual = ownAnnual(y, homeValue);
+      if (y === 1) year1Owning = buyAnnual;
       const rentThisYear = rent0 * Math.pow(1 + rentGrow, y - 1) * 12;
       renterNW = renterNW * (1 + invest) + (buyAnnual - rentThisYear);
       const buyNW = homeValue - balAfter(y) - homeValue * sellPct;
@@ -3957,14 +4012,27 @@
     const beText = breakevenYear
       ? `Buying pulls ahead in <b>year ${breakevenYear}</b>.`
       : `Renting-and-investing stays ahead for the whole ${years}-year horizon.`;
-    V.innerHTML = `<span class="dot">${buyWins ? "&#9679;" : "&#9650;"}</span><div>Over <b>${years} years</b>, ${buyWins ? "buying" : "renting"} comes out ahead by <b>${fmt(gap)}</b> in net worth. ${beText} Year-1 owning runs ${fmt(pi * 12 + price * taxPct / 100 + ins + hoa * 12 + price * maintPct / 100)}/yr vs ${fmt(rent0 * 12)}/yr renting.</div>`;
+    V.innerHTML = `<span class="dot">${buyWins ? "&#9679;" : "&#9650;"}</span><div>Over <b>${years} years</b>, ${buyWins ? "buying" : "renting"} comes out ahead by <b>${fmt(gap)}</b> in net worth. ${beText} Year-1 owning runs ${fmt(year1Owning)}/yr vs ${fmt(rent0 * 12)}/yr renting.</div>`;
 
     const step = years <= 12 ? 1 : Math.ceil(years / 12);
     const rowH = (r) => `<tr><td>${r.y}</td><td>${fmt(r.buyNW)}</td><td class="end">${fmt(r.rentNW)}</td></tr>`;
     document.getElementById("rbTable").innerHTML = rows.filter(r => r.y % step === 0 || r.y === years).map(rowH).join("");
     rbResult = { price, years, buyNW: final.buyNW, rentNW: final.rentNW, breakevenYear, buyWins };
   }
-  ["rbPrice","rbDown","rbRate","rbTerm","rbClosing","rbTax","rbIns","rbHoa","rbMaint","rbAppr","rbSellCost","rbRent","rbRentGrowth","rbInvest","rbYears"].forEach(id => document.getElementById(id).addEventListener("input", computeRentBuy));
+  ["rbPrice","rbDown","rbRate","rbTerm","rbClosing","rbTax","rbTaxAmt","rbIns","rbHoa","rbMaint","rbAppr","rbSellCost","rbRent","rbRentGrowth","rbInvest","rbYears"].forEach(id => document.getElementById(id).addEventListener("input", computeRentBuy));
+  // Rent vs Buy property-tax $/% + HOA mo/yr toggles
+  document.querySelectorAll("#rbTaxModeSeg .seg-btn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#rbTaxModeSeg .seg-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    const pct = b.dataset.m === "pct";
+    document.getElementById("rbTaxAmtWrap").classList.toggle("hidden", pct);
+    document.getElementById("rbTaxPctWrap").classList.toggle("hidden", !pct);
+    computeRentBuy(); scheduleSave();
+  }));
+  document.querySelectorAll("#rbHoaFreqSeg .seg-btn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#rbHoaFreqSeg .seg-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active"); computeRentBuy(); scheduleSave();
+  }));
 
   // ---------- home launcher + tool navigation ----------
   const TOOLS = [
