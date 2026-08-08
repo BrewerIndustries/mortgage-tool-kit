@@ -21,9 +21,12 @@ const SESSION_DAYS = 30;
 const SESSION_MS = SESSION_DAYS * 24 * 60 * 60 * 1000;
 
 // ---------------- CORS ----------------
+// The app is served from both mtk.dabrewer.dev and ftk.dabrewer.dev during/after the domain
+// migration (mtk 301-redirects to ftk), so accept either, plus localhost for dev.
+const ALLOWED_ORIGINS = new Set(['https://ftk.dabrewer.dev', 'https://mtk.dabrewer.dev']);
 app.use('*', cors({
   origin: (origin, c) => {
-    if (origin === c.env.ALLOWED_ORIGIN) return origin;
+    if (origin && (ALLOWED_ORIGINS.has(origin) || origin === c.env.ALLOWED_ORIGIN)) return origin;
     if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin || '')) return origin;
     return c.env.ALLOWED_ORIGIN;
   },
