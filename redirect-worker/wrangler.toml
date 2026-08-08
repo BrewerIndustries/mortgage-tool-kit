@@ -1,0 +1,9 @@
+# 301-redirects the old domain mtk.dabrewer.dev -> ftk.dabrewer.dev.
+# Runs on a route over the (proxied) mtk.dabrewer.dev DNS record — no extra DNS needed.
+name = "mtk-redirect"
+main = "index.js"
+compatibility_date = "2024-11-06"
+
+routes = [
+  { pattern = "mtk.dabrewer.dev/*", zone_name = "dabrewer.dev" }
+]

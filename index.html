@@ -2792,7 +2792,10 @@
   ["tnDate","tnLookback","tnTenor"].forEach(id => document.getElementById(id).addEventListener("input", () => { syncTnPresets(); computeTnote(); }));
 
   // ---------- API base + auth ----------
-  const IS_DEV = !(location.hostname === "mtk.dabrewer.dev" && !location.pathname.startsWith("/dev/"));
+  // Prod = the ftk root (or legacy mtk, which now redirects to ftk); anything else (the /dev/
+  // path, localhost) uses the dev API. The prod API Worker is still named mtk-api.
+  const PROD_HOSTS = ["ftk.dabrewer.dev", "mtk.dabrewer.dev"];
+  const IS_DEV = !(PROD_HOSTS.includes(location.hostname) && !location.pathname.startsWith("/dev/"));
   const API_BASE = IS_DEV ? "https://mtk-api-dev.dabrewer.dev" : "https://mtk-api.dabrewer.dev";
 
   async function api(path, opts = {}) {
