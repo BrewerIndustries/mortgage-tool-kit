@@ -6,7 +6,7 @@
   "tech": ["Vanilla JS", "HTML5 Canvas", "static site", "GitHub Pages"],
   "status": { "prod": "live", "dev": "live" },
   "deploy": {
-    "prod": { "url": "https://mtk.dabrewer.dev/" },
-    "dev": { "url": "https://mtk.dabrewer.dev/dev/" }
+    "prod": { "url": "https://ftk.dabrewer.dev/" },
+    "dev": { "url": "https://ftk.dabrewer.dev/dev/" }
   }
 }

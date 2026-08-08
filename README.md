@@ -151,12 +151,15 @@ One Pages site publishes both branches via `.github/workflows/pages.yml` (on
 
 | Branch | Path | URL |
 |--------|------|-----|
-| `main` | `/` | https://mtk.dabrewer.dev/ |
-| `dev`  | `/dev/` | https://mtk.dabrewer.dev/dev/ |
+| `main` | `/` | https://ftk.dabrewer.dev/ |
+| `dev`  | `/dev/` | https://ftk.dabrewer.dev/dev/ |
 
-The workflow checks out both branches, writes the `CNAME`, and deploys. Pages
-source = "GitHub Actions"; the `github-pages` environment allows the `dev` branch
-to deploy. DNS: `CNAME mtk.dabrewer.dev → brewerindustries.github.io` (DNS-only).
+The workflow checks out both branches, writes the `CNAME` (`ftk.dabrewer.dev`), and
+deploys. Pages source = "GitHub Actions"; the `github-pages` environment allows the
+`dev` branch to deploy. DNS: `CNAME ftk.dabrewer.dev → brewerindustries.github.io`
+(DNS-only). The old **`mtk.dabrewer.dev` 301-redirects to `ftk`** via a Cloudflare
+Single Redirect rule (mtk is proxied for this). The repo, Worker (`mtk-api`), and D1
+are still named `mtk`.
 
 ## Workflow
 
