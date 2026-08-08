@@ -161,3 +161,13 @@ test('RMD table: age 73 distribution period is 26.5', () => {
   assert.equal(RMD_TABLE[73], 26.5);
   near(500000 / RMD_TABLE[73], 18867.9, 1);
 });
+
+test('affordability: fixed-$ property tax is used instead of the rate', () => {
+  const base = { annualIncome: 120000, monthlyDebts: 600, frontDTI: 28, backDTI: 36, down: 60000, ratePct: 6.5, termYears: 30, insAnnual: 1800, hoaMonthly: 0 };
+  const byRate = affordability({ ...base, taxRatePct: 1.1 });
+  const byAmt = affordability({ ...base, taxAnnual: 8000 });     // a high fixed tax
+  assert.ok(byAmt.price < byRate.price, 'a larger fixed tax lowers the affordable price');
+  // taxAnnual is fixed regardless of price; taxRatePct scales with it
+  const cheapTax = affordability({ ...base, taxAnnual: 1000 });
+  assert.ok(cheapTax.price > byAmt.price, 'a smaller fixed tax raises the affordable price');
+});
