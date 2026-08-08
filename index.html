@@ -2858,7 +2858,7 @@
   function handleVerifyHash() {
     const m = (location.hash || "").match(/verify=(ok|invalid)/);
     if (!m) return;
-    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    try { window.history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     if (m[1] === "ok") toast("Email verified - thanks!", "ok");
     else toast("That verification link is invalid or expired. Try Resend from Settings.", "err");
   }
@@ -2954,7 +2954,7 @@
     const m = (location.hash || "").match(/reset=([^&]+)/);
     if (!m) return false;
     resetToken = decodeURIComponent(m[1]);
-    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    try { window.history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     showGate(false);
     document.getElementById("resetGate").classList.remove("hidden");
     return true;
@@ -4176,10 +4176,11 @@
   }
   function openCategory(id) {
     const cat = catById(id); if (!cat) return;
+    const hasCalcs = CALCS.some(c => c.cat === id);
+    _histPush(id === "mortgage" ? { v: "home" } : (hasCalcs ? { v: "cat", id } : { v: "soon", id }));
     const doShow = () => {
       if (id === "mortgage") return showHome();          // mortgage = the existing tool grid
-      const calcs = CALCS.filter(c => c.cat === id);
-      if (calcs.length) return renderCatGrid(cat, calcs); // built-out area → its calculator grid
+      if (hasCalcs) return renderCatGrid(cat, CALCS.filter(c => c.cat === id)); // built-out area → grid
       return showSoon(cat);                               // fallback: still-empty area
     };
     zoomTransition(doShow);
@@ -4274,7 +4275,7 @@
       <span class="td">${esc(t.desc)}</span>
       <span class="go">Open &rarr;</span>
     </button>`).join("");
-  document.querySelectorAll(".tool-card").forEach(c => c.addEventListener("click", () => selectTool(c.dataset.tool)));
+  document.querySelectorAll(".tool-card").forEach(c => c.addEventListener("click", () => { _histPush({ v: "tool", id: c.dataset.tool }); selectTool(c.dataset.tool); }));
   const toolSwitch = document.getElementById("toolSwitch");
   toolSwitch.innerHTML = TOOLS.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
   toolSwitch.addEventListener("change", () => selectTool(toolSwitch.value));
@@ -4384,7 +4385,7 @@
       (out.note ? `<div class="gc-note">${out.note}</div>` : "") +
       (learn ? `<button class="gc-learn" type="button" data-art="${esc(learn.id)}">${bookIc}<span>Learn: ${esc(learn.title)}</span></button>` : "");
     if (out.chart) { const cv = document.getElementById("gcChart"); if (cv) try { _drawChart(cv, out.chart); } catch (e) {} }
-    const lb = document.querySelector("#gcResults .gc-learn"); if (lb) lb.addEventListener("click", () => openArticle(lb.dataset.art));
+    const lb = document.querySelector("#gcResults .gc-learn"); if (lb) lb.addEventListener("click", () => { _histPush({ v: "article", id: lb.dataset.art }); openArticle(lb.dataset.art); });
   }
   // -- lightweight canvas charts (line + bar), theme-aware --
   function _cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#888"; }
@@ -4514,7 +4515,7 @@
         <span class="td">${esc(c.desc)}</span>
         <span class="go">Open &rarr;</span>
       </button>`).join("");
-    document.querySelectorAll("#cgGrid .tool-card").forEach(b => b.addEventListener("click", () => { const c = CALCS.find(x => x.id === b.dataset.calc); if (c) openCalc(c); }));
+    document.querySelectorAll("#cgGrid .tool-card").forEach(b => b.addEventListener("click", () => { const c = CALCS.find(x => x.id === b.dataset.calc); if (c) { _histPush({ v: "calc", id: c.id }); openCalc(c); } }));
     // Learn section: knowledge articles for this area
     const arts = KB.filter(a => a.cat === cat.id);
     const learnWrap = document.getElementById("cgLearn");
@@ -4526,7 +4527,7 @@
           <span class="lc-m">${a.minutes || 4} min read &rarr;</span>
         </button>`).join("") + `</div>`;
       learnWrap.classList.remove("hidden");
-      learnWrap.querySelectorAll(".learn-card").forEach(b => b.addEventListener("click", () => openArticle(b.dataset.art)));
+      learnWrap.querySelectorAll(".learn-card").forEach(b => b.addEventListener("click", () => { _histPush({ v: "article", id: b.dataset.art }); openArticle(b.dataset.art); }));
     } else { learnWrap.innerHTML = ""; learnWrap.classList.add("hidden"); }
     document.getElementById("view-catgrid").classList.remove("hidden");
     window.scrollTo(0, 0);
@@ -4553,7 +4554,7 @@
       ? `<p class="cg-learn-h">More in ${esc(cat ? cat.name : "this area")}</p><div class="learn-grid">` + rel.map(r =>
           `<button class="learn-card" data-art="${esc(r.id)}" type="button"><span class="lc-t">${esc(r.title)}</span><span class="lc-s">${esc(r.summary)}</span><span class="lc-m">${r.minutes || 4} min read &rarr;</span></button>`).join("") + `</div>`
       : "";
-    document.getElementById("artRelated").querySelectorAll(".learn-card").forEach(b => b.addEventListener("click", () => openArticle(b.dataset.art)));
+    document.getElementById("artRelated").querySelectorAll(".learn-card").forEach(b => b.addEventListener("click", () => { _histPush({ v: "article", id: b.dataset.art }); openArticle(b.dataset.art); }));
     document.getElementById("view-article").classList.remove("hidden");
     window.scrollTo(0, 0);
   }
@@ -4561,6 +4562,30 @@
   document.getElementById("cgToHub").addEventListener("click", showHub);
   document.getElementById("gcBack").addEventListener("click", (e) => { const id = e.currentTarget.dataset.cat; const cat = catById(id); if (cat) renderCatGrid(cat, CALCS.filter(c => c.cat === id)); });
   document.getElementById("gcSwitch").addEventListener("change", (e) => { const c = CALCS.find(x => x.id === e.target.value); if (c) openCalc(c); });
+
+  // ---- Browser Back button: navigate one level up within the app instead of leaving it ----
+  // Deeper navigations (hub -> area -> calculator/tool -> article) push a history entry; the
+  // browser Back button then pops it and we render one level up. In-app back buttons render
+  // directly (they mirror goBackOneLevel), so both paths stay consistent.
+  // Each forward navigation pushes a descriptor of the view; Back/Forward render whatever state
+  // we land on. NB: a script-scoped `let history` (escrow parsed activity) shadows the global,
+  // so use window.history.
+  let _navlock = false;   // suppress pushes while rendering in response to popstate
+  function _histPush(desc) { if (_navlock) return; try { window.history.pushState(desc || { v: "hub" }, ""); } catch (e) {} }
+  function _renderState(s) {
+    _navlock = true;
+    try {
+      const v = (s && s.v) || "hub";
+      if (v === "cat") { const c = catById(s.id); if (c) renderCatGrid(c, CALCS.filter(x => x.cat === c.id)); else showHub(); }
+      else if (v === "home") showHome();
+      else if (v === "soon") { const c = catById(s.id); c ? showSoon(c) : showHub(); }
+      else if (v === "tool") selectTool(s.id);
+      else if (v === "calc") { const c = CALCS.find(x => x.id === s.id); c ? openCalc(c) : showHub(); }
+      else if (v === "article") openArticle(s.id);
+      else showHub();
+    } finally { _navlock = false; }
+  }
+  window.addEventListener("popstate", (e) => _renderState(e.state));
 
   // ---- Share + CSV export for the generic calculators ----
   const _csvCell = (s) => { s = String(s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
@@ -4595,7 +4620,7 @@
     if (!m) return false;
     const calc = CALCS.find(x => x.id === m[1]); if (!calc) return false;
     let preset = null; try { preset = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[2]))))); } catch (e) {}
-    try { history.replaceState(null, "", location.pathname); } catch (e) {}
+    try { window.history.replaceState(null, "", location.pathname); } catch (e) {}
     requireDisclaimer(() => openCalc(calc, preset || undefined));
     return true;
   }
@@ -5674,7 +5699,7 @@
   injectTips();
   defaultState = collectState();   // snapshot factory defaults for "Reset to defaults"
   sharedState = parseHashState();  // a "#s=" link reopens someone's exact inputs
-  if (sharedState) { applyState(sharedState); try { history.replaceState(null, "", location.pathname); } catch (e) {} }
+  if (sharedState) { applyState(sharedState); try { window.history.replaceState(null, "", location.pathname); } catch (e) {} }
 
   checkAuth();      // gate the app until signed in
   handleVerifyHash();   // toast if we just came back from an email verify link
