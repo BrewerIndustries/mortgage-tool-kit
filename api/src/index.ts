@@ -179,16 +179,23 @@ const MAX_SCENARIOS = 100;
 const MAX_DATA_BYTES = 200_000;
 
 function cleanName(v: any): string { return String(v ?? "").trim().slice(0, 120); }
+// area / calculator ids are short slugs (a-z, 0-9, hyphen).
+function cleanTag(v: any): string { return String(v ?? "").trim().slice(0, 40).replace(/[^a-z0-9-]/gi, ""); }
 function validData(v: any): string | null {
   const s = typeof v === "string" ? v : JSON.stringify(v ?? {});
   if (s.length > MAX_DATA_BYTES) return null;
   return s;
 }
 
+// List scenarios. With ?calc=<id> -> that generic calculator's scenarios; without ->
+// the mortgage full-snapshot scenarios (calc IS NULL), preserving the original behavior.
 app.get('/scenarios', auth, async (c) => {
-  const { results } = await c.env.DB.prepare(
-    'SELECT id, name, created_at, updated_at FROM scenarios WHERE user_id = ? ORDER BY updated_at DESC',
-  ).bind(c.get('user').id).all();
+  const calc = cleanTag(c.req.query('calc'));
+  const uid = c.get('user').id;
+  const stmt = calc
+    ? c.env.DB.prepare('SELECT id, name, created_at, updated_at FROM scenarios WHERE user_id = ? AND calc = ? ORDER BY updated_at DESC').bind(uid, calc)
+    : c.env.DB.prepare('SELECT id, name, created_at, updated_at FROM scenarios WHERE user_id = ? AND calc IS NULL ORDER BY updated_at DESC').bind(uid);
+  const { results } = await stmt.all();
   return c.json({ scenarios: results });
 });
 
@@ -198,11 +205,13 @@ app.post('/scenarios', auth, async (c) => {
   const data = validData(b.data);
   if (!name) return c.json({ error: 'a name is required' }, 400);
   if (data === null) return c.json({ error: 'scenario data too large' }, 413);
+  const area = cleanTag(b.area) || 'mortgage';
+  const calc = cleanTag(b.calc) || null;     // NULL for the mortgage full snapshot
   const count = await c.env.DB.prepare('SELECT COUNT(*) AS n FROM scenarios WHERE user_id = ?').bind(c.get('user').id).first();
   if (Number((count as any).n) >= MAX_SCENARIOS) return c.json({ error: 'scenario limit reached' }, 409);
   const id = uuid(), ts = Date.now();
-  await c.env.DB.prepare('INSERT INTO scenarios (id, user_id, name, data, created_at, updated_at) VALUES (?,?,?,?,?,?)')
-    .bind(id, c.get('user').id, name, data, ts, ts).run();
+  await c.env.DB.prepare('INSERT INTO scenarios (id, user_id, name, data, area, calc, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?)')
+    .bind(id, c.get('user').id, name, data, area, calc, ts, ts).run();
   return c.json({ scenario: { id, name, created_at: ts, updated_at: ts } }, 201);
 });
 

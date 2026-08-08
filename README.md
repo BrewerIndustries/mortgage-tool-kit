@@ -1,10 +1,46 @@
-# Mortgage Tool Kit
+# Financial Tool Kit
 
-A ledger-styled mortgage toolkit — a static Pages frontend plus a small Cloudflare
-Worker for auth. The landing page is a **launcher**: a card grid of every tool.
-Opening one shows a slim toolbar (**← All tools**, a tool switcher, and the export
-actions); the title/logo returns home. Signed-in users get a **Log out** button by
-the settings gear. The tools:
+A ledger-styled personal-finance toolkit — a static Pages frontend plus a small
+Cloudflare Worker for auth. **Formerly Mortgage Tool Kit.** It's now a hub of six
+tool **areas**: **Mortgage** (the original 9 tools) plus **Auto**, **Investing**,
+**Budgeting & Savings**, **Credit & Debt**, and **Retirement & Taxes** — each with
+its own first round of calculators (see `BACKLOG.md` for what's built and what's next).
+
+The five newer areas run on a small **declarative calculator framework**: each
+calculator is defined as a list of inputs + a `compute()` function (in the `CALCS`
+registry in `index.html`), and a shared renderer builds the form and results. Adding
+a calculator is data, not new markup. The money math reuses `window.MTK` (`calc.js`).
+Every field carries a `?` **tooltip** and formats with **thousands separators**,
+projection tools draw a **live canvas chart**, and each calculator links to a relevant
+**knowledge article**, can **Export CSV**, and can **Share** a deep-link (`#c=<id>~<base64>`)
+that reopens it with the same inputs. The pure math for these areas lives in **`calc.js`**
+(`futureValue`, `presentValueAnnuity`, `payoffMonths`, `federalTax`, `debtPayoff`, `TAX_2024`,
+`RMD_TABLE`, …) alongside the mortgage functions, so the app and the **`test/` unit suite**
+run the exact same code (`node --test test/*.mjs`, 32 tests, wired into CI).
+
+There is no top title bar — a floating **control dock** (bottom-right) holds Home,
+theme, and settings. A built-in **knowledge base** of ~17 educational articles (in the
+`kbData` JSON block, rendered by a magazine-style reader) appears as a "Learn" section
+on each area's grid. To regenerate/extend it, edit `scratchpad/kb.raw.json`-style
+sources and inject decoded HTML into the `#kbData` script tag.
+
+The landing page is a radial **hub**: a central logo (a `$` placeholder for now)
+ringed by category "spokes." Entering any area first shows a forced **disclaimer
+splash** ("information only — not legal or financial advice"), acknowledged once
+per visit. The **Mortgage** spoke opens the toolkit's launcher — a card grid of
+every mortgage tool; opening one shows a slim toolbar (**← All tools**, a tool
+switcher, and the export actions). The header title returns to the hub; on-page
+**← Financial Tool Kit** links back out of an area. Signed-in users get a **Log
+out** button by the settings gear.
+
+> **Infra note:** the rebrand is user-facing only. The repo is still
+> `mortgage-tool-kit`, hosted at `mtk.dabrewer.dev`, backed by the `mtk-api`
+> Worker and `mtk-prod`/`mtk-dev` D1. A domain/infra rename to `ftk` is an open
+> decision in `BACKLOG.md`.
+
+## Mortgage area
+
+The Mortgage area's tools:
 
 - **Escrow Analysis** — projects an escrow account 12 months out, sizes the RESPA
   cushion (0–2 months), and flags a **shortage**, **surplus**, or **deficiency**
@@ -62,8 +98,10 @@ the settings gear. The tools:
   (in the tab actions, with a two-step confirm) blanks every input across all tabs.
 - **Accounts (optional sign-in)** — the calculators are usable without an account
   via **Continue without an account** (guest mode, autosaved to the browser only).
-  Signing in adds **saved scenarios** (name + reload a full property snapshot),
-  cross-device autosave, and server-stored theme/accent. Real login/logout +
+  Signing in adds **saved scenarios** — a full mortgage snapshot **and** per-calculator
+  scenarios in every other area (the `scenarios` table is namespaced by `area` + `calc`;
+  `/scenarios?calc=<id>` lists a calculator's saved inputs, no-arg lists the mortgage
+  snapshot) — plus cross-device autosave, and server-stored theme/accent. Real login/logout +
   self-service password change, backed by a Cloudflare Worker + D1 (see `api/`).
   **Admins** get a Users section in Settings to add/remove accounts (role-gated),
   plus an **audit log** of admin actions and a **mail-queue health** readout that

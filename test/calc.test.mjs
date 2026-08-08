@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 // import the exports object and destructure. This is the SAME module index.html ships.
 import MTK from '../calc.js';
 const { monthlyPI, amortize, payoffPayment, affordability, refinance, federalHolidays, previousBusinessDay } = MTK;
+const { futureValue, presentValueAnnuity, payoffMonths, grow, federalTax, marginalRate, debtPayoff, TAX_2024, RMD_TABLE } = MTK;
 
 const near = (a, b, tol = 1) => assert.ok(Math.abs(a - b) <= tol, `${a} not within ${tol} of ${b}`);
 
@@ -86,4 +87,77 @@ test('previousBusinessDay: Sunday rolls back to Friday', () => {
 });
 test('previousBusinessDay: a normal weekday stays put', () => {
   assert.equal(previousBusinessDay('2026-06-08'), '2026-06-08');
+});
+
+// ===== Non-mortgage area primitives (Auto, Investing, Budget, Debt, Retirement & Taxes) =====
+
+test('futureValue: 10k + 500/mo @ 7% for 30yr ~= 691k', () => {
+  near(futureValue(10000, 500, 7, 30), 691140, 400);
+});
+test('futureValue: 0% is straight-line contributions', () => {
+  assert.equal(futureValue(0, 100, 0, 10), 12000);
+});
+test('futureValue: lump sum only compounds monthly', () => {
+  near(futureValue(1000, 0, 10, 1), 1104.71, 0.5);
+});
+
+test('presentValueAnnuity: inverse of monthlyPI', () => {
+  const pv = presentValueAnnuity(1000, 6, 60);
+  near(pv, 51725.6, 1);
+  near(monthlyPI(pv, 6, 60), 1000, 0.01);   // round-trips
+});
+
+test('payoffMonths: 0% is balance / payment', () => {
+  assert.equal(payoffMonths(5000, 0, 250), 20);
+});
+test('payoffMonths: payment below interest never pays off', () => {
+  assert.equal(payoffMonths(5000, 22, 90), Infinity);   // interest ~= 91.67/mo
+});
+test('payoffMonths: round-trips with monthlyPI', () => {
+  const pay = monthlyPI(20000, 7, 120);
+  near(payoffMonths(20000, 7, pay), 120, 0.1);
+});
+
+test('grow: positive and negative compounding', () => {
+  near(grow(1000, 10, 2), 1210, 0.01);
+  near(grow(30000, -15, 5), 13311.16, 1);
+});
+
+test('federalTax: $70,400 taxable (2024 single) ~= $10,541', () => {
+  near(federalTax(70400, TAX_2024.single.b), 10541, 1);
+  assert.equal(federalTax(0, TAX_2024.single.b), 0);
+});
+test('marginalRate: $70,400 single is the 22% bracket', () => {
+  assert.equal(marginalRate(70400, TAX_2024.single.b), 0.22);
+});
+test('federalTax: married brackets are wider than single', () => {
+  assert.ok(federalTax(100000, TAX_2024.married.b) < federalTax(100000, TAX_2024.single.b));
+});
+
+test('debtPayoff: 3 debts + $200 extra (avalanche) clears in ~44 mo, ~$3,888 interest', () => {
+  const debts = [{ bal: 6000, apr: 22, min: 150 }, { bal: 12000, apr: 7, min: 250 }, { bal: 3000, apr: 15, min: 80 }];
+  const plan = debtPayoff(debts, 200, 'avalanche');
+  near(plan.months, 44, 1);
+  near(plan.interest, 3888, 60);
+  assert.equal(plan.series[0], 21000);                       // starts at total balance
+  assert.ok(plan.series[plan.series.length - 1] < 1);        // ends cleared
+  assert.equal(debts[0].bal, 6000);                          // does not mutate the input
+});
+test('debtPayoff: extra payment beats minimums-only on interest and time', () => {
+  const debts = [{ bal: 6000, apr: 22, min: 150 }, { bal: 12000, apr: 7, min: 250 }, { bal: 3000, apr: 15, min: 80 }];
+  const plan = debtPayoff(debts, 200, 'avalanche');
+  const minOnly = debtPayoff(debts, 0, 'avalanche');
+  assert.ok(minOnly.interest > plan.interest);
+  assert.ok(minOnly.months > plan.months);
+});
+test('debtPayoff: avalanche costs no more interest than snowball', () => {
+  const debts = [{ bal: 6000, apr: 22, min: 150 }, { bal: 12000, apr: 7, min: 250 }, { bal: 3000, apr: 15, min: 80 }];
+  const av = debtPayoff(debts, 200, 'avalanche');
+  const sn = debtPayoff(debts, 200, 'snowball');
+  assert.ok(av.interest <= sn.interest + 1);
+});
+
+test('RMD table: age 73 distribution period is 26.5', () => {
+  assert.equal(RMD_TABLE[73], 26.5);
+  near(500000 / RMD_TABLE[73], 18867.9, 1);
 });
