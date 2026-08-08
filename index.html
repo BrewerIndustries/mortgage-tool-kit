@@ -243,7 +243,19 @@
   .learn-card .lc-m { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: .01em; }
 
   /* Knowledge article reader */
-  .art-wrap { max-width: 680px; margin: 0 auto; }
+  .art-wrap { max-width: 1000px; margin: 0 auto; }
+  .art-layout { display: grid; grid-template-columns: minmax(0, 1fr) 264px; gap: 44px; align-items: start; }
+  .art-layout.no-terms { grid-template-columns: minmax(0, 720px); justify-content: center; }
+  .art-main { min-width: 0; }
+  .art-terms { position: sticky; top: 24px; border-left: 1px solid var(--line); padding-left: 24px; }
+  .art-terms h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--faint); font-weight: 700; margin: 6px 0 16px; }
+  .art-terms .term { margin-bottom: 15px; }
+  .art-terms .term-t { display: block; font-family: var(--serif); font-weight: 600; font-size: 14px; color: var(--accent); margin-bottom: 3px; }
+  .art-terms .term-d { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  @media (max-width: 860px) {
+    .art-layout, .art-layout.no-terms { grid-template-columns: 1fr; gap: 26px; justify-content: stretch; }
+    .art-terms { position: static; border-left: none; border-top: 1px solid var(--line); padding-left: 0; padding-top: 20px; }
+  }
   .art-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--accent); font-weight: 700; margin: 14px 0 6px; }
   .art-title { font-family: var(--serif); font-weight: 600; font-size: 32px; line-height: 1.15; letter-spacing: -.015em; margin: 0 0 6px; }
   .art-meta { font-size: 12.5px; color: var(--faint); margin: 0 0 26px; }
@@ -651,11 +663,16 @@
   <div id="view-article" class="view hidden">
     <div class="art-wrap">
       <button class="soon-back" id="artBack" type="button">&#8592; Back</button>
-      <p class="art-kicker" id="artKicker"></p>
-      <h1 class="art-title" id="artTitle"></h1>
-      <p class="art-meta" id="artMeta"></p>
-      <div class="art-body" id="artBody"></div>
-      <p class="art-disclaimer">Educational information only — not legal, tax, or financial advice. Figures reflect general U.S. rules and can change; verify current specifics for your situation.</p>
+      <div class="art-layout" id="artLayout">
+        <div class="art-main">
+          <p class="art-kicker" id="artKicker"></p>
+          <h1 class="art-title" id="artTitle"></h1>
+          <p class="art-meta" id="artMeta"></p>
+          <div class="art-body" id="artBody"></div>
+          <p class="art-disclaimer">Educational information only — not legal, tax, or financial advice. Figures reflect general U.S. rules and can change; verify current specifics for your situation.</p>
+        </div>
+        <aside class="art-terms hidden" id="artTerms" aria-label="Key terms"></aside>
+      </div>
       <div id="artRelated" class="art-related"></div>
     </div>
   </div>
@@ -4538,6 +4555,76 @@
   try { KB = JSON.parse(document.getElementById("kbData").textContent) || []; } catch (e) { KB = []; }
   const _kbById = (id) => KB.find(a => a.id === id);
   let _articleReturn = null;   // where "back" goes from an article
+
+  // Shared glossary. Each article's sidebar shows the terms that actually appear in it.
+  const GLOSSARY = {
+    "APR": "Annual percentage rate — a loan's yearly cost including fees, so it reads higher than the plain interest rate.",
+    "APY": "Annual percentage yield — what savings earn in a year, including the effect of compounding.",
+    "Amortization": "Paying off a loan in fixed installments; early payments are mostly interest, later ones mostly principal.",
+    "Compounding": "Earning returns on your past returns, so a balance grows faster the longer it's left alone.",
+    "Principal": "The amount borrowed — or the balance still owed — separate from interest.",
+    "Equity": "The share of an asset you own outright: its value minus any loan against it.",
+    "Down payment": "Cash paid upfront that reduces the amount you finance.",
+    "PITI": "A full mortgage payment: Principal, Interest, Taxes, and Insurance.",
+    "PMI": "Private mortgage insurance, usually required with less than 20% down; it can drop off near 78–80% LTV.",
+    "LTV": "Loan-to-value — the loan balance as a percentage of the home's value.",
+    "HOA": "Homeowners-association dues for shared community upkeep.",
+    "Escrow": "An account your servicer uses to collect and pay property taxes and insurance on your behalf.",
+    "Money factor": "A lease's finance charge; multiply by 2,400 for an approximate APR.",
+    "Residual value": "What a leasing company predicts a car will be worth at lease-end.",
+    "Capitalized cost": "The negotiated price of a leased car (the 'cap cost').",
+    "Depreciation": "The value an asset loses over time — usually a car's single biggest cost of ownership.",
+    "Total cost of ownership": "Everything you spend to buy, run, and eventually dispose of something over the years you own it.",
+    "Diversification": "Spreading money across many investments so no single one can sink you.",
+    "Volatility": "How much an investment's price swings up and down over time.",
+    "Risk tolerance": "How much volatility you can stomach without selling in a panic.",
+    "Time horizon": "How long until you need the money — it should shape how much risk you take.",
+    "Index fund": "A fund that holds everything in a market index, giving instant diversification at low cost.",
+    "ETF": "Exchange-traded fund — like an index fund, but traded on an exchange throughout the day.",
+    "Expense ratio": "A fund's annual fee as a percentage of your balance; small differences compound hugely over time.",
+    "Dollar-cost averaging": "Investing a fixed amount on a regular schedule, regardless of price.",
+    "CAGR": "Compound annual growth rate — the annualized return between a start and end value.",
+    "Rule of 72": "Divide 72 by your annual return to estimate the years for money to double.",
+    "Dividend": "A share of a company's profit paid out to shareholders.",
+    "DRIP": "A dividend reinvestment plan that automatically buys more shares with each payout.",
+    "Emergency fund": "Cash set aside — commonly 3–6 months of essential expenses — for genuine surprises.",
+    "Net worth": "Everything you own minus everything you owe.",
+    "Credit score": "A three-digit number lenders use to gauge how likely you are to repay.",
+    "FICO": "The most common credit-scoring model, ranging from 300 to 850.",
+    "Credit utilization": "The share of available credit you're using; keeping it under ~30% helps your score.",
+    "Snowball": "A payoff strategy that clears the smallest balance first for quick, motivating wins.",
+    "Avalanche": "A payoff strategy that clears the highest-interest debt first to minimize total interest.",
+    "Minimum payment": "The smallest amount due on a debt; paying only this stretches out payoff and cost.",
+    "Balance transfer": "Moving a card balance to a new card, often at a promotional 0% APR.",
+    "401(k)": "An employer retirement account funded from your paycheck, often with a company match.",
+    "IRA": "An individual retirement account you open yourself at a brokerage.",
+    "Roth": "An after-tax retirement account whose qualified withdrawals are tax-free.",
+    "RMD": "Required minimum distribution — the amount you must withdraw yearly from pre-tax retirement accounts, starting at age 73.",
+    "Standard deduction": "A flat amount subtracted from income before tax; most filers take it instead of itemizing.",
+    "Marginal rate": "The tax rate on your next dollar of income — the bracket your top dollar falls in.",
+    "Effective rate": "Total tax divided by total income; always lower than your marginal rate.",
+    "4% rule": "A guideline that withdrawing ~4% in year one (then adjusting for inflation) tends to last about 30 years.",
+    "Safe withdrawal rate": "The percentage of savings you can draw each year with low risk of running out.",
+    "FICA": "Payroll tax funding Social Security (6.2%) and Medicare (1.45%).",
+    "Sequence-of-returns risk": "The danger that poor market returns early in retirement permanently shrink a portfolio.",
+  };
+  const _reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  function _renderTerms(a) {
+    const el = document.getElementById("artTerms"), layout = document.getElementById("artLayout");
+    const text = a.title + " " + (a.sections || []).map(s => s.h + " " + String(s.html || "").replace(/<[^>]*>/g, " ")).join(" ");
+    const hits = [];
+    for (const term in GLOSSARY) {
+      const re = new RegExp((/^\w/.test(term) ? "\\b" : "") + _reEsc(term) + (/\w$/.test(term) ? "\\b" : ""), "i");
+      const idx = text.search(re);
+      if (idx >= 0) hits.push({ term, def: GLOSSARY[term], idx });
+    }
+    hits.sort((x, y) => x.idx - y.idx);
+    if (!hits.length) { el.classList.add("hidden"); layout.classList.add("no-terms"); el.innerHTML = ""; return; }
+    layout.classList.remove("no-terms"); el.classList.remove("hidden");
+    el.innerHTML = "<h4>Key terms</h4>" + hits.slice(0, 12).map(h =>
+      `<div class="term"><span class="term-t">${esc(h.term)}</span><span class="term-d">${esc(h.def)}</span></div>`).join("");
+  }
+
   function openArticle(id, returnTo) {
     const a = _kbById(id); if (!a) return;
     if (returnTo) _articleReturn = returnTo; else _articleReturn = () => { const cat = catById(a.cat); if (cat) renderCatGrid(cat, CALCS.filter(c => c.cat === cat.id)); };
@@ -4548,6 +4635,7 @@
     document.getElementById("artMeta").textContent = (a.minutes || 4) + " min read";
     document.getElementById("artBody").innerHTML = (a.sections || []).map(s =>
       `<section class="art-sec"><h3>${esc(s.h)}</h3>${s.html || ""}</section>`).join("");
+    _renderTerms(a);   // key-terms glossary in the right column
     // related articles in the same area
     const rel = KB.filter(x => x.cat === a.cat && x.id !== a.id);
     document.getElementById("artRelated").innerHTML = rel.length
